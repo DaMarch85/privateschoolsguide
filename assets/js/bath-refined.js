@@ -1,4 +1,3 @@
-
 const menuToggle = document.querySelector('.menu-toggle');
 const nav = document.getElementById('main-nav');
 if (menuToggle && nav) {
@@ -30,8 +29,9 @@ function applyFilters() {
   });
 
   if (status) {
+    status.classList.add('is-visible');
     status.textContent = visible
-      ? `Showing ${visible} highlighted school${visible === 1 ? '' : 's'}. For the full Bath directory, use the button below.`
+      ? `Showing ${visible} highlighted school${visible === 1 ? '' : 's'}. Use the full directory to broaden the search.`
       : 'No highlighted school matches those filters. Use the full Bath directory to widen the search.';
   }
 }

@@ -57,44 +57,45 @@
         <section class="main-column">
           <div class="intro-card">
             <h2>Welcome to Bath’s top independent schools.</h2>
-            <p>Use this page as a calm starting point: compare school format, age range and gender mix, then jump through to fuller profiles and planning pages.</p>
+            <p>Start here: compare school format, age range and gender mix, then move through to fuller school profiles and planning pages.</p>
 
-            <div class="filter-row" aria-label="Filter highlighted schools">
-              <div class="select-wrap">
-                <label for="format-filter" class="sr-only">Day or boarding</label>
-                <select id="format-filter">
-                  <option value="">Day or Boarding</option>
-                  <option value="day">Day schools</option>
-                  <option value="boarding">Schools with boarding</option>
-                </select>
+            <div class="filter-panel">
+              <div class="filter-row" aria-label="Filter highlighted schools">
+                <div class="select-wrap">
+                  <label for="format-filter" class="sr-only">Day or boarding</label>
+                  <select id="format-filter">
+                    <option value="">Day or Boarding</option>
+                    <option value="day">Day schools</option>
+                    <option value="boarding">Schools with boarding</option>
+                  </select>
+                </div>
+                <div class="select-wrap">
+                  <label for="age-filter" class="sr-only">Age range</label>
+                  <select id="age-filter">
+                    <option value="">Age Range</option>
+                    <option value="all-through">All-through</option>
+                    <option value="senior">Senior / 11+</option>
+                  </select>
+                </div>
+                <div class="select-wrap">
+                  <label for="gender-filter" class="sr-only">Co-ed or single sex</label>
+                  <select id="gender-filter">
+                    <option value="">Co-Ed or Single Sex</option>
+                    <option value="coed">Co-educational</option>
+                    <option value="girls">Girls only</option>
+                  </select>
+                </div>
+                <button id="filter-button" class="search-button" type="button">Search</button>
               </div>
-              <div class="select-wrap">
-                <label for="age-filter" class="sr-only">Age range</label>
-                <select id="age-filter">
-                  <option value="">Age Range</option>
-                  <option value="all-through">All-through</option>
-                  <option value="senior">Senior / 11+</option>
-                </select>
-              </div>
-              <div class="select-wrap">
-                <label for="gender-filter" class="sr-only">Co-ed or single sex</label>
-                <select id="gender-filter">
-                  <option value="">Co-Ed or Single Sex</option>
-                  <option value="coed">Co-educational</option>
-                  <option value="girls">Girls only</option>
-                </select>
-              </div>
-              <button id="filter-button" class="search-button" type="button">Search</button>
+              <p class="filter-status" id="filter-status" aria-live="polite"></p>
             </div>
-
-            <p class="filter-status" id="filter-status">Showing 3 highlighted schools. For the full Bath directory, use the button below.</p>
           </div>
 
           <section class="schools-section">
             <div class="section-header">
               <div>
                 <h2>Bath Private Schools</h2>
-                <p>Start with a short, focused first pass rather than a crowded directory.</p>
+                <p>A focused first pass rather than a crowded directory.</p>
               </div>
               <a href="/bath/schools/" class="text-link">View full directory</a>
             </div>
@@ -104,7 +105,8 @@
                 <img src="/assets/img/bath/king-edwards-school.png" alt="" class="school-photo">
                 <div class="school-body">
                   <h3>King Edward’s School</h3>
-                  <p class="school-meta">Co-educational, Day</p>
+                  <p class="school-type">All-through day school</p>
+                  <p class="school-meta">Co-educational · Day</p>
                   <p class="school-meta">Ages 3–18</p>
                   <a href="/bath/schools/king-edwards-school/" class="card-button">View School</a>
                 </div>
@@ -114,7 +116,8 @@
                 <img src="/assets/img/bath/kingswood-school.png" alt="" class="school-photo">
                 <div class="school-body">
                   <h3>Kingswood School</h3>
-                  <p class="school-meta">Co-educational, Day &amp; Boarding</p>
+                  <p class="school-type">Senior school</p>
+                  <p class="school-meta">Co-educational · Day &amp; Boarding</p>
                   <p class="school-meta">Ages 11–19</p>
                   <a href="/bath/schools/kingswood-school/" class="card-button">View School</a>
                 </div>
@@ -124,7 +127,8 @@
                 <img src="/assets/img/bath/prior-park-college.png" alt="" class="school-photo">
                 <div class="school-body">
                   <h3>Prior Park College</h3>
-                  <p class="school-meta">Co-educational, Day &amp; Boarding</p>
+                  <p class="school-type">Senior school</p>
+                  <p class="school-meta">Co-educational · Day &amp; Boarding</p>
                   <p class="school-meta">Ages 11–18</p>
                   <a href="/bath/schools/prior-park-college/" class="card-button">View School</a>
                 </div>
@@ -139,7 +143,7 @@
           <section class="compare-strip">
             <div>
               <h2>Compare Bath Schools</h2>
-              <p>Shortlist the schools that feel most likely, then compare them side by side on fees, format, age range and location.</p>
+              <p>Shortlist the most likely options, then compare them side by side on fees, format, age range and location.</p>
             </div>
             <a href="/bath/compare/" class="compare-button">Compare Schools</a>
           </section>
@@ -157,12 +161,26 @@
 
           <section class="side-card">
             <h2>Upcoming Open Days</h2>
-            <ul class="mini-list">
-              <li><a href="/bath/open-days/">Kingswood School</a></li>
-              <li><a href="/bath/open-days/">Prior Park College</a></li>
-              <li><a href="/bath/open-days/">Royal High School Bath</a></li>
+            <ul class="mini-list detailed-list">
+              <li>
+                <a href="/bath/schools/monkton-combe-school/">Monkton Combe School</a>
+                <span>Sat 25 Apr · Senior School Open Morning</span>
+              </li>
+              <li>
+                <a href="/bath/schools/prior-park-college/">Prior Park College</a>
+                <span>Fri 8 May · Open Door Morning</span>
+              </li>
+              <li>
+                <a href="/bath/schools/royal-high-school-bath-gdst/">Royal High School Bath</a>
+                <span>Fri 15 May · Senior School Open House</span>
+              </li>
+              <li>
+                <a href="/bath/schools/downside-school/">Downside School</a>
+                <span>Sat 16 May · Open Morning</span>
+              </li>
             </ul>
-            <a href="/bath/open-days/" class="gold-button gold-button-small">Get Open Day Alerts</a>
+            <p class="sidebar-note">Verified against official school websites on 8 March 2026.</p>
+            <a href="/bath/open-days/" class="gold-button gold-button-small">View all open-day dates</a>
           </section>
 
           <section class="side-card">
