@@ -6,6 +6,8 @@
   <title>Private schools in Bath | Compare day schools, boarding, fees and bursaries</title>
   <meta name="description" content="Independent guide to Bath private schools, with a cleaner shortlisting hub for fees, bursaries, open days and admissions planning.">
   <link rel="canonical" href="https://www.privateschoolsguide.co.uk/bath/">
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <link rel="stylesheet" href="/assets/css/bath-refined.css">
 </head>
 <body>
@@ -57,7 +59,7 @@
         <section class="main-column">
           <div class="intro-card">
             <h2>Welcome to Bath’s top independent schools.</h2>
-            <p>Start here: compare school format, age range and gender mix, then move through to fuller school profiles and planning pages.</p>
+            <p>Start here: compare school format, age range and gender mix, then move through to fuller school profiles, a cleaner map view and planning pages.</p>
 
             <div class="filter-panel">
               <div class="filter-row" aria-label="Filter highlighted schools">
@@ -97,46 +99,79 @@
                 <h2>Bath Private Schools</h2>
                 <p>A focused first pass rather than a crowded directory.</p>
               </div>
-              <a href="/bath/schools/" class="text-link">View full directory</a>
+              <div class="section-tools">
+                <div class="view-toggle" role="tablist" aria-label="Switch between list and map">
+                  <button type="button" class="view-toggle-button is-active" data-view="list" aria-selected="true">List</button>
+                  <button type="button" class="view-toggle-button" data-view="map" aria-selected="false">Map</button>
+                </div>
+                <a href="/bath/schools/" class="text-link">View full directory</a>
+              </div>
             </div>
 
-            <div class="school-grid" id="school-grid">
-              <article class="school-card" data-format="day" data-age="all-through" data-gender="coed">
-                <img src="/assets/img/bath/king-edwards-school.png" alt="" class="school-photo">
-                <div class="school-body">
-                  <h3>King Edward’s School</h3>
-                  <p class="school-type">All-through day school</p>
-                  <p class="school-meta">Co-educational · Day</p>
-                  <p class="school-meta">Ages 3–18</p>
-                  <a href="/bath/schools/king-edwards-school/" class="card-button">View School</a>
-                </div>
-              </article>
+            <div id="school-list-view" class="content-view">
+              <div class="school-grid" id="school-grid">
+                <article class="school-card" data-format="day" data-age="all-through" data-gender="coed">
+                  <img src="/assets/img/bath/king-edwards-school.png" alt="" class="school-photo">
+                  <div class="school-body">
+                    <h3>King Edward’s School</h3>
+                    <p class="school-type">All-through day school</p>
+                    <p class="school-meta">Co-educational · Day</p>
+                    <p class="school-meta">Ages 3–18</p>
+                    <a href="/bath/schools/king-edwards-school/" class="card-button">View School</a>
+                  </div>
+                </article>
 
-              <article class="school-card" data-format="boarding" data-age="senior" data-gender="coed">
-                <img src="/assets/img/bath/kingswood-school.png" alt="" class="school-photo">
-                <div class="school-body">
-                  <h3>Kingswood School</h3>
-                  <p class="school-type">Senior school</p>
-                  <p class="school-meta">Co-educational · Day &amp; Boarding</p>
-                  <p class="school-meta">Ages 11–19</p>
-                  <a href="/bath/schools/kingswood-school/" class="card-button">View School</a>
-                </div>
-              </article>
+                <article class="school-card" data-format="boarding" data-age="senior" data-gender="coed">
+                  <img src="/assets/img/bath/kingswood-school.png" alt="" class="school-photo">
+                  <div class="school-body">
+                    <h3>Kingswood School</h3>
+                    <p class="school-type">Senior school</p>
+                    <p class="school-meta">Co-educational · Day &amp; Boarding</p>
+                    <p class="school-meta">Ages 11–19</p>
+                    <a href="/bath/schools/kingswood-school/" class="card-button">View School</a>
+                  </div>
+                </article>
 
-              <article class="school-card" data-format="boarding" data-age="senior" data-gender="coed">
-                <img src="/assets/img/bath/prior-park-college.png" alt="" class="school-photo">
-                <div class="school-body">
-                  <h3>Prior Park College</h3>
-                  <p class="school-type">Senior school</p>
-                  <p class="school-meta">Co-educational · Day &amp; Boarding</p>
-                  <p class="school-meta">Ages 11–18</p>
-                  <a href="/bath/schools/prior-park-college/" class="card-button">View School</a>
-                </div>
-              </article>
+                <article class="school-card" data-format="boarding" data-age="senior" data-gender="coed">
+                  <img src="/assets/img/bath/prior-park-college.png" alt="" class="school-photo">
+                  <div class="school-body">
+                    <h3>Prior Park College</h3>
+                    <p class="school-type">Senior school</p>
+                    <p class="school-meta">Co-educational · Day &amp; Boarding</p>
+                    <p class="school-meta">Ages 11–18</p>
+                    <a href="/bath/schools/prior-park-college/" class="card-button">View School</a>
+                  </div>
+                </article>
+              </div>
+
+              <div class="directory-note">
+                <strong>Also in the Bath directory:</strong> Monkton Combe School, Royal High School Bath, Paragon School, Kingswood Preparatory School, Bath Academy and Downside School.
+              </div>
             </div>
 
-            <div class="directory-note">
-              <strong>Also in the Bath directory:</strong> Monkton Combe School, Royal High School Bath, Paragon School, Kingswood Preparatory School, Bath Academy and Downside School.
+            <div id="school-map-view" class="content-view map-view" hidden>
+              <div class="map-panel">
+                <div class="map-topbar">
+                  <div class="map-legend" aria-label="Map legend">
+                    <span><i class="legend-dot legend-dot-day"></i> Day</span>
+                    <span><i class="legend-dot legend-dot-boarding"></i> Boarding / mixed</span>
+                    <span><i class="legend-dot legend-dot-area"></i> Bath-area</span>
+                  </div>
+                  <p class="map-note">One pin per directory listing. Positions are approximate and based on school postcodes.</p>
+                </div>
+                <div id="bath-map" class="bath-map" aria-label="Map of Bath private schools"></div>
+                <div class="map-links" id="map-links">
+                  <a href="/bath/schools/king-edwards-school/">King Edward’s School</a>
+                  <a href="/bath/schools/kingswood-school/">Kingswood School</a>
+                  <a href="/bath/schools/kingswood-preparatory-school/">Kingswood Preparatory School</a>
+                  <a href="/bath/schools/prior-park-college/">Prior Park College</a>
+                  <a href="/bath/schools/paragon-school/">Paragon School</a>
+                  <a href="/bath/schools/monkton-combe-school/">Monkton Combe School</a>
+                  <a href="/bath/schools/royal-high-school-bath-gdst/">Royal High School Bath</a>
+                  <a href="/bath/schools/bath-academy/">Bath Academy</a>
+                  <a href="/bath/schools/downside-school/">Downside School</a>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -219,6 +254,7 @@
     </div>
   </footer>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="/assets/js/bath-refined.js"></script>
 </body>
 </html>

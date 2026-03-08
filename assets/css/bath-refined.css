@@ -287,3 +287,193 @@ select{
   .intro-card h2{font-size:1.7rem}
   .school-body h3{font-size:1.45rem}
 }
+
+
+
+.section-tools{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+}
+.view-toggle{
+  display:inline-flex;
+  align-items:center;
+  border:1px solid var(--line);
+  background:#fff;
+}
+.view-toggle-button{
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:#42546a;
+  font:inherit;
+  font-weight:700;
+  padding:9px 14px;
+  cursor:pointer;
+}
+.view-toggle-button + .view-toggle-button{
+  border-left:1px solid var(--line);
+}
+.view-toggle-button.is-active{
+  background:var(--navy);
+  color:#fff;
+}
+.content-view + .content-view{
+  margin-top:0;
+}
+.map-view{
+  margin-top:2px;
+}
+.map-panel{
+  background:#fff;
+  border:1px solid #e5e8ed;
+}
+.map-topbar{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  padding:14px 16px 12px;
+  border-bottom:1px solid #e5e8ed;
+  background:#fafbfc;
+}
+.map-legend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:14px;
+  font-size:.92rem;
+  color:#49576a;
+}
+.map-legend span{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.legend-dot{
+  display:inline-block;
+  width:12px;
+  height:12px;
+  border-radius:999px;
+  border:1px solid rgba(0,0,0,.08);
+}
+.legend-dot-day{background:var(--navy)}
+.legend-dot-boarding{background:var(--gold)}
+.legend-dot-area{background:#7f8a97}
+.map-note{
+  margin:0;
+  max-width:34ch;
+  text-align:right;
+  color:#637083;
+  font-size:.9rem;
+}
+.bath-map{
+  height:430px;
+  width:100%;
+  background:#eef2f6;
+}
+.map-links{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  padding:14px 16px 16px;
+  border-top:1px solid #e5e8ed;
+}
+.map-links a{
+  display:inline-flex;
+  align-items:center;
+  padding:9px 12px;
+  border:1px solid #d9dee4;
+  background:#fff;
+  color:#24374f;
+  font-size:.92rem;
+  font-weight:600;
+}
+.map-links a:hover{
+  text-decoration:none;
+  background:#f6f8fa;
+}
+.school-map-marker{
+  display:block;
+  width:16px;
+  height:16px;
+  border-radius:999px;
+  border:2px solid #fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);
+}
+.school-map-marker.day{background:var(--navy)}
+.school-map-marker.boarding{background:var(--gold)}
+.school-map-marker.area{background:#7f8a97}
+.leaflet-popup-content-wrapper{
+  border-radius:0;
+  box-shadow:0 8px 20px rgba(15,34,56,.16);
+}
+.leaflet-popup-content{
+  margin:14px 16px;
+  min-width:190px;
+}
+.map-popup-title{
+  margin:0 0 6px;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:1.1rem;
+  line-height:1.1;
+  color:#17283f;
+}
+.map-popup-meta{
+  margin:0 0 10px;
+  color:#5b6878;
+  font-size:.92rem;
+}
+.map-popup-link{
+  color:var(--navy-deep);
+  font-weight:700;
+}
+.leaflet-control-attribution{
+  font-size:.72rem;
+}
+.leaflet-control-zoom a{
+  border-radius:0 !important;
+}
+.leaflet-container a{
+  color:var(--navy-deep);
+}
+.leaflet-bar{
+  border-radius:0;
+  box-shadow:none;
+}
+.leaflet-bar a{
+  border-radius:0 !important;
+}
+@media (max-width: 960px){
+  .map-topbar{
+    flex-direction:column;
+  }
+  .map-note{
+    text-align:left;
+    max-width:none;
+  }
+}
+@media (max-width: 760px){
+  .section-tools{
+    width:100%;
+    justify-content:space-between;
+  }
+  .bath-map{
+    height:340px;
+  }
+  .map-links{
+    flex-direction:column;
+  }
+  .map-links a{
+    width:100%;
+  }
+}
+@media (max-width: 640px){
+  .view-toggle{
+    width:100%;
+  }
+  .view-toggle-button{
+    flex:1 1 50%;
+    text-align:center;
+  }
+}
