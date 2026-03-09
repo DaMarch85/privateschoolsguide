@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Compare Bath private schools | Day, boarding, ages and fees</title>
-  <meta name="description" content="Build a shortlist of Bath private schools and compare day or boarding format, age range, fees, bursaries and location side by side.">
+  <title>Compare Bath private schools | Overview and A-level metrics</title>
+  <meta name="description" content="Build a shortlist of Bath private schools and switch between overview comparisons and A-level metrics, including grades, subject breadth and subject mix.">
   <link rel="canonical" href="https://www.privateschoolsguide.co.uk/bath/compare/">
   <link rel="stylesheet" href="/assets/css/bath-refined.css">
 </head>
@@ -40,7 +40,7 @@
       <section class="compare-hero">
         <span class="eyebrow">Bath compare tool</span>
         <h1>Compare Bath private schools</h1>
-        <p>Build a shortlist of up to four schools, then compare age range, format, fees, bursaries and location side by side. Your shortlist is saved on this browser so you can come back to it later.</p>
+        <p>Build a shortlist of up to four schools, then switch between the core overview metrics and a dedicated A-level view covering grades, subject breadth and subject mix. Your shortlist is saved on this browser so you can come back to it later.</p>
         <div class="compare-actions">
           <a href="/bath/" class="compare-link-button">Back to Bath guide</a>
           <button id="compare-clear-top" class="compare-inline-button" type="button">Clear selection</button>
@@ -67,21 +67,20 @@
           </section>
 
           <section class="compare-panel">
-            <h2>Comparison table</h2>
+            <div class="compare-panel-heading">
+              <div>
+                <h2>Comparison table</h2>
+                <p class="compare-panel-lead">Switch between the current overview metrics and the A-level metrics view.</p>
+              </div>
+              <div class="compare-metric-toggle" role="tablist" aria-label="Comparison table view">
+                <button type="button" class="compare-metric-button is-active" data-compare-view="overview" aria-pressed="true">Overview</button>
+                <button type="button" class="compare-metric-button" data-compare-view="alevel" aria-pressed="false">A-level metrics</button>
+              </div>
+            </div>
+            <p id="compare-table-note" class="compare-table-note">Overview view covers ages, gender, day or boarding format, fees, bursaries and location.</p>
             <div class="compare-table-wrap">
-              <table class="compare-table">
-                <thead>
-                  <tr>
-                    <th>School</th>
-                    <th>Ages</th>
-                    <th>Gender</th>
-                    <th>Day / boarding</th>
-                    <th>Day fee</th>
-                    <th>Boarding fee</th>
-                    <th>Bursaries</th>
-                    <th>Location</th>
-                  </tr>
-                </thead>
+              <table id="compare-table" class="compare-table">
+                <thead id="compare-thead"></thead>
                 <tbody id="compare-tbody"></tbody>
               </table>
             </div>
@@ -94,14 +93,14 @@
             <p>Start with two or three likely options, compare the practical basics, then move into school profiles and open-day planning.</p>
             <ol class="compare-mini-list">
               <li>Select schools above.</li>
-              <li>Scan the table for format, fees and bursaries.</li>
+              <li>Use the toggle to switch between overview and A-level metrics.</li>
               <li>Open the profile pages for details and open days.</li>
             </ol>
           </section>
 
           <section class="compare-side-card">
             <h3>What this page is best for</h3>
-            <p>This compare tool is designed for first-pass narrowing, not final judgement. It is strongest on factual differences such as age range, boarding format, fees and whether bursaries are signposted.</p>
+            <p>This compare tool is designed for first-pass narrowing, not final judgement. It is strongest on factual differences such as age range, boarding format, fees, bursaries and — for senior schools — A-level performance and subject mix.</p>
             <p class="compare-help-note">For fuller context, use the school profiles and open-days guide alongside this page.</p>
           </section>
         </aside>
