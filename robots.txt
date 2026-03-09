@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
-Sitemap: https://www.privateschoolsguide.co.uk/sitemap.xml
+
+Sitemap: https://privateschoolsguide.co.uk/sitemap.xml
