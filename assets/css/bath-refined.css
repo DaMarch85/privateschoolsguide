@@ -61,3 +61,66 @@
     letter-spacing:.14em;
   }
 }
+
+
+/* Mobile refinements for location, compare and Bath-specific pages */
+@media (max-width: 900px){
+  .location-page .page-shell{padding-top:18px}
+  .location-hero{min-height:42svh}
+  .location-layout{grid-template-columns:1fr;gap:22px;padding-top:20px}
+
+  .location-side-nav{
+    background:var(--psg-paper);
+    border:1px solid var(--psg-line);
+    padding:18px 18px 8px;
+  }
+  .location-side-nav-group{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--psg-line)}
+  .location-side-nav-group:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+  .location-side-nav .nav-kicker{margin-bottom:10px}
+  .location-side-nav-title{font-size:1.38rem}
+  .location-side-nav a,.location-side-nav .coming-soon{font-size:1.18rem}
+  .location-side-nav .sub-link,.location-side-nav .sub-label{padding-left:12px;font-size:1rem}
+
+  .location-grid-title{font-size:1.56rem;margin-bottom:14px}
+  .school-square-grid{grid-template-columns:1fr;gap:16px}
+  .school-square-card{display:grid;grid-template-columns:42% 1fr;aspect-ratio:auto;min-height:210px}
+  .school-square-media{flex:auto;min-height:100%}
+  .school-square-body{padding:14px 15px 15px}
+  .school-square-body h2{font-size:1.34rem}
+  .school-square-text{font-size:.95rem}
+
+  .location-map-panel{position:static}
+  .location-map-head h2{font-size:1.44rem}
+  .bath-location-map{height:340px}
+
+  .compare-page{padding:22px 0 0}
+  .compare-hero,.compare-panel,.compare-side-card{padding:20px}
+  .compare-hero h1{font-size:clamp(1.92rem,9vw,2.7rem)}
+  .compare-actions,.compare-toolbar-actions{display:grid;grid-template-columns:1fr;gap:10px}
+  .compare-link-button,.compare-inline-button{width:100%}
+  .compare-panel-heading{align-items:stretch}
+  .compare-metric-toggle{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .compare-metric-button{width:100%;padding:12px 10px}
+  .compare-table-wrap{margin-inline:-18px;padding-inline:18px}
+  .compare-table{min-width:680px}
+}
+
+@media (max-width: 640px){
+  .location-hero{min-height:38svh}
+  .location-hero-copy{padding-inline:16px}
+  .location-hero-title.location-hero-title-single{font-size:clamp(2.5rem,15vw,3.8rem);letter-spacing:.14em}
+  .location-side-nav{padding:16px 16px 6px}
+  .location-side-nav-title{font-size:1.28rem}
+  .location-side-nav a,.location-side-nav .coming-soon{font-size:1.08rem}
+  .location-side-nav .sub-link,.location-side-nav .sub-label{font-size:.95rem}
+  .school-square-card{grid-template-columns:1fr;min-height:0}
+  .school-square-media{aspect-ratio:16/9;min-height:0}
+  .school-square-body{padding:14px}
+  .bath-location-map{height:300px}
+  .compare-hero,.compare-panel,.compare-side-card{padding:18px 16px}
+  .compare-chooser{gap:10px}
+  .compare-option{padding:12px 12px 10px}
+  .compare-option-title{font-size:.96rem}
+  .compare-option-meta{font-size:.86rem}
+  .compare-panel h2,.compare-side-card h3{font-size:1.48rem}
+}
