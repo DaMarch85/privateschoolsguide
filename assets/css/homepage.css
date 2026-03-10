@@ -1,427 +1,267 @@
 
 :root{
-  --home-bg:#f4efe8;
-  --home-paper:#efe7dc;
-  --home-ink:#292421;
-  --home-muted:#6c6359;
-  --home-accent:#b35b2e;
-  --home-accent-soft:#cf8a5a;
-  --home-border:rgba(41,36,33,.18);
-  --home-dark:#1f1a17;
-  --home-dark-soft:#2a2520;
-  --home-map-height:420px;
+  --bg:#20201f;
+  --panel:#f3efe7;
+  --panel-2:#ebe5db;
+  --ink:#20201f;
+  --muted:#62584d;
+  --accent:#b65b2b;
+  --accent-2:#d77a49;
 }
 
-body.home-minimal{
-  margin:0;
-  background:var(--home-bg);
-  color:var(--home-ink);
-  font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--panel);
+  font-family:Inter, Arial, sans-serif;
 }
+a{color:inherit;text-decoration:none}
+a:hover{text-decoration:underline}
 
-body.home-minimal a{
-  color:inherit;
-  text-decoration:none;
-}
-
-body.home-minimal .skip-link:focus{
-  border-radius:0;
-}
-
-body.home-minimal .site-footer,
-body.home-minimal .site-footer *{
-  border-radius:0 !important;
-}
-
-body.home-minimal .site-footer{
-  background:var(--home-dark);
-  color:#ece3d7;
-  border-top:1px solid rgba(255,255,255,.12);
-}
-
-body.home-minimal .site-footer h2,
-body.home-minimal .site-footer h3{
-  color:#fbf6ef;
-}
-
-body.home-minimal .site-footer a{
-  color:#f3c6ab;
-}
-
-body.home-minimal .footer-bottom{
-  border-top-color:rgba(255,255,255,.12);
-}
-
-.shell{
-  width:min(100%, 1440px);
-  margin-inline:auto;
+.sr-only{
+  position:absolute!important;
+  width:1px;height:1px;
+  padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0
 }
 
 .home-hero{
   position:relative;
-  min-height:86svh;
-  background:#181411;
+  min-height:84vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   overflow:hidden;
+  background:#000;
 }
-
 .hero-video{
   position:absolute;
   inset:0;
   width:100%;
   height:100%;
   object-fit:cover;
+  background:#000;
 }
-
-.hero-video-mobile{
-  display:none;
-}
-
-.hero-wash{
+.hero-video-mobile{display:none}
+.hero-overlay{
   position:absolute;
   inset:0;
-  background:
-    linear-gradient(180deg, rgba(25,21,18,.28) 0%, rgba(25,21,18,.38) 45%, rgba(25,21,18,.72) 100%),
-    linear-gradient(90deg, rgba(179,91,46,.22) 0%, rgba(179,91,46,0) 35%, rgba(179,91,46,.12) 100%);
+  background:linear-gradient(to bottom, rgba(0,0,0,.18), rgba(0,0,0,.38));
 }
-
-.hero-centre{
+.hero-inner{
   position:relative;
-  min-height:86svh;
-  display:grid;
-  place-items:center;
-  padding:3rem 1.5rem;
-  text-align:center;
-}
-
-.hero-centre h1{
-  margin:0;
-  color:#f9f4ed;
-  font-family:"EB Garamond", ui-serif, Georgia, "Times New Roman", serif;
-  font-weight:500;
-  font-size:clamp(1.9rem, 5.2vw, 3.8rem);
-  letter-spacing:.18em;
-  line-height:1;
-  text-transform:uppercase;
-  text-shadow:0 4px 28px rgba(0,0,0,.35);
-}
-
-.home-finder{
-  padding:0 0 4rem;
-}
-
-.finder-grid{
-  display:grid;
-  grid-template-columns:minmax(320px, 430px) minmax(0, 1fr);
-  background:var(--home-bg);
-}
-
-.finder-panel{
-  padding:2.6rem 2rem 2.2rem;
-}
-
-.finder-locations{
-  background:#f6f0e8;
-  border-right:1px solid var(--home-border);
-}
-
-.finder-map-panel{
-  background:#f2ece3;
-}
-
-.section-kicker{
-  margin:0 0 .8rem;
-  color:var(--home-accent);
-  font-size:.88rem;
-  font-weight:600;
-  letter-spacing:.16em;
-  text-transform:uppercase;
-}
-
-.finder-locations h2,
-.finder-map-head h2{
-  margin:0 0 1.15rem;
-  font-family:"EB Garamond", ui-serif, Georgia, "Times New Roman", serif;
-  font-weight:500;
-  font-size:clamp(1.35rem, 2.3vw, 2rem);
-  line-height:1.02;
-  letter-spacing:.14em;
-  text-transform:uppercase;
-}
-
-.location-search{
-  width:100%;
-  padding:1rem 0;
-  border:none;
-  border-bottom:1px solid var(--home-border);
-  background:transparent;
-  color:var(--home-ink);
-  font:500 1rem/1.4 "Inter",system-ui,sans-serif;
-  outline:none;
-}
-
-.location-search::placeholder{
-  color:#8a7f75;
-}
-
-.location-list{
-  list-style:none;
-  margin:1.25rem 0 0;
-  padding:0;
-}
-
-.location-link{
+  z-index:2;
+  width:min(1200px, 92vw);
   display:flex;
-  align-items:flex-end;
-  justify-content:space-between;
-  gap:1rem;
-  padding:1rem 0;
-  border-bottom:1px solid var(--home-border);
-  transition:color .18s ease, padding-left .18s ease;
-}
-
-.location-link:hover,
-.location-link:focus-visible{
-  color:var(--home-accent);
-  padding-left:.4rem;
-}
-
-.location-name{
-  font-family:"EB Garamond", ui-serif, Georgia, serif;
-  font-size:1.9rem;
-  letter-spacing:.04em;
-}
-
-.location-state{
-  color:var(--home-muted);
-  font-size:.88rem;
-  text-transform:uppercase;
-  letter-spacing:.12em;
-}
-
-.location-link.is-live .location-state{
-  color:var(--home-accent);
-}
-
-.finder-note{
-  margin:1.15rem 0 0;
-  color:var(--home-muted);
-  max-width:34ch;
-}
-
-.finder-map-head{
-  display:flex;
-  align-items:flex-end;
-  justify-content:space-between;
-  gap:1rem;
-  margin-bottom:1.25rem;
-}
-
-.homepage-map{
-  width:100%;
-  height:var(--home-map-height);
-  background:#ddd4c8;
-  border:1px solid var(--home-border);
-}
-
-.homepage-map .leaflet-control-attribution{
-  font-size:.68rem;
-}
-
-.homepage-map .school-map-marker{
-  display:block;
-  width:14px;
-  height:14px;
-  background:var(--home-dark);
-  border:2px solid #f2ece3;
-  box-shadow:0 0 0 1px rgba(0,0,0,.18);
-}
-
-.homepage-map .school-map-marker.boarding{
-  background:var(--home-accent);
-}
-
-.homepage-map .school-map-marker.area{
-  background:#756658;
-}
-
-.map-popup{
-  min-width:180px;
-}
-
-.map-popup-title{
-  margin:0 0 .2rem;
-  font:600 1rem/1.2 "Inter",system-ui,sans-serif;
-}
-
-.map-popup-meta{
-  margin:0 0 .65rem;
-  color:var(--home-muted);
-  font-size:.9rem;
-}
-
-.map-popup-link{
-  color:var(--home-accent);
-  font-weight:600;
-}
-
-.placeholder-shell{
-  min-height:100svh;
-  display:grid;
-  grid-template-rows:minmax(44svh, auto) auto 1fr;
-  background:var(--home-bg);
-}
-
-.placeholder-hero{
-  position:relative;
-  background:
-    linear-gradient(180deg, rgba(32,26,23,.42), rgba(32,26,23,.72)),
-    url('/assets/video/home-hero-poster.jpg') center/cover no-repeat;
-  display:grid;
-  place-items:center;
-  padding:2rem;
-  text-align:center;
-}
-
-.placeholder-hero h1{
-  margin:0;
-  color:#f9f4ed;
-  font-family:"EB Garamond", ui-serif, Georgia, serif;
-  font-size:clamp(3rem, 8vw, 5.5rem);
-  font-weight:500;
-  letter-spacing:.08em;
-}
-
-.placeholder-body{
-  width:min(calc(100% - 2.5rem), 900px);
-  margin:0 auto;
-  padding:2.25rem 0 4rem;
-}
-
-.placeholder-copy{
-  max-width:42rem;
-}
-
-.placeholder-copy h2{
-  margin:0 0 .8rem;
-  font-family:"EB Garamond", ui-serif, Georgia, serif;
-  font-size:clamp(2rem, 3vw, 3rem);
-  letter-spacing:.03em;
-}
-
-.placeholder-copy p{
-  color:var(--home-muted);
-  max-width:52ch;
-}
-
-.placeholder-actions{
-  display:flex;
-  flex-wrap:wrap;
-  gap:1rem;
-  margin-top:1.6rem;
-}
-
-.home-button{
-  display:inline-flex;
   align-items:center;
   justify-content:center;
-  min-width:180px;
-  padding:1rem 1.3rem;
-  border:1px solid var(--home-dark);
-  background:var(--home-dark);
-  color:#f8f1e7;
+}
+.hero-title{
+  margin:0;
+  text-align:center;
+  text-transform:uppercase;
+  color:#f5f1eb;
+  font-family:"EB Garamond", Georgia, serif;
   font-weight:600;
-  letter-spacing:.02em;
+  line-height:.94;
+  letter-spacing:.14em;
+  text-wrap:balance;
+}
+.hero-title span{
+  display:block;
+}
+.hero-title span:nth-child(1){
+  font-size:clamp(1.2rem, 1.7vw, 1.7rem);
+  margin-bottom:.22em;
+}
+.hero-title span:nth-child(2){
+  font-size:clamp(2.6rem, 5.4vw, 4.6rem);
+}
+.hero-title span:nth-child(3){
+  font-size:clamp(2.2rem, 4.7vw, 3.9rem);
 }
 
-.home-button:hover{
-  background:var(--home-accent);
-  border-color:var(--home-accent);
+.home-explorer{
+  background:var(--bg);
+  padding:3.25rem 4vw 4.25rem;
+}
+.explore-grid{
+  display:grid;
+  grid-template-columns:minmax(300px, 420px) minmax(340px, 1fr);
+  gap:2rem;
+  width:min(1280px, 100%);
+  margin:0 auto;
+  align-items:start;
+}
+.explore-left,.explore-right{
+  min-width:0;
+}
+.section-title{
+  margin:0 0 1.15rem;
+  font-family:"EB Garamond", Georgia, serif;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  font-size:clamp(1.4rem, 2vw, 2rem);
+  color:#f5f1eb;
+}
+.search-shell{
+  margin-bottom:1.25rem;
+}
+.search-shell input{
+  width:100%;
+  background:#2a2a28;
+  color:#f5f1eb;
+  border:none;
+  outline:none;
+  padding:1rem 1rem;
+  font-size:1rem;
+}
+.search-shell input::placeholder{color:#b8b0a5}
+.location-list{
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:grid;
+  gap:.1rem;
+}
+.location-list a{
+  display:block;
+  padding:.95rem 0;
+  border-bottom:1px solid rgba(243,239,231,.15);
+  font-size:1.04rem;
+  color:#f5f1eb;
+}
+.location-list a:hover{
+  color:#f7b08a;
+  text-decoration:none;
+}
+.home-map{
+  width:100%;
+  min-height:420px;
+  background:#161615;
+}
+.leaflet-container{
+  background:#161615;
+  font-family:Inter, Arial, sans-serif;
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip{
+  border-radius:0;
+}
+.leaflet-popup-content{
+  margin:12px 14px;
+  color:#20201f;
+}
+.map-popup-title{
+  margin:0 0 .3rem;
+  font-weight:600;
+}
+.map-popup-meta{
+  margin:0;
+  font-size:.92rem;
+  color:#5d5449;
+}
+.custom-marker{
+  width:12px;
+  height:12px;
+  background:var(--accent);
+  border:2px solid #fff;
+  box-shadow:0 0 0 1px rgba(32,32,31,.45);
+}
+.custom-marker.area{
+  background:#8a7d6f;
 }
 
-.home-button.is-ghost{
-  background:transparent;
-  color:var(--home-ink);
+.site-footer{
+  background:#161615;
+  color:#d6cfc4;
+  padding:2.4rem 4vw 1rem;
 }
-
-.home-button.is-ghost:hover{
-  color:#f8f1e7;
+.container{
+  width:min(1280px, 100%);
+  margin:0 auto;
 }
-
-.visually-hidden{
-  position:absolute !important;
-  width:1px !important;
-  height:1px !important;
-  padding:0 !important;
-  margin:-1px !important;
-  overflow:hidden !important;
-  clip:rect(0,0,0,0) !important;
-  white-space:nowrap !important;
-  border:0 !important;
+.footer-grid{
+  display:grid;
+  grid-template-columns:1.5fr 1fr 1fr;
+  gap:2rem;
+}
+.site-footer h2,
+.site-footer h3{
+  margin:0 0 .85rem;
+  font-family:"EB Garamond", Georgia, serif;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:#f5f1eb;
+}
+.site-footer p{
+  margin:0;
+  color:#c5bcaf;
+  line-height:1.5;
+}
+.footer-links{
+  list-style:none;
+  padding:0;margin:0;
+}
+.footer-links li+li{margin-top:.35rem}
+.footer-links a{color:#d6cfc4}
+.footer-bottom{
+  margin-top:1.5rem;
+  padding-top:1rem;
+  border-top:1px solid rgba(243,239,231,.12);
 }
 
 @media (max-width: 900px){
-  .finder-grid{
+  .home-hero{
+    min-height:74vh;
+  }
+  .hero-video-desktop{display:none}
+  .hero-video-mobile{display:block}
+  .hero-title{
+    letter-spacing:.12em;
+  }
+  .hero-title span:nth-child(1){
+    font-size:1rem;
+  }
+  .hero-title span:nth-child(2){
+    font-size:2.25rem; /* ~25% smaller than previous mobile scale */
+  }
+  .hero-title span:nth-child(3){
+    font-size:1.85rem; /* ~25% smaller than previous mobile scale */
+  }
+  .home-explorer{
+    padding:2rem 1.1rem 2.8rem;
+  }
+  .explore-grid{
     grid-template-columns:1fr;
+    gap:1.5rem;
   }
-
-  .finder-locations{
-    border-right:none;
-    border-bottom:1px solid var(--home-border);
+  .home-map{
+    min-height:340px;
   }
-
-  .finder-panel{
-    padding:1.8rem 1.2rem;
-  }
-
-  .finder-map-head{
-    display:block;
-  }
-
-  .homepage-map{
-    height:360px;
+  .footer-grid{
+    grid-template-columns:1fr;
+    gap:1.4rem;
   }
 }
 
-@media (max-width: 700px){
-  .home-hero,
-  .hero-centre{
-    min-height:72svh;
+@media (max-width: 560px){
+  .home-hero{
+    min-height:72vh;
   }
-
-  .hero-video-desktop{
-    display:none;
+  .hero-title span:nth-child(1){
+    font-size:.92rem;
   }
-
-  .hero-video-mobile{
-    display:block;
+  .hero-title span:nth-child(2){
+    font-size:1.95rem;
   }
-
-  .hero-centre h1{
-    font-size:3.4rem;
-    letter-spacing:.09em;
+  .hero-title span:nth-child(3){
+    font-size:1.62rem;
   }
-
-  .location-name{
-    font-size:1.55rem;
-  }
-
-  .location-link{
-    align-items:center;
-  }
-
-  .location-state{
-    font-size:.75rem;
-  }
-
-  .homepage-map{
-    height:320px;
-  }
-
-  .placeholder-actions{
-    flex-direction:column;
-  }
-
-  .home-button{
-    width:100%;
+  .section-title{
+    font-size:1.35rem;
   }
 }
