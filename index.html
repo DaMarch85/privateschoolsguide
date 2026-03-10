@@ -4,27 +4,28 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>The Private School Guide</title>
-  <meta name="description" content="Find private school guides by location.">
+  <meta name="description" content="Find your location and move into the relevant private school guide.">
   <meta name="robots" content="index, follow">
-  <meta name="theme-color" content="#20201f">
+  <link rel="canonical" href="https://www.privateschoolsguide.co.uk/">
+  <meta name="theme-color" content="#2a2520">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/homepage.css">
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="/assets/css/homepage.css">
 </head>
-<body class="home-page">
-  <main>
-    <section class="home-hero" aria-labelledby="hero-title">
+<body class="home-minimal">
+  <main id="main">
+    <section class="home-hero" aria-labelledby="home-title">
       <video class="hero-video hero-video-desktop" autoplay muted loop playsinline preload="metadata" poster="/assets/video/home-hero-poster.jpg">
         <source src="/assets/video/home-hero-desktop.mp4" type="video/mp4">
       </video>
       <video class="hero-video hero-video-mobile" autoplay muted loop playsinline preload="metadata" poster="/assets/video/home-hero-mobile-poster.jpg">
         <source src="/assets/video/home-hero-mobile.mp4" type="video/mp4">
       </video>
-      <div class="hero-overlay"></div>
-      <div class="hero-inner">
-        <h1 id="hero-title" class="hero-title">
+      <div class="hero-wash" aria-hidden="true"></div>
+      <div class="hero-centre shell">
+        <h1 id="home-title" class="hero-title">
           <span>THE</span>
           <span>PRIVATE SCHOOL</span>
           <span>GUIDE</span>
@@ -32,29 +33,33 @@
       </div>
     </section>
 
-    <section class="home-explorer" aria-labelledby="explore-title">
-      <div class="explore-grid">
-        <div class="explore-left">
-          <h2 id="explore-title" class="section-title">FIND A LOCATION</h2>
-          <div class="search-shell">
-            <label class="sr-only" for="location-search">Search locations</label>
-            <input id="location-search" type="search" placeholder="Search locations">
-          </div>
-          <nav aria-label="Locations">
-            <ul id="location-list" class="location-list">
-              <li><a href="/bath/">Bath</a></li>
-              <li><a href="/bristol/">Bristol</a></li>
-              <li><a href="/cheltenham/">Cheltenham</a></li>
-              <li><a href="/oxford/">Oxford</a></li>
-              <li><a href="/winchester/">Winchester</a></li>
-              <li><a href="/sevenoaks/">Sevenoaks</a></li>
-              <li><a href="/st-albans/">St Albans</a></li>
-            </ul>
-          </nav>
+    <section class="home-finder shell" aria-labelledby="finder-title">
+      <div class="finder-grid">
+        <div class="finder-panel finder-locations">
+          <p class="section-kicker">Find a location</p>
+          <h2 id="finder-title">Choose the guide you want.</h2>
+          <label class="visually-hidden" for="location-search">Search locations</label>
+          <input id="location-search" class="location-search" type="search" placeholder="Search locations" autocomplete="off">
+          <ul id="location-list" class="location-list">
+            <li><a href="/bath/" data-location-item data-name="Bath" class="location-link is-live"><span class="location-name">Bath</span><span class="location-state">Live now</span></a></li>
+            <li><a href="/bristol/" data-location-item data-name="Bristol" class="location-link"><span class="location-name">Bristol</span><span class="location-state">Coming soon</span></a></li>
+            <li><a href="/cheltenham/" data-location-item data-name="Cheltenham" class="location-link"><span class="location-name">Cheltenham</span><span class="location-state">Coming soon</span></a></li>
+            <li><a href="/oxford/" data-location-item data-name="Oxford" class="location-link"><span class="location-name">Oxford</span><span class="location-state">Coming soon</span></a></li>
+            <li><a href="/winchester/" data-location-item data-name="Winchester" class="location-link"><span class="location-name">Winchester</span><span class="location-state">Coming soon</span></a></li>
+            <li><a href="/sevenoaks/" data-location-item data-name="Sevenoaks" class="location-link"><span class="location-name">Sevenoaks</span><span class="location-state">Coming soon</span></a></li>
+            <li><a href="/st-albans/" data-location-item data-name="St Albans" class="location-link"><span class="location-name">St Albans</span><span class="location-state">Coming soon</span></a></li>
+          </ul>
+          <p class="finder-note">Bath is the first live guide. The additional locations are placeholder pages so the structure is ready as you expand.</p>
         </div>
-        <div class="explore-right">
-          <h2 class="section-title">BATH MAP</h2>
-          <div id="home-map" class="home-map" aria-label="Bath schools map"></div>
+
+        <div class="finder-panel finder-map-panel">
+          <div class="finder-map-head">
+            <div>
+              <p class="section-kicker">Current live guide</p>
+              <h2>Bath map</h2>
+            </div>
+          </div>
+          <div id="homepage-map" class="homepage-map" aria-label="Bath school map"></div>
         </div>
       </div>
     </section>
