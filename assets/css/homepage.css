@@ -1,12 +1,13 @@
-
 :root{
-  --bg:#20201f;
-  --panel:#f3efe7;
-  --panel-2:#ebe5db;
-  --ink:#20201f;
-  --muted:#62584d;
+  --bg:#221f1d;
+  --bg-2:#2d2723;
+  --panel:#f5efe5;
+  --panel-2:#eadfce;
+  --ink:#221f1d;
+  --muted:#6f6256;
   --accent:#b65b2b;
   --accent-2:#d77a49;
+  --accent-3:#f0b08a;
 }
 
 *{box-sizing:border-box}
@@ -47,7 +48,7 @@ a:hover{text-decoration:underline}
 .hero-overlay{
   position:absolute;
   inset:0;
-  background:linear-gradient(to bottom, rgba(0,0,0,.18), rgba(0,0,0,.38));
+  background:linear-gradient(to bottom, rgba(0,0,0,.14), rgba(0,0,0,.34));
 }
 .hero-inner{
   position:relative;
@@ -61,35 +62,30 @@ a:hover{text-decoration:underline}
   margin:0;
   text-align:center;
   text-transform:uppercase;
-  color:#f5f1eb;
+  color:#f6f1ea;
   font-family:"EB Garamond", Georgia, serif;
   font-weight:600;
   line-height:.94;
-  letter-spacing:.14em;
+  letter-spacing:.12em;
   text-wrap:balance;
 }
 .hero-title span{
   display:block;
+  font-size:clamp(2.4rem, 4.7vw, 4.15rem);
 }
-.hero-title span:nth-child(1){
-  font-size:clamp(1.2rem, 1.7vw, 1.7rem);
-  margin-bottom:.22em;
-}
-.hero-title span:nth-child(2){
-  font-size:clamp(2.6rem, 5.4vw, 4.6rem);
-}
-.hero-title span:nth-child(3){
-  font-size:clamp(2.2rem, 4.7vw, 3.9rem);
+.hero-title span + span{
+  margin-top:.04em;
 }
 
 .home-explorer{
-  background:var(--bg);
+  background:var(--panel);
+  color:var(--ink);
   padding:3.25rem 4vw 4.25rem;
 }
 .explore-grid{
   display:grid;
   grid-template-columns:minmax(300px, 420px) minmax(340px, 1fr);
-  gap:2rem;
+  gap:2.25rem;
   width:min(1280px, 100%);
   margin:0 auto;
   align-items:start;
@@ -103,22 +99,23 @@ a:hover{text-decoration:underline}
   font-weight:600;
   text-transform:uppercase;
   letter-spacing:.12em;
-  font-size:clamp(1.4rem, 2vw, 2rem);
-  color:#f5f1eb;
+  font-size:clamp(1.45rem, 2vw, 2rem);
+  color:var(--accent);
 }
 .search-shell{
   margin-bottom:1.25rem;
 }
 .search-shell input{
   width:100%;
-  background:#2a2a28;
-  color:#f5f1eb;
+  background:#fffaf3;
+  color:var(--ink);
   border:none;
   outline:none;
   padding:1rem 1rem;
   font-size:1rem;
+  border-bottom:2px solid rgba(182,91,43,.22);
 }
-.search-shell input::placeholder{color:#b8b0a5}
+.search-shell input::placeholder{color:#8c7b6a}
 .location-list{
   list-style:none;
   margin:0;
@@ -129,12 +126,12 @@ a:hover{text-decoration:underline}
 .location-list a{
   display:block;
   padding:.95rem 0;
-  border-bottom:1px solid rgba(243,239,231,.15);
+  border-bottom:1px solid rgba(34,31,29,.12);
   font-size:1.04rem;
-  color:#f5f1eb;
+  color:var(--ink);
 }
 .location-list a:hover{
-  color:#f7b08a;
+  color:var(--accent);
   text-decoration:none;
 }
 .home-map{
@@ -175,8 +172,8 @@ a:hover{text-decoration:underline}
 }
 
 .site-footer{
-  background:#161615;
-  color:#d6cfc4;
+  background:var(--bg-2);
+  color:#e7dbcd;
   padding:2.4rem 4vw 1rem;
 }
 .container{
@@ -195,11 +192,11 @@ a:hover{text-decoration:underline}
   font-weight:600;
   text-transform:uppercase;
   letter-spacing:.08em;
-  color:#f5f1eb;
+  color:#f6f1ea;
 }
 .site-footer p{
   margin:0;
-  color:#c5bcaf;
+  color:#d9c9b6;
   line-height:1.5;
 }
 .footer-links{
@@ -207,7 +204,8 @@ a:hover{text-decoration:underline}
   padding:0;margin:0;
 }
 .footer-links li+li{margin-top:.35rem}
-.footer-links a{color:#d6cfc4}
+.footer-links a{color:#e7dbcd}
+.footer-links a:hover{color:var(--accent-3)}
 .footer-bottom{
   margin-top:1.5rem;
   padding-top:1rem;
@@ -221,16 +219,10 @@ a:hover{text-decoration:underline}
   .hero-video-desktop{display:none}
   .hero-video-mobile{display:block}
   .hero-title{
-    letter-spacing:.12em;
+    letter-spacing:.1em;
   }
-  .hero-title span:nth-child(1){
-    font-size:1rem;
-  }
-  .hero-title span:nth-child(2){
-    font-size:2.25rem; /* ~25% smaller than previous mobile scale */
-  }
-  .hero-title span:nth-child(3){
-    font-size:1.85rem; /* ~25% smaller than previous mobile scale */
+  .hero-title span{
+    font-size:clamp(1.65rem, 7vw, 2.45rem);
   }
   .home-explorer{
     padding:2rem 1.1rem 2.8rem;
@@ -252,16 +244,13 @@ a:hover{text-decoration:underline}
   .home-hero{
     min-height:72vh;
   }
-  .hero-title span:nth-child(1){
-    font-size:.92rem;
-  }
-  .hero-title span:nth-child(2){
-    font-size:1.95rem;
-  }
-  .hero-title span:nth-child(3){
-    font-size:1.62rem;
+  .hero-title span{
+    font-size:1.85rem;
   }
   .section-title{
-    font-size:1.35rem;
+    font-size:1.3rem;
+  }
+  .location-list a{
+    font-size:1rem;
   }
 }
