@@ -3,77 +3,72 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Private Schools Guide | Independent local school guides for UK parents</title>
-  <meta name="description" content="An independent guide to private schools, beginning with a fully developed Bath hub and designed to expand to other UK locations.">
+  <title>Private School Guide | Find your local guide</title>
+  <meta name="description" content="Find your location and move into the relevant private school guide. Bath is live now, with additional UK locations coming next.">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://privateschoolsguide.co.uk">
+  <link rel="canonical" href="https://privateschoolsguide.co.uk/">
   <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-  <meta property="og:title" content="Private Schools Guide | Independent local school guides for UK parents">
-  <meta property="og:description" content="An independent guide to private schools, beginning with a fully developed Bath hub and designed to expand to other UK locations.">
+  <meta property="og:title" content="Private School Guide | Find your local guide">
+  <meta property="og:description" content="Choose a location and move straight into the relevant private school guide.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://privateschoolsguide.co.uk">
-  <meta property="og:site_name" content="Private Schools Guide">
+  <meta property="og:url" content="https://privateschoolsguide.co.uk/">
+  <meta property="og:site_name" content="Private School Guide">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="theme-color" content="#0b1f3a">
+  <meta name="theme-color" content="#2a2520">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="/assets/css/homepage.css">
 </head>
-<body>
+<body class="home-minimal">
   <a class="skip-link" href="#main">Skip to content</a>
-  <header class="site-header">
-    <div class="container header-inner">
-      <a class="brand" href="/">
-        <span class="brand-mark" aria-hidden="true">PS</span>
-        <span class="brand-text">Private Schools Guide</span>
-      </a>
-      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
-      <nav id="site-nav" class="site-nav" aria-label="Primary">
-        <a class="" href="/bath/">Bath</a><a class="" href="/methodology/">Methodology</a><a class="" href="/advertise/">Advertise</a><a class="" href="/claim-your-profile/">Claim a profile</a><a class="" href="/contact/">Contact</a>
-      </nav>
-    </div>
-  </header>
-  
-  <main id="main" class="page-shell">
-    <div class="container">
-      
-<section class="hero">
-  <span class="kicker">Independent local school guides</span>
-  <h1>Independent local guides for parents choosing private schools</h1>
-  <p>Private Schools Guide is built around one main brand with Bath as the first fully developed local hub. It combines editorial school profiles, practical comparison pages, clear commercial separation and a clean technical structure for search.</p>
-  <div class="hero-actions">
-    <a class="button button-primary" href="/bath/">Browse Bath schools</a>
-    <a class="button button-secondary" href="/methodology/">See methodology</a>
-  </div>
-</section>
-<section class="section">
-  <h2>Start with Bath</h2>
-  <p class="lead">Bath is a strong first market: it is compact, has a manageable number of schools, and supports genuinely distinct local content rather than thin city pages.</p>
-  <div class="stats">
-    <div class="stat"><strong>9</strong><span>Schools listed in the Bath hub</span></div>
-    <div class="stat"><strong>6</strong><span>Schools offering boarding</span></div>
-    <div class="stat"><strong>9</strong><span>Schools showing bursaries on the source data</span></div>
-  </div>
-</section>
-<section class="section">
-  <h2>Explore the Bath hub</h2>
-  <div class="link-grid">
-    <a class="panel" href="/bath/"><h3>Bath hub</h3><p>Main landing page for the local market.</p></a>
-    <a class="panel" href="/bath/schools/"><h3>School directory</h3><p>Clean list page for every Bath profile.</p></a>
-    <a class="panel" href="/bath/fees/"><h3>Fees guide</h3><p>Indicative fee bands and next steps for parents.</p></a>
-    <a class="panel" href="/bath/compare/"><h3>Comparison page</h3><p>Simple at-a-glance table across the Bath cohort.</p></a>
-  </div>
-</section>
-<section class="section">
-  <div class="cta-band">
-    <div>
-      <h2>Commercially ready from day one</h2>
-      <p class="muted">The site already separates editorial content from commercial opportunities, with featured placements clearly labelled and practical routes for schools to update profiles.</p>
-    </div>
-    <a class="button button-outline" href="/advertise/">View packages</a>
-  </div>
-</section>
 
-    </div>
+  <main id="main">
+    <section class="home-hero" aria-labelledby="home-title">
+      <video class="hero-video hero-video-desktop" autoplay muted loop playsinline preload="metadata" poster="/assets/video/home-hero-poster.jpg">
+        <source src="/assets/video/home-hero-desktop.mp4" type="video/mp4">
+      </video>
+      <video class="hero-video hero-video-mobile" autoplay muted loop playsinline preload="metadata" poster="/assets/video/home-hero-mobile-poster.jpg">
+        <source src="/assets/video/home-hero-mobile.mp4" type="video/mp4">
+      </video>
+      <div class="hero-wash" aria-hidden="true"></div>
+      <div class="hero-centre">
+        <h1 id="home-title">Private School Guide</h1>
+      </div>
+    </section>
+
+    <section class="home-finder shell" aria-labelledby="finder-title">
+      <div class="finder-grid">
+        <div class="finder-panel finder-locations">
+          <p class="section-kicker">Find a location</p>
+          <h2 id="finder-title">Choose the guide you want.</h2>
+          <label class="visually-hidden" for="location-search">Search locations</label>
+          <input id="location-search" class="location-search" type="search" placeholder="Search locations" autocomplete="off">
+          <ul id="location-list" class="location-list">
+            <li><a href="/bath/" data-location-item data-name="Bath" class="location-link is-live"><span class="location-name">Bath</span><span class="location-state">Live now</span></a></li>
+            <li><a href="/bristol/" data-location-item data-name="Bristol" class="location-link"><span class="location-name">Bristol</span><span class="location-state">Coming soon</span></a></li>
+            <li><a href="/cheltenham/" data-location-item data-name="Cheltenham" class="location-link"><span class="location-name">Cheltenham</span><span class="location-state">Coming soon</span></a></li>
+            <li><a href="/oxford/" data-location-item data-name="Oxford" class="location-link"><span class="location-name">Oxford</span><span class="location-state">Coming soon</span></a></li>
+            <li><a href="/winchester/" data-location-item data-name="Winchester" class="location-link"><span class="location-name">Winchester</span><span class="location-state">Coming soon</span></a></li>
+            <li><a href="/sevenoaks/" data-location-item data-name="Sevenoaks" class="location-link"><span class="location-name">Sevenoaks</span><span class="location-state">Coming soon</span></a></li>
+            <li><a href="/st-albans/" data-location-item data-name="St Albans" class="location-link"><span class="location-name">St Albans</span><span class="location-state">Coming soon</span></a></li>
+          </ul>
+          <p class="finder-note">Bath is the first live guide. The additional locations are placeholder pages so the structure is ready as you expand.</p>
+        </div>
+
+        <div class="finder-panel finder-map-panel">
+          <div class="finder-map-head">
+            <p class="section-kicker">Current live guide</p>
+            <h2>Bath map</h2>
+          </div>
+          <div id="homepage-map" class="homepage-map" aria-label="Bath school map"></div>
+        </div>
+      </div>
+    </section>
   </main>
+
   <footer class="site-footer">
     <div class="container footer-grid">
       <div>
@@ -94,6 +89,8 @@
       <p>© 2026 Private Schools Guide. Independent guide. <a href="/image-credits/">Image credits</a>.</p>
     </div>
   </footer>
-  <script src="/assets/js/site.js" defer></script>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="/assets/js/homepage.js" defer></script>
 </body>
 </html>
