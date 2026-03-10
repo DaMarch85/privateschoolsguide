@@ -97,10 +97,11 @@ body.home-minimal .footer-bottom{
   margin:0;
   color:#f9f4ed;
   font-family:"EB Garamond", ui-serif, Georgia, "Times New Roman", serif;
-  font-weight:600;
-  font-size:clamp(3.6rem, 10vw, 7.3rem);
-  letter-spacing:.12em;
-  line-height:.92;
+  font-weight:500;
+  font-size:clamp(1.9rem, 5.2vw, 3.8rem);
+  letter-spacing:.18em;
+  line-height:1;
+  text-transform:uppercase;
   text-shadow:0 4px 28px rgba(0,0,0,.35);
 }
 
@@ -141,9 +142,10 @@ body.home-minimal .footer-bottom{
   margin:0 0 1.15rem;
   font-family:"EB Garamond", ui-serif, Georgia, "Times New Roman", serif;
   font-weight:500;
-  font-size:clamp(2rem, 3vw, 3rem);
-  line-height:.98;
-  letter-spacing:.04em;
+  font-size:clamp(1.35rem, 2.3vw, 2rem);
+  line-height:1.02;
+  letter-spacing:.14em;
+  text-transform:uppercase;
 }
 
 .location-search{
