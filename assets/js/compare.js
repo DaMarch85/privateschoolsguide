@@ -202,7 +202,7 @@
   }
 
   function formatPercent(value) {
-    return typeof value === 'number' ? `${(value * 100).toFixed(1)}%` : '—';
+    return typeof value === 'number' ? `${(value * 100).toFixed(0)}%` : '—';
   }
 
   function formatCount(value) {

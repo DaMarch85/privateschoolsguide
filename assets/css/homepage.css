@@ -319,8 +319,8 @@ body.home-minimal a{
   }
 
   .hero-title{
-    font-size:clamp(1.45rem, 6vw, 2.6rem);
-    letter-spacing:.13em;
+    font-size:clamp(2.6rem, 10.8vw, 4.7rem);
+    letter-spacing:.12em;
     width:100%;
     max-width:14ch;
     margin:0 auto;
@@ -358,8 +358,8 @@ body.home-minimal a{
   }
 
   .hero-title{
-    font-size:1.35rem;
-    letter-spacing:.12em;
+    font-size:2.45rem;
+    letter-spacing:.11em;
   }
 
   .finder-locations h2,

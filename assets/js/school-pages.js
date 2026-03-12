@@ -51,6 +51,62 @@
   const currentData = extractSchoolData(document, currentSlug);
   cache.set(currentSlug, currentData);
 
+  function roundPercentString(text) {
+    return String(text || '').replace(/(\d+(?:\.\d+)?)%/g, (_, num) => `${Math.round(parseFloat(num))}%`);
+  }
+
+  function normalizePercentages(scope) {
+    if (!scope) return;
+    scope.querySelectorAll('.tile-kpi-value, .metric-value').forEach((node) => {
+      node.textContent = roundPercentString(node.textContent.trim());
+    });
+  }
+
+  function getTileTitleFromHtml(tileHtml) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = tileHtml.trim();
+    const title = wrap.querySelector('h2');
+    return title ? title.textContent.trim() : '';
+  }
+
+  function buildTileMap(data) {
+    const map = new Map();
+    (data.tiles || []).forEach((tileHtml) => {
+      const title = getTileTitleFromHtml(tileHtml);
+      if (title) map.set(title, tileHtml);
+    });
+    return map;
+  }
+
+  function buildTileOrder(primaryData, secondaryData) {
+    const order = [];
+    const seen = new Set();
+    const pushTitle = (title) => {
+      if (title && !seen.has(title)) {
+        seen.add(title);
+        order.push(title);
+      }
+    };
+    (primaryData.tiles || []).forEach((tileHtml) => pushTitle(getTileTitleFromHtml(tileHtml)));
+    (secondaryData.tiles || []).forEach((tileHtml) => pushTitle(getTileTitleFromHtml(tileHtml)));
+    return order;
+  }
+
+  function tileElementFromHtml(tileHtml) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = tileHtml.trim();
+    return wrap.firstElementChild || null;
+  }
+
+  function createPlaceholderTile(title) {
+    const tile = document.createElement('article');
+    tile.className = 'school-feature-tile school-feature-tile--placeholder';
+    tile.setAttribute('aria-hidden', 'true');
+    tile.setAttribute('data-missing-tile', title || '');
+    return tile;
+  }
+
+
   function bindTileInteractions(scope) {
     scope.querySelectorAll('.subjects-details').forEach((details) => {
       const tile = details.closest('.tile-expandable');
@@ -74,6 +130,8 @@
         });
       });
     });
+
+    normalizePercentages(scope);
   }
 
   bindTileInteractions(document);
@@ -155,7 +213,7 @@
     return data;
   }
 
-  function createCompareColumn(data, label, allowClear) {
+  function createCompareHeader(data, label, allowClear) {
     const column = document.createElement('section');
     column.className = 'school-compare-column';
     const header = document.createElement('div');
@@ -175,18 +233,28 @@
       actions.appendChild(clearBtn);
     }
     header.appendChild(actions);
+    column.appendChild(header);
+    return column;
+  }
 
-    const stack = document.createElement('div');
-    stack.className = 'school-feature-grid school-feature-grid-compare';
-    data.tiles.forEach((tileHtml) => {
-      const wrap = document.createElement('div');
-      wrap.innerHTML = tileHtml.trim();
-      if (wrap.firstElementChild) stack.appendChild(wrap.firstElementChild);
+  function createPairedComparison(primaryData, secondaryData) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'school-compare-paired';
+    const primaryMap = buildTileMap(primaryData);
+    const secondaryMap = buildTileMap(secondaryData);
+    const titles = buildTileOrder(primaryData, secondaryData);
+
+    titles.forEach((title) => {
+      const row = document.createElement('div');
+      row.className = 'school-compare-row';
+      const primaryTile = primaryMap.has(title) ? tileElementFromHtml(primaryMap.get(title)) : createPlaceholderTile(title);
+      const secondaryTile = secondaryMap.has(title) ? tileElementFromHtml(secondaryMap.get(title)) : createPlaceholderTile(title);
+      if (primaryTile) row.appendChild(primaryTile);
+      if (secondaryTile) row.appendChild(secondaryTile);
+      wrapper.appendChild(row);
     });
 
-    column.appendChild(header);
-    column.appendChild(stack);
-    return column;
+    return wrapper;
   }
 
   function setActiveLink(slug) {
@@ -206,11 +274,15 @@
         baseGrid.insertAdjacentElement('afterend', compareMount);
       }
       compareMount.innerHTML = '';
-      compareMount.appendChild(createCompareColumn(currentData, 'Current school', false));
-      compareMount.appendChild(createCompareColumn(comparisonData, 'Comparison school', true));
+      const headerRow = document.createElement('div');
+      headerRow.className = 'school-compare-headers';
+      headerRow.appendChild(createCompareHeader(currentData, 'Current school', false));
+      headerRow.appendChild(createCompareHeader(comparisonData, 'Comparison school', true));
+      compareMount.appendChild(headerRow);
+      compareMount.appendChild(createPairedComparison(currentData, comparisonData));
       bindTileInteractions(compareMount);
       baseGrid.style.display = 'none';
-      compareMount.style.display = 'grid';
+      compareMount.style.display = 'block';
       body.classList.add('is-compare-mode');
       setActiveLink(slug);
       renderMap(currentData, comparisonData);
