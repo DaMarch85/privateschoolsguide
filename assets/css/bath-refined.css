@@ -124,3 +124,323 @@
   .compare-option-meta{font-size:.86rem}
   .compare-panel h2,.compare-side-card h3{font-size:1.48rem}
 }
+
+
+/* School profile pages */
+.school-profile-page{background:var(--psg-bg)}
+.school-profile-hero{
+  position:relative;
+  min-height:50svh;
+  display:flex;
+  align-items:flex-end;
+  overflow:hidden;
+  background:#000;
+}
+.school-profile-hero img{
+  position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+}
+.school-profile-hero::after{
+  content:"";
+  position:absolute; inset:0;
+  background:
+    linear-gradient(180deg, rgba(31,26,23,.10) 0%, rgba(31,26,23,.34) 52%, rgba(31,26,23,.72) 100%),
+    linear-gradient(90deg, rgba(179,91,46,.18), rgba(179,91,46,0) 40%, rgba(179,91,46,.08));
+}
+.school-profile-hero-copy{
+  position:relative; z-index:1;
+  width:min(100%, 1440px);
+  margin:0 auto;
+  padding:0 24px 40px;
+  color:var(--psg-white);
+  text-align:center;
+}
+.school-profile-title{
+  margin:0;
+  font-family:"EB Garamond",ui-serif,Georgia,"Times New Roman",serif;
+  font-size:clamp(2.7rem, 6vw, 5rem);
+  font-weight:500;
+  letter-spacing:.12em;
+  line-height:.92;
+  text-transform:uppercase;
+  text-shadow:0 6px 28px rgba(0,0,0,.28);
+}
+.school-profile-title span{display:block}
+.school-profile-subhead{
+  margin:16px auto 0;
+  max-width:46ch;
+  font-size:1.12rem;
+  line-height:1.45;
+  color:rgba(250,247,242,.93);
+}
+
+.school-profile-layout{
+  display:grid;
+  grid-template-columns:260px minmax(0,1fr) 32%;
+  gap:26px;
+  align-items:start;
+  padding-top:28px;
+}
+.school-profile-side{
+  padding-top:4px;
+}
+.school-profile-side .nav-kicker{
+  margin:0 0 14px;
+  color:var(--psg-accent);
+  font:600 .82rem/1.2 "Inter",sans-serif;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.school-profile-side-card{
+  background:var(--psg-paper);
+  border:1px solid var(--psg-line);
+  padding:18px 18px 14px;
+  margin-bottom:18px;
+}
+.school-profile-side-card h2{
+  margin:0 0 14px;
+  font-family:"EB Garamond",ui-serif,Georgia,"Times New Roman",serif;
+  font-size:1.55rem;
+  font-weight:500;
+  letter-spacing:.04em;
+  color:var(--psg-dark);
+}
+.school-glance-list{
+  list-style:none; margin:0; padding:0;
+}
+.school-glance-list li{
+  position:relative;
+  padding:0 0 0 20px;
+  margin:0 0 12px;
+  color:var(--psg-ink);
+  font-size:1rem;
+  line-height:1.38;
+}
+.school-glance-list li::before{
+  content:"•";
+  position:absolute;
+  left:0;
+  color:var(--psg-accent);
+}
+.school-glance-list li strong{
+  font-weight:600;
+  color:var(--psg-dark);
+}
+.compare-school-links{
+  list-style:none; margin:0; padding:0;
+}
+.compare-school-links li + li{margin-top:8px}
+.compare-school-links a{
+  display:block;
+  font-family:"EB Garamond",ui-serif,Georgia,"Times New Roman",serif;
+  font-size:1.32rem;
+  line-height:1.12;
+  color:var(--psg-ink);
+  transition:color .18s ease, transform .18s ease;
+}
+.compare-school-links a:hover{
+  color:var(--psg-accent);
+  transform:translateX(6px);
+}
+.compare-school-links small{
+  display:block;
+  margin-top:2px;
+  color:var(--psg-muted);
+  font-size:.76rem;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  font-family:"Inter",system-ui,sans-serif;
+}
+
+.school-profile-main{min-width:0}
+.school-detail-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0,1fr));
+  gap:22px;
+}
+.school-detail-card{
+  background:var(--psg-paper);
+  border:1px solid var(--psg-line);
+  padding:20px;
+  min-height:330px;
+  display:flex;
+  flex-direction:column;
+}
+.school-detail-card h2{
+  margin:0 0 14px;
+  font-family:"EB Garamond",ui-serif,Georgia,"Times New Roman",serif;
+  font-size:1.55rem;
+  font-weight:500;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  line-height:1.02;
+  color:var(--psg-dark);
+}
+.school-detail-card p{margin:0 0 14px; color:var(--psg-ink)}
+.school-detail-card p:last-child{margin-bottom:0}
+.tile-kpis{
+  display:grid;
+  gap:12px;
+}
+.tile-kpi{
+  padding:12px 14px;
+  background:rgba(179,91,46,.06);
+  border:1px solid rgba(179,91,46,.15);
+}
+.tile-kpi-label{
+  display:block;
+  font:600 .78rem/1.2 "Inter",sans-serif;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--psg-muted);
+  margin-bottom:6px;
+}
+.tile-kpi-value{
+  display:block;
+  font-family:"EB Garamond",ui-serif,Georgia,"Times New Roman",serif;
+  font-size:2.1rem;
+  font-weight:500;
+  line-height:.95;
+  color:var(--psg-dark);
+}
+.tile-list{
+  margin:0; padding-left:18px; color:var(--psg-ink);
+}
+.tile-list li+li{margin-top:8px}
+.metric-list{
+  display:grid; gap:10px; margin-top:2px;
+}
+.metric-row{
+  display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+  padding-bottom:8px; border-bottom:1px solid var(--psg-line);
+}
+.metric-row:last-child{border-bottom:none; padding-bottom:0}
+.metric-name{color:var(--psg-dark); font-weight:500}
+.metric-value{color:var(--psg-accent); font-weight:700}
+.inline-chips{
+  display:flex; flex-wrap:wrap; gap:10px;
+}
+.inline-chip{
+  padding:8px 12px;
+  background:rgba(41,36,33,.05);
+  border:1px solid rgba(41,36,33,.08);
+  color:var(--psg-ink);
+  font-size:.95rem;
+}
+.fee-profile-list{
+  list-style:none; margin:0; padding:0;
+}
+.fee-profile-list li + li{margin-top:10px}
+.fee-profile-label{
+  display:block;
+  color:var(--psg-muted);
+  font-size:.76rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  margin-bottom:3px;
+}
+.fee-profile-value{
+  font-size:1.02rem;
+  color:var(--psg-dark);
+}
+.school-card-coming{
+  margin-top:auto;
+  color:var(--psg-muted);
+}
+.school-card-copy ul{margin:0; padding-left:18px}
+.school-card-copy li + li{margin-top:8px}
+.subjects-details{
+  margin-top:0;
+}
+.subjects-details summary{
+  cursor:pointer;
+  list-style:none;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin-top:12px;
+  color:var(--psg-accent);
+  font:600 .88rem/1.2 "Inter",sans-serif;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.subjects-details summary::-webkit-details-marker{display:none}
+.subjects-details summary::after{
+  content:"+";
+  font-size:1rem;
+  line-height:1;
+}
+.subjects-details[open] summary::after{content:"–"}
+.subjects-details .metric-list{margin-top:12px}
+
+.school-profile-map{
+  position:sticky; top:24px;
+}
+.school-profile-map .location-map-head{margin:0 0 12px}
+.school-profile-map .location-map-head .nav-kicker{
+  margin:0 0 8px;
+  color:var(--psg-accent);
+  font:600 .82rem/1.2 "Inter",sans-serif;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.school-profile-map .location-map-head h2{
+  margin:0;
+  font-family:"EB Garamond",ui-serif,Georgia,"Times New Roman",serif;
+  font-size:1.7rem;
+  font-weight:500;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--psg-dark);
+}
+.school-page-map{
+  height:620px;
+  border:1px solid var(--psg-line);
+  background:var(--psg-paper-2);
+}
+.school-page-map .leaflet-control-attribution{font-size:.68rem}
+.school-page-map .school-map-marker{
+  display:block; width:14px; height:14px;
+  background:var(--psg-accent);
+  border:2px solid var(--psg-paper);
+  box-shadow:0 0 0 1px rgba(0,0,0,.14);
+}
+.map-caption{
+  margin:12px 0 0;
+  color:var(--psg-muted);
+  font-size:.92rem;
+}
+.school-page-map .leaflet-popup-content-wrapper{
+  border-radius:0;
+}
+.school-page-map .leaflet-popup-content{
+  margin:14px 14px 12px;
+}
+
+@media (max-width:1180px){
+  .school-profile-layout{grid-template-columns:240px minmax(0,1fr)}
+  .school-profile-map{grid-column:1 / -1; position:static}
+  .school-page-map{height:420px}
+}
+
+@media (max-width:900px){
+  .school-profile-hero{min-height:42svh}
+  .school-profile-hero-copy{padding:0 18px 28px}
+  .school-profile-layout{grid-template-columns:1fr; gap:22px; padding-top:20px}
+  .school-profile-side-card{margin-bottom:16px}
+  .school-detail-grid{grid-template-columns:1fr}
+  .school-detail-card{min-height:0}
+  .school-page-map{height:360px}
+}
+
+@media (max-width:640px){
+  .school-profile-hero{min-height:38svh}
+  .school-profile-title{font-size:clamp(2.35rem,11vw,3.8rem); letter-spacing:.10em}
+  .school-profile-subhead{font-size:1rem; max-width:28ch}
+  .school-profile-side-card{padding:16px}
+  .school-profile-side-card h2{font-size:1.4rem}
+  .compare-school-links a{font-size:1.18rem}
+  .school-detail-card{padding:18px 16px}
+  .school-detail-card h2{font-size:1.36rem}
+  .tile-kpi-value{font-size:1.8rem}
+  .school-page-map{height:300px}
+}
