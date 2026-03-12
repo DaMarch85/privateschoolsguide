@@ -116,6 +116,28 @@
       sync();
     });
 
+    scope.querySelectorAll('[data-subject-toggle]').forEach((button) => {
+      if (button.dataset.bound === 'true') return;
+      button.dataset.bound = 'true';
+      button.addEventListener('click', () => {
+        const tile = button.closest('.tile-expandable');
+        if (!tile) return;
+        const extra = tile.querySelector('.subject-extra');
+        if (!extra) return;
+        const expand = button.getAttribute('data-subject-toggle') === 'expand';
+        if (expand) {
+          extra.hidden = false;
+          tile.classList.add('is-expanded');
+          button.hidden = true;
+        } else {
+          extra.hidden = true;
+          tile.classList.remove('is-expanded');
+          const opener = tile.querySelector('[data-subject-toggle="expand"]');
+          if (opener) opener.hidden = false;
+        }
+      });
+    });
+
     scope.querySelectorAll('[data-fee-switch]').forEach((switcher) => {
       const tile = switcher.closest('.school-feature-tile');
       if (!tile || switcher.dataset.bound === 'true') return;

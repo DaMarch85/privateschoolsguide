@@ -908,3 +908,60 @@
     gap:16px;
   }
 }
+
+
+
+/* --- March 2026 bursaries / subject mix / mobile profile polish --- */
+.school-profile-page .subject-toggle{
+  display:inline-flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:8px;
+  border:none;
+  background:transparent;
+  color:var(--psg-accent);
+  padding:0;
+  margin-top:auto;
+  font:600 .82rem/1.2 "Inter",sans-serif;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+.school-profile-page .subject-toggle::after{
+  content:"+";
+  font-size:1rem;
+  line-height:1;
+}
+.school-profile-page .subject-toggle--collapse{
+  margin-top:12px;
+}
+.school-profile-page .subject-toggle--collapse::after{
+  content:"–";
+}
+.school-profile-page .subject-extra[hidden]{
+  display:none !important;
+}
+.school-profile-page .subject-extra{
+  margin-top:12px;
+}
+@media (max-width: 640px){
+  .school-profile-page .school-glance-table{
+    border-top:none;
+    display:grid;
+    gap:10px;
+  }
+  .school-profile-page .school-glance-row{
+    padding:12px 14px;
+    border:1px solid var(--psg-line);
+    background:var(--psg-paper);
+  }
+  .school-profile-page .school-glance-label{
+    color:var(--psg-accent);
+    margin-bottom:4px;
+  }
+  .school-profile-page .school-glance-value{
+    font-family:"EB Garamond",ui-serif,Georgia,"Times New Roman",serif;
+    font-size:1.36rem;
+    line-height:1.02;
+  }
+}
