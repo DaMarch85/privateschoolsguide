@@ -1,98 +1,95 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="en-GB">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>The Private School Guide</title>
-  <meta name="description" content="Find your location and move into the relevant private school guide.">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://www.privateschoolsguide.co.uk/">
-  <meta name="theme-color" content="#2a2520">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-  <link rel="stylesheet" href="/assets/css/homepage.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>The Private School Guide</title>
+<meta content="Find your location and move into the relevant private school guide." name="description"/>
+<meta content="index, follow" name="robots"/>
+<link href="https://www.privateschoolsguide.co.uk/" rel="canonical"/>
+<meta content="#2a2520" name="theme-color"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link crossorigin="" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" rel="stylesheet"/>
+<link href="/assets/css/homepage.css" rel="stylesheet"/>
 </head>
 <body class="home-minimal">
-  <main id="main">
-    <section class="home-hero" aria-labelledby="home-title">
-      <video class="hero-video hero-video-desktop" autoplay muted loop playsinline preload="metadata" poster="/assets/video/home-hero-poster.jpg">
-        <source src="/assets/video/home-hero-desktop.mp4" type="video/mp4">
-      </video>
-      <video class="hero-video hero-video-mobile" autoplay muted loop playsinline preload="metadata" poster="/assets/video/home-hero-mobile-poster.jpg">
-        <source src="/assets/video/home-hero-mobile.mp4" type="video/mp4">
-      </video>
-      <div class="hero-wash" aria-hidden="true"></div>
-      <div class="hero-centre shell">
-        <h1 id="home-title" class="hero-title">
-          <span>THE</span>
-          <span>PRIVATE SCHOOL</span>
-          <span>GUIDE</span>
-        </h1>
-      </div>
-    </section>
+<main id="main">
+<section aria-labelledby="home-title" class="home-hero">
+<video autoplay="" class="hero-video hero-video-desktop" loop="" muted="" playsinline="" poster="/assets/video/home-hero-poster.jpg" preload="metadata">
+<source src="/assets/video/home-hero-desktop.mp4" type="video/mp4"/>
+</video>
+<video autoplay="" class="hero-video hero-video-mobile" loop="" muted="" playsinline="" poster="/assets/video/home-hero-mobile-poster.jpg" preload="metadata">
+<source src="/assets/video/home-hero-mobile.mp4" type="video/mp4"/>
+</video>
+<div aria-hidden="true" class="hero-wash"></div>
+<div class="hero-centre shell">
+<h1 class="hero-title" id="home-title">
+<span>THE</span>
+<span>PRIVATE SCHOOL</span>
+<span>GUIDE</span>
+</h1>
+</div>
+</section>
+<section aria-labelledby="finder-title" class="home-finder shell">
+<div class="finder-grid">
+<div class="finder-panel finder-locations">
+<p class="section-kicker">Find a location</p>
+<h2 id="finder-title">Choose the guide you want.</h2>
+<label class="visually-hidden" for="location-search">Search locations</label>
+<input autocomplete="off" class="location-search" id="location-search" placeholder="Search locations" type="search"/>
+<ul class="location-list" id="location-list">
+<li><a class="location-link is-live" data-location-item="" data-name="Bath" href="/bath/"><span class="location-name">Bath</span><span class="location-state">Live now</span></a></li>
+<li><a class="location-link" data-location-item="" data-name="Bristol" href="/bristol/"><span class="location-name">Bristol</span><span class="location-state">Coming soon</span></a></li>
+<li><a class="location-link" data-location-item="" data-name="Cheltenham" href="/cheltenham/"><span class="location-name">Cheltenham</span><span class="location-state">Coming soon</span></a></li>
+<li><a class="location-link" data-location-item="" data-name="Oxford" href="/oxford/"><span class="location-name">Oxford</span><span class="location-state">Coming soon</span></a></li>
+<li><a class="location-link" data-location-item="" data-name="Winchester" href="/winchester/"><span class="location-name">Winchester</span><span class="location-state">Coming soon</span></a></li>
+<li><a class="location-link" data-location-item="" data-name="Sevenoaks" href="/sevenoaks/"><span class="location-name">Sevenoaks</span><span class="location-state">Coming soon</span></a></li>
+<li><a class="location-link" data-location-item="" data-name="St Albans" href="/st-albans/"><span class="location-name">St Albans</span><span class="location-state">Coming soon</span></a></li>
+</ul>
 
-    <section class="home-finder shell" aria-labelledby="finder-title">
-      <div class="finder-grid">
-        <div class="finder-panel finder-locations">
-          <p class="section-kicker">Find a location</p>
-          <h2 id="finder-title">Choose the guide you want.</h2>
-          <label class="visually-hidden" for="location-search">Search locations</label>
-          <input id="location-search" class="location-search" type="search" placeholder="Search locations" autocomplete="off">
-          <ul id="location-list" class="location-list">
-            <li><a href="/bath/" data-location-item data-name="Bath" class="location-link is-live"><span class="location-name">Bath</span><span class="location-state">Live now</span></a></li>
-            <li><a href="/bristol/" data-location-item data-name="Bristol" class="location-link"><span class="location-name">Bristol</span><span class="location-state">Coming soon</span></a></li>
-            <li><a href="/cheltenham/" data-location-item data-name="Cheltenham" class="location-link"><span class="location-name">Cheltenham</span><span class="location-state">Coming soon</span></a></li>
-            <li><a href="/oxford/" data-location-item data-name="Oxford" class="location-link"><span class="location-name">Oxford</span><span class="location-state">Coming soon</span></a></li>
-            <li><a href="/winchester/" data-location-item data-name="Winchester" class="location-link"><span class="location-name">Winchester</span><span class="location-state">Coming soon</span></a></li>
-            <li><a href="/sevenoaks/" data-location-item data-name="Sevenoaks" class="location-link"><span class="location-name">Sevenoaks</span><span class="location-state">Coming soon</span></a></li>
-            <li><a href="/st-albans/" data-location-item data-name="St Albans" class="location-link"><span class="location-name">St Albans</span><span class="location-state">Coming soon</span></a></li>
-          </ul>
-          <p class="finder-note">Bath is the first live guide. The additional locations are placeholder pages so the structure is ready as you expand.</p>
-        </div>
-
-        <div class="finder-panel finder-map-panel">
-          <div class="finder-map-head">
-            <div>
-              <p class="section-kicker">Current live guide</p>
-              <h2>Bath map</h2>
-            </div>
-          </div>
-          <div id="homepage-map" class="homepage-map" aria-label="Bath school map"></div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <div class="container footer-grid">
-      <div>
-        <h2>The Private School Guide</h2>
-        <p>An independent local guide to UK private schools. Start by choosing a location.</p>
-      </div>
-      <div>
-        <h3>Explore</h3>
-        <ul class="footer-links">
-          <li><a href="/bath/">Bath</a></li>
-          <li><a href="/about/">About</a></li>
-          <li><a href="/methodology/">Methodology</a></li>
-          <li><a href="/privacy/">Privacy</a></li>
-          <li><a href="/cookies/">Cookies</a></li>
-          <li><a href="/terms/">Terms</a></li>
-        </ul>
-      </div>
-      <div>
-        <h3>Contact</h3>
-        <p><a href="mailto:hello@privateschoolsguide.co.uk">hello@privateschoolsguide.co.uk</a></p>
-      </div>
-    </div>
-    <div class="container footer-bottom">
-      <p>© 2026 The Private School Guide.</p>
-    </div>
-  </footer>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="/assets/js/homepage.js" defer></script>
+</div>
+<div class="finder-panel finder-map-panel">
+<div class="finder-map-head">
+<div>
+<p class="section-kicker">Current live guide</p>
+<h2>Bath map</h2>
+</div>
+</div>
+<div aria-label="Bath school map" class="homepage-map" id="homepage-map"></div>
+</div>
+</div>
+</section>
+</main>
+<footer class="site-footer">
+<div class="container footer-grid">
+<div>
+<h2>The Private School Guide</h2>
+<p>An independent local guide to UK private schools. Start by choosing a location.</p>
+</div>
+<div>
+<h3>Explore</h3>
+<ul class="footer-links">
+<li><a href="/bath/">Bath</a></li>
+<li><a href="/about/">About</a></li>
+<li><a href="/methodology/">Methodology</a></li>
+<li><a href="/privacy/">Privacy</a></li>
+<li><a href="/cookies/">Cookies</a></li>
+<li><a href="/terms/">Terms</a></li>
+</ul>
+</div>
+<div>
+<h3>Contact</h3>
+<p><a href="mailto:hello@privateschoolsguide.co.uk">hello@privateschoolsguide.co.uk</a></p>
+</div>
+</div>
+<div class="container footer-bottom">
+<p>© 2026 The Private School Guide.</p>
+</div>
+</footer>
+<script crossorigin="" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script defer="" src="/assets/js/homepage.js"></script>
 </body>
 </html>
