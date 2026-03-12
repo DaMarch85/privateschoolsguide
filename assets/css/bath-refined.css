@@ -444,3 +444,72 @@
   .tile-kpi-value{font-size:1.8rem}
   .school-page-map{height:300px}
 }
+
+
+/* ===== School pages second pass ===== */
+.school-profile-page .page-shell{padding-top:28px}
+.school-profile-page .site-header{position:relative;z-index:3}
+.school-profile-page .school-profile-hero{position:relative;min-height:56svh;display:flex;align-items:flex-end;overflow:hidden;background:#000}
+.school-profile-page .school-profile-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.school-profile-page .school-profile-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg, rgba(31,26,23,.10) 0%, rgba(31,26,23,.28) 40%, rgba(31,26,23,.72) 100%),linear-gradient(90deg, rgba(179,91,46,.16), rgba(179,91,46,0) 42%, rgba(179,91,46,.10))}
+.school-profile-page .school-profile-hero-copy{position:relative;z-index:1;width:min(100%,1440px);margin:0 auto;padding:0 24px 36px;color:var(--psg-white);text-align:left}
+.school-profile-page .school-profile-title{margin:0;max-width:12ch;font-family:"EB Garamond",ui-serif,Georgia,"Times New Roman",serif;font-size:clamp(3rem,6.2vw,5rem);font-weight:500;line-height:.9;letter-spacing:.12em;text-transform:uppercase;text-shadow:0 6px 28px rgba(0,0,0,.25)}
+.school-profile-page .school-profile-subhead{margin:14px 0 0;max-width:42ch;color:rgba(250,247,242,.94);font-size:1.08rem;line-height:1.45}
+.school-profile-page .school-profile-layout{display:grid;grid-template-columns:260px minmax(0,1fr) 32%;gap:26px;align-items:start;padding-top:28px}
+.school-profile-page .school-side-section + .school-side-section{margin-top:26px}
+.school-profile-page .school-side-column .nav-kicker,.school-profile-page .school-map-panel .nav-kicker{margin:0 0 14px;color:var(--psg-accent);font:600 .82rem/1.2 "Inter",sans-serif;letter-spacing:.14em;text-transform:uppercase}
+.school-profile-page .school-glance-table{border-top:1px solid var(--psg-line)}
+.school-profile-page .school-glance-row{padding:10px 0 11px;border-bottom:1px solid var(--psg-line)}
+.school-profile-page .school-glance-label{display:block;color:var(--psg-muted);font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px}
+.school-profile-page .school-glance-value{display:block;color:var(--psg-dark);font-size:1rem;line-height:1.36}
+.school-profile-page .school-compare-links{list-style:none;margin:0;padding:0;border-top:1px solid var(--psg-line)}
+.school-profile-page .school-compare-links li{border-bottom:1px solid var(--psg-line)}
+.school-profile-page .school-compare-links a{display:block;padding:12px 0;font-family:"EB Garamond",ui-serif,Georgia,serif;font-size:1.45rem;line-height:1.08;letter-spacing:.03em;color:var(--psg-ink);transition:color .18s ease,transform .18s ease}
+.school-profile-page .school-compare-links a:hover,.school-profile-page .school-compare-links a:focus-visible{color:var(--psg-accent);transform:translateX(6px)}
+.school-profile-page .school-feature-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.school-profile-page .school-feature-tile{background:var(--psg-paper);border:1px solid var(--psg-line);padding:22px;aspect-ratio:1/1;min-height:410px;display:flex;flex-direction:column;overflow:hidden}
+.school-profile-page .school-feature-tile.tile-expandable.is-expanded{aspect-ratio:auto;min-height:410px}
+.school-profile-page .school-feature-tile h2{margin:0 0 14px;font-family:"EB Garamond",ui-serif,Georgia,"Times New Roman",serif;font-size:1.52rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;line-height:1.02;color:var(--psg-dark)}
+.school-profile-page .school-feature-body{display:flex;flex-direction:column;gap:12px;flex:1}
+.school-profile-page .school-feature-body p{margin:0;color:var(--psg-ink)}
+.school-profile-page .school-feature-body .school-card-copy ul,.school-profile-page .school-feature-body .tile-list{margin:0;padding-left:18px}
+.school-profile-page .school-feature-body .school-card-copy li + li,.school-profile-page .school-feature-body .tile-list li + li{margin-top:8px}
+.school-profile-page .tile-note{color:var(--psg-muted);font-size:.95rem}
+.school-profile-page .tile-coming-soon{margin-top:auto}
+.school-profile-page .tile-kpis{display:grid;gap:12px}
+.school-profile-page .tile-kpi{padding:12px 14px;background:rgba(179,91,46,.06);border:1px solid rgba(179,91,46,.14)}
+.school-profile-page .tile-kpi-label{display:block;margin-bottom:6px;font:600 .76rem/1.2 "Inter",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--psg-muted)}
+.school-profile-page .tile-kpi-value{display:block;font-family:"EB Garamond",ui-serif,Georgia,serif;font-size:2rem;font-weight:500;line-height:.92;color:var(--psg-dark)}
+.school-profile-page .metric-list{display:grid;gap:10px}
+.school-profile-page .metric-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--psg-line)}
+.school-profile-page .metric-row:last-child{padding-bottom:0;border-bottom:none}
+.school-profile-page .metric-name{color:var(--psg-dark);font-weight:500}
+.school-profile-page .metric-value{color:var(--psg-accent);font-weight:700}
+.school-profile-page .subjects-details{margin-top:auto}
+.school-profile-page .subjects-details summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:8px;color:var(--psg-accent);font:600 .82rem/1.2 "Inter",sans-serif;letter-spacing:.1em;text-transform:uppercase}
+.school-profile-page .subjects-details summary::-webkit-details-marker{display:none}
+.school-profile-page .subjects-details summary::after{content:"+";font-size:1rem;line-height:1}
+.school-profile-page .subjects-details[open] summary::after{content:"–"}
+.school-profile-page .subjects-details .metric-list{margin-top:12px}
+.school-profile-page .inline-chips{display:flex;flex-wrap:wrap;gap:10px}
+.school-profile-page .inline-chip{padding:8px 10px;background:rgba(41,36,33,.05);border:1px solid rgba(41,36,33,.08);color:var(--psg-ink);font-size:.95rem}
+.school-profile-page .fee-switch{display:inline-flex;border:1px solid var(--psg-line);margin-top:4px}
+.school-profile-page .fee-switch button{border:none;background:transparent;color:var(--psg-ink);padding:10px 12px;font:600 .76rem/1.2 "Inter",sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+.school-profile-page .fee-switch button + button{border-left:1px solid var(--psg-line)}
+.school-profile-page .fee-switch button.is-active{background:var(--psg-accent);color:var(--psg-white)}
+.school-profile-page .fee-pane{display:none;margin-top:12px}
+.school-profile-page .fee-pane.is-active{display:block}
+.school-profile-page .fee-year-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 18px}
+.school-profile-page .fee-year-column{display:grid;gap:8px}
+.school-profile-page .fee-year-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid rgba(41,36,33,.08);padding-bottom:7px}
+.school-profile-page .fee-year-row:last-child{border-bottom:none;padding-bottom:0}
+.school-profile-page .fee-year{color:var(--psg-muted);font-size:.8rem;letter-spacing:.06em;text-transform:uppercase}
+.school-profile-page .fee-amount{color:var(--psg-dark);font-weight:600;font-size:.93rem;text-align:right}
+.school-profile-page .school-map-panel{position:sticky;top:24px}
+.school-profile-page .school-map-panel .location-map-head{margin:0 0 12px}
+.school-profile-page .school-map-panel .location-map-head h2{margin:0;font-family:"EB Garamond",ui-serif,Georgia,"Times New Roman",serif;font-size:1.7rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--psg-dark)}
+.school-profile-page .school-page-map{height:640px}
+.school-profile-page .map-caption{margin:12px 0 0;color:var(--psg-muted);font-size:.92rem}
+@media (max-width:1180px){.school-profile-page .school-profile-layout{grid-template-columns:240px minmax(0,1fr)}.school-profile-page .school-map-panel{grid-column:1 / -1;position:static}.school-profile-page .school-page-map{height:420px}}
+@media (max-width:900px){.school-profile-page .school-profile-hero{min-height:44svh}.school-profile-page .school-profile-hero-copy{padding:0 18px 28px}.school-profile-page .school-profile-title{max-width:unset;font-size:clamp(2.6rem,10vw,4rem)}.school-profile-page .school-profile-subhead{font-size:1rem;max-width:28ch}.school-profile-page .school-profile-layout{grid-template-columns:1fr;gap:22px;padding-top:20px}.school-profile-page .school-feature-grid{grid-template-columns:1fr}.school-profile-page .school-feature-tile{aspect-ratio:auto;min-height:0}.school-profile-page .school-page-map{height:360px}}
+@media (max-width:640px){.school-profile-page .school-profile-hero{min-height:40svh}.school-profile-page .school-profile-title{letter-spacing:.10em}.school-profile-page .school-side-section + .school-side-section{margin-top:22px}.school-profile-page .school-compare-links a{font-size:1.24rem}.school-profile-page .school-feature-tile{padding:18px 16px}.school-profile-page .school-feature-tile h2{font-size:1.34rem}.school-profile-page .tile-kpi-value{font-size:1.75rem}.school-profile-page .fee-year-columns{grid-template-columns:1fr;gap:8px}.school-profile-page .school-page-map{height:300px}}
