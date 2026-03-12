@@ -1,42 +1,259 @@
-(function(){
-  const target = document.getElementById('school-page-map');
-  const data = window.schoolProfileMapData;
-  if (target && data && window.L) {
-    const map = window.L.map(target, {zoomControl:true, scrollWheelZoom:false});
-    window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom:18,
-      attribution:'&copy; OpenStreetMap contributors'
-    }).addTo(map);
-    const icon = window.L.divIcon({
-      className:'school-map-icon',
-      html:'<span class="school-map-marker"></span>',
-      iconSize:[16,16],
-      iconAnchor:[8,8],
-      popupAnchor:[0,-8]
-    });
-    const marker = window.L.marker([data.lat, data.lng], {icon:icon}).addTo(map);
-    marker.bindPopup(`<div class="map-popup"><h3 class="map-popup-title">${data.name}</h3><p class="map-popup-meta">${data.note || ''}</p><a class="map-popup-link" href="${data.slug}">View school</a></div>`);
-    map.setView([data.lat, data.lng], data.zoom || 13);
+
+(function () {
+  const body = document.body;
+  const currentSlug = body.dataset.schoolSlug || window.location.pathname.replace(/\/$/, '').split('/').pop();
+  const locationSlug = body.dataset.locationSlug || window.location.pathname.split('/').filter(Boolean)[0] || 'bath';
+  const mapTarget = document.getElementById('school-page-map');
+  const mapTitle = document.querySelector('.school-map-panel .location-map-head h2');
+  const mapCaption = document.querySelector('.school-map-panel .map-caption');
+  const sideCompareLinks = Array.from(document.querySelectorAll('.school-compare-links a'));
+  const main = document.querySelector('.school-profile-main');
+  const baseGrid = main ? main.querySelector('.school-feature-grid') : null;
+  let compareMount = null;
+  let map = null;
+  let markerLayer = null;
+  const cache = new Map();
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
 
-  document.querySelectorAll('.subjects-details').forEach((details) => {
-    const tile = details.closest('.tile-expandable');
-    const sync = () => tile && tile.classList.toggle('is-expanded', details.open);
-    details.addEventListener('toggle', sync);
-    sync();
-  });
+  function extractMapData(doc) {
+    const script = Array.from(doc.querySelectorAll('script')).find((node) => node.textContent.includes('window.schoolProfileMapData'));
+    if (!script) return null;
+    const match = script.textContent.match(/window\.schoolProfileMapData\s*=\s*(\{[\s\S]*?\});?/);
+    if (!match) return null;
+    try {
+      return JSON.parse(match[1]);
+    } catch (err) {
+      return null;
+    }
+  }
 
-  document.querySelectorAll('[data-fee-switch]').forEach((switcher) => {
-    const tile = switcher.closest('.school-feature-tile');
-    if (!tile) return;
-    const buttons = switcher.querySelectorAll('[data-fee-target]');
-    const panes = tile.querySelectorAll('[data-fee-pane]');
-    buttons.forEach((button) => {
-      button.addEventListener('click', () => {
-        const targetPane = button.getAttribute('data-fee-target');
-        buttons.forEach((btn) => btn.classList.toggle('is-active', btn === button));
-        panes.forEach((pane) => pane.classList.toggle('is-active', pane.getAttribute('data-fee-pane') === targetPane));
+  function extractSchoolData(doc, slugHint) {
+    const titleEl = doc.querySelector('#school-page-title');
+    const subheadEl = doc.querySelector('.school-profile-subhead');
+    const grid = doc.querySelector('.school-feature-grid');
+    const caption = doc.querySelector('.map-caption');
+    const canonical = doc.querySelector('link[rel="canonical"]');
+    const path = canonical ? new URL(canonical.getAttribute('href')).pathname : '/'+ locationSlug + '/schools/' + slugHint + '/';
+    return {
+      slug: slugHint,
+      path,
+      name: titleEl ? titleEl.textContent.trim() : slugHint,
+      subhead: subheadEl ? subheadEl.textContent.trim() : '',
+      tiles: grid ? Array.from(grid.children).map((node) => node.outerHTML) : [],
+      mapData: extractMapData(doc),
+      address: caption ? caption.textContent.trim() : ''
+    };
+  }
+
+  const currentData = extractSchoolData(document, currentSlug);
+  cache.set(currentSlug, currentData);
+
+  function bindTileInteractions(scope) {
+    scope.querySelectorAll('.subjects-details').forEach((details) => {
+      const tile = details.closest('.tile-expandable');
+      const sync = () => tile && tile.classList.toggle('is-expanded', details.open);
+      details.removeEventListener?.('toggle', sync);
+      details.addEventListener('toggle', sync);
+      sync();
+    });
+
+    scope.querySelectorAll('[data-fee-switch]').forEach((switcher) => {
+      const tile = switcher.closest('.school-feature-tile');
+      if (!tile || switcher.dataset.bound === 'true') return;
+      switcher.dataset.bound = 'true';
+      const buttons = switcher.querySelectorAll('[data-fee-target]');
+      const panes = tile.querySelectorAll('[data-fee-pane]');
+      buttons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const targetPane = button.getAttribute('data-fee-target');
+          buttons.forEach((btn) => btn.classList.toggle('is-active', btn === button));
+          panes.forEach((pane) => pane.classList.toggle('is-active', pane.getAttribute('data-fee-pane') === targetPane));
+        });
       });
     });
+  }
+
+  bindTileInteractions(document);
+
+  function getMarkerIcon(kind) {
+    return window.L.divIcon({
+      className: 'school-map-icon',
+      html: '<span class="school-map-marker ' + (kind === 'secondary' ? 'school-map-marker--secondary' : '') + '"></span>',
+      iconSize: [16, 16],
+      iconAnchor: [8, 8],
+      popupAnchor: [0, -8]
+    });
+  }
+
+  function popupHtml(data) {
+    return '<div class="map-popup"><h3 class="map-popup-title">' + escapeHtml(data.name) + '</h3>' +
+      '<p class="map-popup-meta">' + escapeHtml((data.mapData && data.mapData.note) || '') + '</p>' +
+      '<a class="map-popup-link" href="' + escapeHtml(data.path) + '">View school</a></div>';
+  }
+
+  function renderMap(primary, secondary) {
+    if (!mapTarget || !window.L || !primary || !primary.mapData) return;
+
+    if (!map) {
+      map = window.L.map(mapTarget, { zoomControl: true, scrollWheelZoom: false });
+      window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+    }
+
+    if (markerLayer) markerLayer.remove();
+    markerLayer = window.L.layerGroup().addTo(map);
+
+    const bounds = [];
+    const addMarker = (data, kind) => {
+      if (!data || !data.mapData) return;
+      const latLng = [data.mapData.lat, data.mapData.lng];
+      bounds.push(latLng);
+      const marker = window.L.marker(latLng, { icon: getMarkerIcon(kind) }).addTo(markerLayer);
+      marker.bindPopup(popupHtml(data));
+    };
+
+    addMarker(primary, 'primary');
+    if (secondary) addMarker(secondary, 'secondary');
+
+    if (bounds.length === 1) {
+      map.setView(bounds[0], primary.mapData.zoom || 13);
+    } else if (bounds.length > 1) {
+      map.fitBounds(bounds, { padding: [40, 40] });
+    }
+
+    if (mapTitle) mapTitle.textContent = secondary ? 'School locations' : 'School location';
+    if (mapCaption) mapCaption.textContent = secondary ? (primary.name + ' and ' + secondary.name + ' in Bath') : (primary.address || 'Bath, Somerset');
+
+    const existingLegend = document.querySelector('.school-map-legend');
+    if (existingLegend) existingLegend.remove();
+    if (secondary && mapTarget.parentElement) {
+      const legend = document.createElement('div');
+      legend.className = 'school-map-legend';
+      legend.innerHTML = '<span class="school-map-legend-item"><span class="school-map-dot school-map-dot--primary"></span>' + escapeHtml(primary.name) + '</span>' +
+        '<span class="school-map-legend-item"><span class="school-map-dot school-map-dot--secondary"></span>' + escapeHtml(secondary.name) + '</span>';
+      mapTarget.parentElement.appendChild(legend);
+    }
+
+    setTimeout(() => map.invalidateSize(), 60);
+  }
+
+  renderMap(currentData, null);
+
+  async function fetchSchool(slug) {
+    if (cache.has(slug)) return cache.get(slug);
+    const response = await fetch('/' + locationSlug + '/schools/' + slug + '/', { credentials: 'same-origin' });
+    if (!response.ok) throw new Error('Unable to fetch comparison school');
+    const html = await response.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const data = extractSchoolData(doc, slug);
+    cache.set(slug, data);
+    return data;
+  }
+
+  function createCompareColumn(data, label, allowClear) {
+    const column = document.createElement('section');
+    column.className = 'school-compare-column';
+    const header = document.createElement('div');
+    header.className = 'school-compare-column-head';
+    header.innerHTML = '<p class="school-compare-column-kicker">' + escapeHtml(label) + '</p>' +
+      '<h2>' + escapeHtml(data.name) + '</h2>' +
+      '<p>' + escapeHtml(data.subhead) + '</p>';
+    const actions = document.createElement('div');
+    actions.className = 'school-compare-column-actions';
+    actions.innerHTML = '<a class="school-compare-head-link" href="' + escapeHtml(data.path) + '">Open full page</a>';
+    if (allowClear) {
+      const clearBtn = document.createElement('button');
+      clearBtn.type = 'button';
+      clearBtn.className = 'school-compare-clear';
+      clearBtn.textContent = 'Clear comparison';
+      clearBtn.addEventListener('click', clearComparison);
+      actions.appendChild(clearBtn);
+    }
+    header.appendChild(actions);
+
+    const stack = document.createElement('div');
+    stack.className = 'school-feature-grid school-feature-grid-compare';
+    data.tiles.forEach((tileHtml) => {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = tileHtml.trim();
+      if (wrap.firstElementChild) stack.appendChild(wrap.firstElementChild);
+    });
+
+    column.appendChild(header);
+    column.appendChild(stack);
+    return column;
+  }
+
+  function setActiveLink(slug) {
+    sideCompareLinks.forEach((link) => {
+      const target = link.dataset.compareSchool || new URL(link.href, window.location.origin).searchParams.get('compare');
+      link.classList.toggle('is-active', target === slug);
+    });
+  }
+
+  async function applyComparison(slug) {
+    if (!slug || slug === currentSlug || !main || !baseGrid) return;
+    try {
+      const comparisonData = await fetchSchool(slug);
+      if (!compareMount) {
+        compareMount = document.createElement('div');
+        compareMount.className = 'school-compare-columns';
+        baseGrid.insertAdjacentElement('afterend', compareMount);
+      }
+      compareMount.innerHTML = '';
+      compareMount.appendChild(createCompareColumn(currentData, 'Current school', false));
+      compareMount.appendChild(createCompareColumn(comparisonData, 'Comparison school', true));
+      bindTileInteractions(compareMount);
+      baseGrid.style.display = 'none';
+      compareMount.style.display = 'grid';
+      body.classList.add('is-compare-mode');
+      setActiveLink(slug);
+      renderMap(currentData, comparisonData);
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.set('compare', slug);
+      window.history.replaceState({}, '', nextUrl);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function clearComparison() {
+    if (baseGrid) baseGrid.style.display = '';
+    if (compareMount) compareMount.style.display = 'none';
+    body.classList.remove('is-compare-mode');
+    setActiveLink('');
+    renderMap(currentData, null);
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete('compare');
+    nextUrl.searchParams.delete('schools');
+    window.history.replaceState({}, '', nextUrl.pathname + (nextUrl.search ? nextUrl.search : ''));
+  }
+
+  sideCompareLinks.forEach((link) => {
+    link.addEventListener('click', (event) => {
+      const href = link.getAttribute('href') || '';
+      const url = new URL(href, window.location.origin);
+      let target = url.searchParams.get('compare');
+      if (!target && url.searchParams.get('schools')) {
+        const schools = url.searchParams.get('schools').split(',');
+        target = schools.find((slug) => slug && slug !== currentSlug);
+      }
+      if (!target) return;
+      event.preventDefault();
+      applyComparison(target);
+    });
   });
+
+  const params = new URLSearchParams(window.location.search);
+  let initialCompare = params.get('compare');
+  if (!initialCompare && params.get('schools')) {
+    const schools = params.get('schools').split(',');
+    initialCompare = schools.find((slug) => slug && slug !== currentSlug);
+  }
+  if (initialCompare) applyComparison(initialCompare);
 })();

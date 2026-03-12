@@ -513,3 +513,273 @@
 @media (max-width:1180px){.school-profile-page .school-profile-layout{grid-template-columns:240px minmax(0,1fr)}.school-profile-page .school-map-panel{grid-column:1 / -1;position:static}.school-profile-page .school-page-map{height:420px}}
 @media (max-width:900px){.school-profile-page .school-profile-hero{min-height:44svh}.school-profile-page .school-profile-hero-copy{padding:0 18px 28px}.school-profile-page .school-profile-title{max-width:unset;font-size:clamp(2.6rem,10vw,4rem)}.school-profile-page .school-profile-subhead{font-size:1rem;max-width:28ch}.school-profile-page .school-profile-layout{grid-template-columns:1fr;gap:22px;padding-top:20px}.school-profile-page .school-feature-grid{grid-template-columns:1fr}.school-profile-page .school-feature-tile{aspect-ratio:auto;min-height:0}.school-profile-page .school-page-map{height:360px}}
 @media (max-width:640px){.school-profile-page .school-profile-hero{min-height:40svh}.school-profile-page .school-profile-title{letter-spacing:.10em}.school-profile-page .school-side-section + .school-side-section{margin-top:22px}.school-profile-page .school-compare-links a{font-size:1.24rem}.school-profile-page .school-feature-tile{padding:18px 16px}.school-profile-page .school-feature-tile h2{font-size:1.34rem}.school-profile-page .tile-kpi-value{font-size:1.75rem}.school-profile-page .fee-year-columns{grid-template-columns:1fr;gap:8px}.school-profile-page .school-page-map{height:300px}}
+
+
+
+/* School profile page refinements and comparison mode */
+.school-profile-page .school-profile-hero{
+  min-height:52svh;
+  width:100%;
+}
+.school-profile-page .school-profile-hero-copy{
+  padding:32px 28px 40px;
+}
+.school-profile-page .school-profile-title{
+  max-width:12ch;
+  font-size:clamp(2.55rem, 5.2vw, 4.35rem);
+  line-height:.94;
+}
+.school-profile-page .school-profile-subhead{
+  max-width:48ch;
+}
+.school-profile-page .school-back-strip{
+  background:var(--psg-paper);
+  border-bottom:1px solid var(--psg-line);
+}
+.school-profile-page .school-back-link{
+  display:inline-flex;
+  align-items:center;
+  gap:.45rem;
+  padding:12px 0 14px;
+  color:var(--psg-ink);
+  font:500 1rem/1.2 "EB Garamond", ui-serif, Georgia, serif;
+  letter-spacing:.04em;
+}
+.school-profile-page .school-back-link:hover{
+  color:var(--psg-accent);
+  text-decoration:none;
+}
+.school-profile-page .school-profile-layout{
+  grid-template-columns:236px minmax(0,1fr) 316px;
+  gap:24px;
+  align-items:start;
+}
+.school-profile-page .school-profile-main{min-width:0}
+.school-profile-page .school-feature-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0,1fr));
+  gap:22px;
+  align-items:start;
+}
+.school-profile-page .school-feature-tile{
+  aspect-ratio:auto;
+  min-height:0;
+  overflow:visible;
+}
+.school-profile-page .school-feature-tile h2{
+  font-size:1.42rem;
+}
+.school-profile-page .school-map-panel{
+  position:sticky;
+  top:24px;
+  align-self:start;
+}
+.school-profile-page .school-map-panel .location-map-head{
+  margin:0 0 10px;
+}
+.school-profile-page .school-map-panel .location-map-head h2{
+  font-size:1.18rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.school-profile-page .school-page-map{
+  height:540px;
+}
+.school-profile-page .map-caption{
+  line-height:1.35;
+}
+.school-profile-page .fee-year-columns{
+  grid-template-columns:1fr;
+  gap:8px;
+}
+.school-profile-page .fee-year-column{
+  display:contents;
+}
+.school-profile-page .school-compare-links a.is-active{
+  color:var(--psg-accent);
+  transform:translateX(6px);
+}
+.school-profile-page .school-compare-columns{
+  display:none;
+}
+.school-profile-page.is-compare-mode .school-feature-grid{
+  display:none;
+}
+.school-profile-page.is-compare-mode .school-compare-columns{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0,1fr));
+  gap:22px;
+  align-items:start;
+}
+.school-profile-page .school-compare-column{
+  min-width:0;
+}
+.school-profile-page .school-compare-column-head{
+  position:sticky;
+  top:24px;
+  z-index:4;
+  background:var(--psg-paper);
+  border:1px solid var(--psg-line);
+  padding:16px 18px 14px;
+  margin-bottom:18px;
+}
+.school-profile-page .school-compare-column-kicker{
+  margin:0 0 8px;
+  color:var(--psg-accent);
+  font:600 .78rem/1.2 "Inter",sans-serif;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.school-profile-page .school-compare-column-head h2{
+  margin:0;
+  font-family:"EB Garamond", ui-serif, Georgia, serif;
+  font-size:1.9rem;
+  font-weight:500;
+  letter-spacing:.04em;
+  line-height:.96;
+  color:var(--psg-dark);
+}
+.school-profile-page .school-compare-column-head p{
+  margin:8px 0 0;
+  color:var(--psg-ink);
+  font-size:.98rem;
+  line-height:1.45;
+}
+.school-profile-page .school-compare-column-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:12px;
+}
+.school-profile-page .school-compare-head-link,
+.school-profile-page .school-compare-clear{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:40px;
+  padding:0 14px;
+  border:1px solid var(--psg-line);
+  background:var(--psg-paper);
+  color:var(--psg-dark);
+  font:600 .76rem/1.2 "Inter",sans-serif;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+.school-profile-page .school-compare-head-link:hover,
+.school-profile-page .school-compare-clear:hover{
+  color:var(--psg-accent);
+  text-decoration:none;
+}
+.school-profile-page .school-compare-column .school-feature-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:18px;
+}
+.school-profile-page .school-map-legend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:14px;
+  margin:10px 0 0;
+  font-size:.86rem;
+  color:var(--psg-muted);
+}
+.school-profile-page .school-map-legend-item{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.school-profile-page .school-map-dot{
+  width:12px;
+  height:12px;
+  border-radius:999px;
+  display:inline-block;
+}
+.school-profile-page .school-map-dot--primary{background:var(--psg-accent)}
+.school-profile-page .school-map-dot--secondary{background:var(--psg-dark)}
+.school-profile-page .school-map-marker{
+  display:block;
+  width:16px;
+  height:16px;
+  border-radius:999px;
+  background:var(--psg-accent);
+  border:2px solid var(--psg-paper);
+  box-shadow:0 0 0 1px rgba(41,36,33,.14);
+}
+.school-profile-page .school-map-marker--secondary{
+  background:var(--psg-dark);
+}
+.school-profile-page .school-page-map .leaflet-popup-content-wrapper{
+  border-radius:0;
+}
+.school-profile-page .school-page-map .leaflet-popup-content{
+  margin:12px 14px;
+}
+.school-profile-page .school-page-map .map-popup-title{
+  margin:0 0 4px;
+  font-family:"EB Garamond",ui-serif,Georgia,serif;
+  font-size:1.2rem;
+}
+.school-profile-page .school-page-map .map-popup-meta{
+  margin:0 0 8px;
+  color:var(--psg-muted);
+  font-size:.92rem;
+}
+.school-profile-page .school-page-map .map-popup-link{
+  color:var(--psg-accent);
+  font-weight:600;
+}
+@media (max-width: 1360px){
+  .school-profile-page .school-profile-layout{
+    grid-template-columns:236px minmax(0,1fr);
+  }
+  .school-profile-page .school-map-panel{
+    grid-column:1 / -1;
+    position:static;
+  }
+  .school-profile-page .school-page-map{
+    height:420px;
+  }
+}
+@media (max-width: 1180px){
+  .school-profile-page.is-compare-mode .school-compare-columns{
+    grid-template-columns:1fr;
+  }
+}
+@media (max-width: 900px){
+  .school-profile-page .school-profile-title{
+    max-width:unset;
+    font-size:clamp(2.3rem, 10vw, 3.8rem);
+  }
+  .school-profile-page .school-profile-subhead{
+    max-width:32ch;
+    font-size:1rem;
+  }
+  .school-profile-page .school-profile-layout{
+    grid-template-columns:1fr;
+    gap:22px;
+    padding-top:20px;
+  }
+  .school-profile-page .school-feature-grid,
+  .school-profile-page.is-compare-mode .school-compare-columns{
+    grid-template-columns:1fr;
+  }
+  .school-profile-page .school-page-map{
+    height:360px;
+  }
+  .school-profile-page .school-compare-column-head{
+    position:static;
+  }
+}
+@media (max-width: 640px){
+  .school-profile-page .school-back-link{
+    padding:10px 0 12px;
+    font-size:.96rem;
+  }
+  .school-profile-page .school-feature-tile{
+    padding:18px 16px;
+  }
+  .school-profile-page .school-page-map{
+    height:300px;
+  }
+}
