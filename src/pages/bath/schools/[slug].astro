@@ -2,26 +2,431 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SiteHeader from '../../../components/SiteHeader.astro';
 import SiteFooter from '../../../components/SiteFooter.astro';
-import schools from '../../../data/bath/schools.json';
+import { supabase } from '../../../lib/supabase';
 
-export async function getStaticPaths() {
-  return schools.map((school) => ({
-    params: { slug: school.slug },
-    props: { school }
-  }));
+const LOCATION_SLUG = 'bath';
+const DEFAULT_HERO_IMAGE = '/assets/img/bath/bath-location-hero.jpg';
+
+const BATH_COORDINATE_FALLBACKS: Record<string, { lat: number; lng: number; zoom?: number }> = {
+  'king-edwards-school': { lat: 51.386488, lng: -2.343663, zoom: 13 },
+  'kingswood-school': { lat: 51.398883, lng: -2.370005, zoom: 13 },
+  'kingswood-preparatory-school': { lat: 51.397143, lng: -2.373238, zoom: 13 },
+  'prior-park-college': { lat: 51.364523, lng: -2.343082, zoom: 13 },
+  'paragon-school': { lat: 51.370494, lng: -2.355122, zoom: 13 },
+  'monkton-combe-school': { lat: 51.357305, lng: -2.326354, zoom: 13 },
+  'royal-high-school-bath-gdst': { lat: 51.397185, lng: -2.365419, zoom: 13 },
+  'bath-academy': { lat: 51.383903, lng: -2.363978, zoom: 13 },
+  'downside-school': { lat: 51.253899, lng: -2.495195, zoom: 13 }
+};
+
+type SchoolRecord = {
+  id: string | number;
+  slug: string;
+  name: string;
+  school_type: string | null;
+  phase: string | null;
+  gender: string | null;
+  age_min: number | null;
+  age_max: number | null;
+  day_boarding: string | null;
+  address: string | null;
+  town: string | null;
+  county: string | null;
+  postcode: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  website: string | null;
+  pupil_numbers: number | null;
+  fees_from: number | null;
+  description: string | null;
+  inspection_rating: string | null;
+};
+
+type SchoolContentRecord = {
+  admissions_summary: string | null;
+  academic_snapshot: string | null;
+  inspection_snapshot: string | null;
+  assessment_approach: string | null;
+  scholarships: string | null;
+  destinations: string | null;
+  what_parents_say: string | null;
+  what_school_says: string | null;
+  editor_notes: string | null;
+};
+
+type ExamResultRecord = {
+  result_year: number;
+  entries_count: number | string | null;
+  pct_a_star_a: number | string | null;
+  pct_a_star_b: number | string | null;
+  unique_subjects: number | string | null;
+};
+
+type SubjectRecord = {
+  subject_name: string;
+  share_of_entries: number | string | null;
+  sort_order: number | null;
+};
+
+type FeeRecord = {
+  academic_year: string;
+  fee_type: string;
+  year_group_label: string;
+  amount_gbp: number | string;
+  includes_vat: boolean;
+};
+
+type BursaryRecord = {
+  has_bursaries: boolean | null;
+  status_label: string | null;
+  summary: string | null;
+  entry_points: string | null;
+  published_support_level: string | null;
+  application_and_review: string | null;
+};
+
+function toNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
 }
 
-const { school } = Astro.props;
-const compareLinks = school.compareLinks || [];
-const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(school.mapData)};`;
+function formatCurrency(value: unknown): string {
+  const num = toNumber(value);
+  if (num === null) return '—';
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+    maximumFractionDigits: 0
+  }).format(num);
+}
+
+function formatPercent(value: unknown): string {
+  const num = toNumber(value);
+  if (num === null) return '—';
+  return `${Math.round(num * 100)}%`;
+}
+
+function formatInteger(value: unknown): string {
+  const num = toNumber(value);
+  if (num === null) return '—';
+  return new Intl.NumberFormat('en-GB').format(num);
+}
+
+function getPhaseLabel(phase: string | null, ageMax: number | null): string {
+  const value = (phase || '').toLowerCase();
+  if (value.includes('all')) return 'All-through school';
+  if (value.includes('prep') || value.includes('junior') || (ageMax !== null && ageMax <= 11)) return 'Prep school';
+  return 'Senior school';
+}
+
+function getGenderLabel(gender: string | null): string {
+  const value = (gender || '').toLowerCase();
+  if (value.includes('girl')) return 'Girls';
+  if (value.includes('boy')) return 'Boys';
+  return 'Co-ed';
+}
+
+function tidyFormatLabel(dayBoarding: string | null): string {
+  if (!dayBoarding) return 'Day';
+  return dayBoarding
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/(^|, )day boarding/gi, '$1Day & boarding')
+    .replace(/(^|, )boarding and day/gi, '$1Day & boarding')
+    .replace(/(^|, )day and boarding/gi, '$1Day & boarding')
+    .trim();
+}
+
+function getAgeLabel(ageMin: number | null, ageMax: number | null): string {
+  if (ageMin !== null && ageMax !== null) return `${ageMin}–${ageMax}`;
+  if (ageMin !== null) return `${ageMin}+`;
+  if (ageMax !== null) return `Up to ${ageMax}`;
+  return 'To be confirmed';
+}
+
+function buildAddress(school: SchoolRecord): string {
+  const parts = [school.address, school.town, school.postcode].filter(Boolean);
+  return parts.join(', ');
+}
+
+function splitPipeList(text: string | null | undefined): string[] {
+  return String(text || '')
+    .split('|')
+    .map((item) => item.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+}
+
+function splitParagraphs(text: string | null | undefined): string[] {
+  const value = String(text || '').trim();
+  if (!value) return [];
+  if (value.includes('|')) return [];
+  return value
+    .split(/\n\s*\n|\r\n\s*\r\n/)
+    .map((item) => item.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+}
+
+function yearGroupOrder(label: string): number {
+  const trimmed = label.trim();
+  if (/^nursery/i.test(trimmed)) return -1;
+  if (/^reception/i.test(trimmed)) return 0;
+  const match = trimmed.match(/^year\s*(\d{1,2})/i);
+  if (match) return Number(match[1]);
+  return 999;
+}
+
+function feeTypeOrder(type: string): number {
+  if (type === 'day') return 1;
+  if (type === 'weekly_boarding') return 2;
+  if (type === 'full_boarding') return 3;
+  return 9;
+}
+
+function feeTypeLabel(type: string): string {
+  if (type === 'day') return 'Day';
+  if (type === 'weekly_boarding') return 'Weekly boarding';
+  if (type === 'full_boarding') return 'Full boarding';
+  return type.replace(/_/g, ' ');
+}
+
+function splitColumns<T>(rows: T[]): T[][] {
+  if (rows.length <= 4) return [rows];
+  const midpoint = Math.ceil(rows.length / 2);
+  return [rows.slice(0, midpoint), rows.slice(midpoint)];
+}
+
+export async function getStaticPaths() {
+  const { data: location, error: locationError } = await supabase
+    .from('locations')
+    .select('id')
+    .eq('slug', LOCATION_SLUG)
+    .single();
+
+  if (locationError || !location) {
+    throw new Error(`Could not load ${LOCATION_SLUG} location for school paths: ${locationError?.message || 'No location found'}`);
+  }
+
+  const { data: locationLinks, error: linksError } = await supabase
+    .from('location_schools')
+    .select('school_id, sort_order')
+    .eq('location_id', location.id)
+    .order('sort_order', { ascending: true });
+
+  if (linksError) {
+    throw new Error(`Could not load ${LOCATION_SLUG} school links: ${linksError.message}`);
+  }
+
+  const schoolIds = (locationLinks || []).map((row) => row.school_id);
+  if (!schoolIds.length) return [];
+
+  const { data: schools, error: schoolsError } = await supabase
+    .from('schools')
+    .select('id, slug')
+    .in('id', schoolIds);
+
+  if (schoolsError) {
+    throw new Error(`Could not load ${LOCATION_SLUG} school slugs: ${schoolsError.message}`);
+  }
+
+  const slugById = new Map((schools || []).map((row) => [String(row.id), row.slug]));
+
+  return (locationLinks || [])
+    .map((link) => slugById.get(String(link.school_id)))
+    .filter(Boolean)
+    .map((slug) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  throw new Error('Missing school slug');
+}
+
+const { data: schoolData, error: schoolError } = await supabase
+  .from('schools')
+  .select('id, slug, name, school_type, phase, gender, age_min, age_max, day_boarding, address, town, county, postcode, latitude, longitude, website, pupil_numbers, fees_from, description, inspection_rating')
+  .eq('slug', slug)
+  .single();
+
+if (schoolError || !schoolData) {
+  throw new Error(`Could not load school ${slug}: ${schoolError?.message || 'No school found'}`);
+}
+
+const school = schoolData as SchoolRecord;
+const canonicalPath = `/${LOCATION_SLUG}/schools/${school.slug}/`;
+
+const [contentRes, heroImageRes, examRes, feeRes, bursaryRes, bathLocationRes] = await Promise.all([
+  supabase
+    .from('school_content')
+    .select('admissions_summary, academic_snapshot, inspection_snapshot, assessment_approach, scholarships, destinations, what_parents_say, what_school_says, editor_notes')
+    .eq('school_id', school.id)
+    .maybeSingle(),
+  supabase
+    .from('school_images')
+    .select('image_url, alt_text')
+    .eq('school_id', school.id)
+    .eq('image_type', 'hero')
+    .order('sort_order', { ascending: true })
+    .limit(1)
+    .maybeSingle(),
+  supabase
+    .from('school_exam_results')
+    .select('result_year, entries_count, pct_a_star_a, pct_a_star_b, unique_subjects')
+    .eq('school_id', school.id)
+    .eq('exam_type', 'alevel')
+    .order('result_year', { ascending: false })
+    .limit(1)
+    .maybeSingle(),
+  supabase
+    .from('school_fee_profiles')
+    .select('academic_year, fee_type, year_group_label, amount_gbp, includes_vat')
+    .eq('school_id', school.id)
+    .order('academic_year', { ascending: false }),
+  supabase
+    .from('school_bursaries')
+    .select('has_bursaries, status_label, summary, entry_points, published_support_level, application_and_review')
+    .eq('school_id', school.id)
+    .maybeSingle(),
+  supabase
+    .from('locations')
+    .select('id')
+    .eq('slug', LOCATION_SLUG)
+    .single()
+]);
+
+const content = (contentRes.data || null) as SchoolContentRecord | null;
+const heroImageUrl = heroImageRes.data?.image_url || DEFAULT_HERO_IMAGE;
+const heroImageAlt = heroImageRes.data?.alt_text || '';
+const alevelResult = (examRes.data || null) as ExamResultRecord | null;
+const feeRowsAll = (feeRes.data || []) as FeeRecord[];
+const bursary = (bursaryRes.data || null) as BursaryRecord | null;
+
+if (bathLocationRes.error || !bathLocationRes.data) {
+  throw new Error(`Could not load ${LOCATION_SLUG} location for compare links: ${bathLocationRes.error?.message || 'No location found'}`);
+}
+
+const { data: compareLinkRows, error: compareLinkError } = await supabase
+  .from('location_schools')
+  .select('school_id, sort_order')
+  .eq('location_id', bathLocationRes.data.id)
+  .order('sort_order', { ascending: true });
+
+if (compareLinkError) {
+  throw new Error(`Could not load compare links for ${LOCATION_SLUG}: ${compareLinkError.message}`);
+}
+
+const compareSchoolIds = (compareLinkRows || []).map((row) => row.school_id);
+const { data: compareSchoolsRaw, error: compareSchoolsError } = compareSchoolIds.length
+  ? await supabase.from('schools').select('id, slug, name').in('id', compareSchoolIds)
+  : { data: [], error: null };
+
+if (compareSchoolsError) {
+  throw new Error(`Could not load compare school names for ${LOCATION_SLUG}: ${compareSchoolsError.message}`);
+}
+
+const compareSchoolMap = new Map((compareSchoolsRaw || []).map((row) => [String(row.id), row]));
+const compareLinks = (compareLinkRows || [])
+  .map((row) => compareSchoolMap.get(String(row.school_id)))
+  .filter(Boolean)
+  .filter((row) => row?.slug !== school.slug)
+  .map((row) => ({ slug: row!.slug, name: row!.name }));
+
+const { data: subjectRowsRaw, error: subjectRowsError } = alevelResult
+  ? await supabase
+      .from('school_subject_popularity')
+      .select('subject_name, share_of_entries, sort_order')
+      .eq('school_id', school.id)
+      .eq('exam_type', 'alevel')
+      .eq('result_year', alevelResult.result_year)
+      .order('sort_order', { ascending: true })
+  : { data: [], error: null };
+
+if (subjectRowsError) {
+  throw new Error(`Could not load subject popularity for ${school.slug}: ${subjectRowsError.message}`);
+}
+
+const subjectRows = (subjectRowsRaw || []) as SubjectRecord[];
+const currentAcademicYear = Array.from(new Set(feeRowsAll.map((row) => row.academic_year))).sort().at(-1) || null;
+const feeRows = feeRowsAll
+  .filter((row) => row.academic_year === currentAcademicYear)
+  .sort((a, b) => {
+    const feeTypeDelta = feeTypeOrder(a.fee_type) - feeTypeOrder(b.fee_type);
+    if (feeTypeDelta !== 0) return feeTypeDelta;
+    return yearGroupOrder(a.year_group_label) - yearGroupOrder(b.year_group_label);
+  });
+
+const feePanes = Array.from(new Set(feeRows.map((row) => row.fee_type))).map((feeType) => {
+  const rows = feeRows.filter((row) => row.fee_type === feeType);
+  return {
+    feeType,
+    label: feeTypeLabel(feeType),
+    columns: splitColumns(rows)
+  };
+});
+
+const allFeesIncludeVat = feeRows.length ? feeRows.every((row) => row.includes_vat) : false;
+const phaseLabel = getPhaseLabel(school.phase, school.age_max);
+const genderLabel = getGenderLabel(school.gender);
+const formatLabel = tidyFormatLabel(school.day_boarding);
+const ageLabel = getAgeLabel(school.age_min, school.age_max);
+const address = buildAddress(school);
+const subhead = school.description || `${phaseLabel} in ${school.town || 'Bath'}.`;
+
+const fallbackMap = BATH_COORDINATE_FALLBACKS[school.slug];
+const latitude = toNumber(school.latitude) ?? fallbackMap?.lat ?? null;
+const longitude = toNumber(school.longitude) ?? fallbackMap?.lng ?? null;
+const mapData = latitude !== null && longitude !== null
+  ? {
+      name: school.name,
+      slug: canonicalPath,
+      lat: latitude,
+      lng: longitude,
+      note: `${phaseLabel} · ${genderLabel} · ${formatLabel} · Ages ${ageLabel}`,
+      zoom: fallbackMap?.zoom || 13
+    }
+  : null;
+const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(mapData)};`;
+
+const rawAtGlanceRows = [
+  { label: 'Ages', value: ageLabel },
+  { label: 'Gender', value: genderLabel },
+  { label: 'Format', value: formatLabel },
+  school.pupil_numbers ? { label: 'Pupils', value: `${formatInteger(school.pupil_numbers)} pupils` } : null,
+  school.fees_from ? { label: 'Day fees from', value: `${formatCurrency(school.fees_from)} / year` } : null,
+  bursary?.status_label
+    ? { label: 'Bursaries', value: bursary.status_label }
+    : bursary?.has_bursaries === true
+      ? { label: 'Bursaries', value: 'Available' }
+      : bursary?.has_bursaries === false
+        ? { label: 'Bursaries', value: 'Not currently published' }
+        : null
+];
+
+const atGlanceRows = rawAtGlanceRows.filter((row): row is { label: string; value: string } => Boolean(row));
+
+const parentLikes = splitPipeList(content?.what_parents_say);
+const schoolVoice = splitPipeList(content?.what_school_says);
+const inspectionBullets = splitPipeList(content?.inspection_snapshot);
+const scholarshipBullets = splitPipeList(content?.scholarships);
+const destinationsBullets = splitPipeList(content?.destinations);
+const assessmentBullets = splitPipeList(content?.assessment_approach);
+const bursaryBullets = [
+  bursary?.entry_points,
+  bursary?.published_support_level,
+  bursary?.application_and_review
+].filter(Boolean) as string[];
+
+const subjectTopRows = subjectRows.slice(0, 5);
+const subjectExtraRows = subjectRows.slice(5);
 ---
 <BaseLayout
   title={`${school.name} | Bath school profile`}
-  description={school.metaDescription || school.subhead}
-  canonicalPath={school.canonicalPath}
+  description={subhead}
+  canonicalPath={canonicalPath}
   includeLeaflet={true}
   bodyClass="school-profile-page"
-  dataLocationSlug={school.locationSlug}
+  dataLocationSlug={LOCATION_SLUG}
   dataSchoolSlug={school.slug}
 >
   <Fragment slot="head">
@@ -33,10 +438,10 @@ const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(school.m
   <SiteHeader minimal={true} />
 
   <section aria-labelledby="school-page-title" class="school-profile-hero">
-    <img alt="" src={school.heroImage} />
+    <img alt={heroImageAlt} src={heroImageUrl} />
     <div class="school-profile-hero-copy">
       <h1 class="school-profile-title" id="school-page-title">{school.name}</h1>
-      <p class="school-profile-subhead">{school.subhead}</p>
+      <p class="school-profile-subhead">{subhead}</p>
     </div>
   </section>
   <div class="school-back-strip"><div class="shell"><a class="school-back-link" href="/bath/">← Back to Bath</a></div></div>
@@ -47,7 +452,7 @@ const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(school.m
         <section class="school-side-section">
           <p class="nav-kicker">At a glance</p>
           <div class="school-glance-table">
-            {school.atGlanceRows.map((row) => (
+            {atGlanceRows.map((row) => (
               <div class="school-glance-row"><span class="school-glance-label">{row.label}</span><span class="school-glance-value">{row.value}</span></div>
             ))}
           </div>
@@ -67,7 +472,189 @@ const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(school.m
 
       <section class="school-profile-main">
         <div class="school-feature-grid">
-          {school.featureTilesHtml.map((tileHtml) => <Fragment set:html={tileHtml} />)}
+          {alevelResult && (
+            <article class="school-feature-tile">
+              <h2>A-level Results</h2>
+              <div class="school-feature-body">
+                <div class="tile-kpis">
+                  <div class="tile-kpi"><span class="tile-kpi-label">% A*–A</span><span class="tile-kpi-value">{formatPercent(alevelResult.pct_a_star_a)}</span></div>
+                  <div class="tile-kpi"><span class="tile-kpi-label">% A*–B</span><span class="tile-kpi-value">{formatPercent(alevelResult.pct_a_star_b)}</span></div>
+                  <div class="tile-kpi"><span class="tile-kpi-label">Different A-level subjects</span><span class="tile-kpi-value">{formatInteger(alevelResult.unique_subjects)}</span></div>
+                </div>
+                <p class="tile-note">Results shown for {alevelResult.result_year}.</p>
+              </div>
+            </article>
+          )}
+
+          {subjectRows.length > 0 && (
+            <article class={`school-feature-tile ${subjectExtraRows.length ? 'tile-expandable' : ''}`}>
+              <h2>Popular Subjects</h2>
+              <div class="school-feature-body">
+                <div class="metric-list">
+                  {subjectTopRows.map((subject) => (
+                    <div class="metric-row"><span class="metric-name">{subject.subject_name}</span><span class="metric-value">{formatPercent(subject.share_of_entries)}</span></div>
+                  ))}
+                </div>
+                {subjectExtraRows.length > 0 && (
+                  <Fragment>
+                    <button class="subject-toggle" data-subject-toggle="expand" type="button">Show full subject mix</button>
+                    <div class="subject-extra" hidden>
+                      <div class="metric-list">
+                        {subjectExtraRows.map((subject) => (
+                          <div class="metric-row"><span class="metric-name">{subject.subject_name}</span><span class="metric-value">{formatPercent(subject.share_of_entries)}</span></div>
+                        ))}
+                      </div>
+                      <button class="subject-toggle subject-toggle--collapse" data-subject-toggle="collapse" type="button">Collapse subject mix</button>
+                    </div>
+                  </Fragment>
+                )}
+              </div>
+            </article>
+          )}
+
+          {content?.inspection_snapshot || school.inspection_rating ? (
+            <article class="school-feature-tile">
+              <h2>Inspection Snapshot</h2>
+              <div class="school-feature-body">
+                <div class="school-card-copy">
+                  {inspectionBullets.length > 1 ? (
+                    <ul>
+                      {inspectionBullets.map((item) => <li>{item}</li>)}
+                    </ul>
+                  ) : (
+                    splitParagraphs(content?.inspection_snapshot || school.inspection_rating).map((paragraph) => <p>{paragraph}</p>)
+                  )}
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {content?.assessment_approach ? (
+            <article class="school-feature-tile">
+              <h2>Assessment Approach</h2>
+              <div class="school-feature-body">
+                <div class="school-card-copy">
+                  {assessmentBullets.length > 1 ? (
+                    <ul>
+                      {assessmentBullets.map((item) => <li>{item}</li>)}
+                    </ul>
+                  ) : (
+                    splitParagraphs(content.assessment_approach).map((paragraph) => <p>{paragraph}</p>)
+                  )}
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {content?.scholarships ? (
+            <article class="school-feature-tile">
+              <h2>Scholarships</h2>
+              <div class="school-feature-body">
+                <div class="school-card-copy">
+                  {scholarshipBullets.length > 1 ? (
+                    <ul>
+                      {scholarshipBullets.map((item) => <li>{item}</li>)}
+                    </ul>
+                  ) : (
+                    splitParagraphs(content.scholarships).map((paragraph) => <p>{paragraph}</p>)
+                  )}
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {content?.destinations ? (
+            <article class="school-feature-tile">
+              <h2>Leavers Destinations</h2>
+              <div class="school-feature-body">
+                <div class="school-card-copy">
+                  {destinationsBullets.length > 1 ? (
+                    <ul>
+                      {destinationsBullets.map((item) => <li>{item}</li>)}
+                    </ul>
+                  ) : (
+                    splitParagraphs(content.destinations).map((paragraph) => <p>{paragraph}</p>)
+                  )}
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {parentLikes.length > 0 ? (
+            <article class="school-feature-tile">
+              <h2>Parents Like</h2>
+              <div class="school-feature-body">
+                <div class="school-card-copy">
+                  <ul>
+                    {parentLikes.map((item) => <li>{item}</li>)}
+                  </ul>
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {schoolVoice.length > 0 ? (
+            <article class="school-feature-tile">
+              <h2>How the School Describes Itself</h2>
+              <div class="school-feature-body">
+                <div class="school-card-copy">
+                  <ul>
+                    {schoolVoice.map((item) => <li>{item}</li>)}
+                  </ul>
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {feePanes.length > 0 && (
+            <article class={`school-feature-tile ${feePanes.length > 1 ? 'tile-expandable' : ''}`}>
+              <h2>Fee Profile</h2>
+              <div class="school-feature-body">
+                <p class="tile-note">
+                  {allFeesIncludeVat ? 'Annual fees including VAT.' : 'Annual fees. Please check the school for VAT treatment.'}
+                  {currentAcademicYear ? ` ${currentAcademicYear}.` : ''}
+                </p>
+
+                {feePanes.length > 1 && (
+                  <div class="fee-switch" data-fee-switch>
+                    {feePanes.map((pane, index) => (
+                      <button class={index === 0 ? 'is-active' : undefined} data-fee-target={pane.feeType} type="button">{pane.label}</button>
+                    ))}
+                  </div>
+                )}
+
+                {feePanes.map((pane, index) => (
+                  <div class={`fee-pane ${index === 0 ? 'is-active' : ''}`} data-fee-pane={pane.feeType}>
+                    <div class="fee-year-columns">
+                      {pane.columns.map((column) => (
+                        <div class="fee-year-column">
+                          {column.map((row) => (
+                            <div class="fee-year-row"><span class="fee-year">{row.year_group_label}</span><span class="fee-amount">{formatCurrency(row.amount_gbp)}</span></div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </article>
+          )}
+
+          {bursary ? (
+            <article class="school-feature-tile">
+              <h2>Bursaries</h2>
+              <div class="school-feature-body">
+                {bursary.summary ? <p>{bursary.summary}</p> : null}
+                {bursaryBullets.length > 0 ? (
+                  <div class="school-card-copy">
+                    <ul>
+                      {bursaryBullets.map((item) => <li>{item}</li>)}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            </article>
+          ) : null}
         </div>
       </section>
 
@@ -77,7 +664,7 @@ const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(school.m
           <h2>School location</h2>
         </div>
         <div aria-label={`Map showing ${school.name}`} class="bath-location-map school-page-map" id="school-page-map"></div>
-        <p class="map-caption">{school.address}</p>
+        <p class="map-caption">{address}</p>
       </aside>
     </div>
   </main>
