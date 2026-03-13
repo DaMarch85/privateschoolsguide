@@ -1,0 +1,30 @@
+---
+const { full = false } = Astro.props;
+---
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div>
+      <h2>The Private School Guide</h2>
+      {full && <p>An independent local guide to UK private schools. Start by choosing a location.</p>}
+    </div>
+    {full ? (
+      <div>
+        <h3>Explore</h3>
+        <ul class="footer-links">
+          <li><a href="/about/">About</a></li>
+          <li><a href="/methodology/">Methodology</a></li>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/cookies/">Cookies</a></li>
+          <li><a href="/terms/">Terms</a></li>
+        </ul>
+      </div>
+    ) : <div />}
+    <div class="footer-contact">
+      <h3>Contact</h3>
+      <p><a href="mailto:hello@privateschoolsguide.co.uk">hello@privateschoolsguide.co.uk</a></p>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <p>© 2026 The Private School Guide.</p>
+  </div>
+</footer>

@@ -1,0 +1,318 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SiteHeader from '../../../components/SiteHeader.astro';
+import SiteFooter from '../../../components/SiteFooter.astro';
+import compareSchools from '../../../data/bath/compare.json';
+---
+<BaseLayout
+  title="Compare Bath private schools | Overview and A-level metrics"
+  description="Build a shortlist of Bath private schools and switch between overview comparisons and A-level metrics, including grades, subject breadth and subject mix."
+  canonicalPath="/bath/compare/"
+  bodyClass="compare-page-body"
+>
+  <Fragment slot="head">
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+    <link rel="stylesheet" href="/assets/css/bath-refined.css" />
+  </Fragment>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+  <SiteHeader minimal={true} />
+
+  <main id="main">
+    <div class="shell compare-page">
+      <section class="compare-hero">
+        <span class="eyebrow">Bath compare tool</span>
+        <h1>Compare Bath private schools</h1>
+        <p>Build a shortlist of up to four schools, then switch between the core overview metrics and a dedicated A-level view covering grades, subject breadth and subject mix. Your shortlist is saved on this browser so you can come back to it later.</p>
+        <div class="compare-actions">
+          <a href="/bath/" class="compare-link-button">Back to Bath guide</a>
+          <button id="compare-clear-top" class="compare-inline-button" type="button">Clear selection</button>
+        </div>
+      </section>
+
+      <section class="compare-layout">
+        <section class="compare-main">
+          <section class="compare-panel">
+            <h2>Build your shortlist</h2>
+            <p>Select up to four schools to focus the comparison table. If nothing is selected, the full Bath comparison is shown.</p>
+
+            <div id="compare-chooser" class="compare-chooser" aria-label="Choose schools to compare"></div>
+
+            <div class="compare-toolbar">
+              <p id="compare-status" class="compare-status" aria-live="polite">Showing all Bath schools.</p>
+              <div class="compare-toolbar-actions">
+                <button id="compare-clear" class="compare-inline-button" type="button">Clear selection</button>
+                <a class="compare-link-button" href="/bath/schools/">View full directory</a>
+              </div>
+            </div>
+
+            <div id="compare-pill-row" class="compare-pill-row" aria-live="polite"></div>
+          </section>
+
+          <section class="compare-panel">
+            <div class="compare-panel-heading">
+              <div>
+                <h2>Comparison table</h2>
+                <p class="compare-panel-lead">Switch between the current overview metrics and the A-level metrics view.</p>
+              </div>
+              <div class="compare-metric-toggle" role="tablist" aria-label="Comparison table view">
+                <button type="button" class="compare-metric-button is-active" data-compare-view="overview" aria-pressed="true">Overview</button>
+                <button type="button" class="compare-metric-button" data-compare-view="alevel" aria-pressed="false">A-level metrics</button>
+              </div>
+            </div>
+            <p id="compare-table-note" class="compare-table-note">Overview view covers ages, gender, day or boarding format, fees, bursaries and location.</p>
+            <div class="compare-table-wrap">
+              <table id="compare-table" class="compare-table">
+                <thead id="compare-thead"></thead>
+                <tbody id="compare-tbody"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <aside class="compare-sidebar">
+          <section class="compare-side-card">
+            <h3>How to use this page</h3>
+            <p>Start with two or three likely options, compare the practical basics, then move into school profiles and open-day planning.</p>
+            <ol class="compare-mini-list">
+              <li>Select schools above.</li>
+              <li>Use the toggle to switch between overview and A-level metrics.</li>
+              <li>Open the profile pages for details and open days.</li>
+            </ol>
+          </section>
+
+          <section class="compare-side-card">
+            <h3>What this page is best for</h3>
+            <p>This compare tool is designed for first-pass narrowing, not final judgement. It is strongest on factual differences such as age range, boarding format, fees, bursaries and — for senior schools — A-level performance and subject mix.</p>
+            <p class="compare-help-note">For fuller context, use the school profiles and open-days guide alongside this page.</p>
+          </section>
+        </aside>
+      </section>
+    </div>
+  </main>
+
+  <SiteFooter />
+
+  <script type="application/json" id="bath-compare-data">{JSON.stringify(compareSchools)}</script>
+  <script>
+    const STORAGE_KEY = 'psg-bath-compare';
+    const VIEW_STORAGE_KEY = 'psg-bath-compare-view';
+    const MAX_SELECTION = 4;
+
+    const schools = JSON.parse(document.getElementById('bath-compare-data')?.textContent || '[]');
+    const overviewColumns = [
+      { key: 'name', label: 'School' },
+      { key: 'ages', label: 'Ages' },
+      { key: 'gender', label: 'Gender' },
+      { key: 'format', label: 'Day / boarding' },
+      { key: 'dayFee', label: 'Day fee' },
+      { key: 'boardingFee', label: 'Boarding fee' },
+      { key: 'bursaries', label: 'Bursaries' },
+      { key: 'location', label: 'Location' }
+    ];
+
+    const alevelColumns = [
+      { key: 'name', label: 'School' },
+      { key: 'totalExams', label: 'Total exams' },
+      { key: 'pctAStarA', label: '%A*/A' },
+      { key: 'pctAStarB', label: '%A*-B' },
+      { key: 'uniqueSubjects', label: 'Unique subjects' },
+      { key: 'coreScience', label: 'Core science' },
+      { key: 'mathematics', label: 'Mathematics' },
+      { key: 'art', label: 'Art' },
+      { key: 'languages', label: 'Languages' },
+      { key: 'economics', label: 'Economics' },
+      { key: 'english', label: 'English' },
+      { key: 'history', label: 'History' },
+      { key: 'geography', label: 'Geography' },
+      { key: 'psychology', label: 'Psychology' },
+      { key: 'other', label: 'Other' }
+    ];
+
+    const chooser = document.getElementById('compare-chooser');
+    const thead = document.getElementById('compare-thead');
+    const tbody = document.getElementById('compare-tbody');
+    const tableNote = document.getElementById('compare-table-note');
+    const status = document.getElementById('compare-status');
+    const pillRow = document.getElementById('compare-pill-row');
+    const clearButtons = [document.getElementById('compare-clear'), document.getElementById('compare-clear-top')].filter(Boolean);
+    const viewButtons = Array.from(document.querySelectorAll('[data-compare-view]'));
+
+    function getQueryIds() {
+      const params = new URLSearchParams(window.location.search);
+      const raw = params.get('schools');
+      if (!raw) return [];
+      return raw.split(',').map((v) => v.trim()).filter(Boolean).slice(0, MAX_SELECTION);
+    }
+
+    function loadSelection() {
+      const queryIds = getQueryIds();
+      if (queryIds.length) return queryIds;
+      try {
+        const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        return Array.isArray(stored) ? stored.slice(0, MAX_SELECTION) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function loadView() {
+      const params = new URLSearchParams(window.location.search);
+      const queryView = params.get('view');
+      if (queryView === 'alevel' || queryView === 'overview') return queryView;
+      const stored = localStorage.getItem(VIEW_STORAGE_KEY);
+      return stored === 'alevel' ? 'alevel' : 'overview';
+    }
+
+    let selected = loadSelection();
+    let currentView = loadView();
+
+    function saveSelection() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(selected));
+    }
+
+    function saveView() {
+      localStorage.setItem(VIEW_STORAGE_KEY, currentView);
+    }
+
+    function updateUrl() {
+      const url = new URL(window.location.href);
+      if (selected.length) url.searchParams.set('schools', selected.join(','));
+      else url.searchParams.delete('schools');
+      url.searchParams.set('view', currentView);
+      history.replaceState({}, '', url);
+    }
+
+    function formatPercent(value) {
+      return typeof value === 'number' ? `${(value * 100).toFixed(0)}%` : '—';
+    }
+
+    function formatCount(value) {
+      if (value === null || value === undefined || value === '') return '—';
+      return Number(value).toLocaleString('en-GB');
+    }
+
+    function visibleSchools() {
+      if (!selected.length) return schools;
+      return selected.map((id) => schools.find((item) => item.id === id)).filter(Boolean);
+    }
+
+    function renderChooser() {
+      chooser.innerHTML = '';
+      const limitReached = selected.length >= MAX_SELECTION;
+
+      schools.forEach((school) => {
+        const label = document.createElement('label');
+        label.className = 'compare-option';
+        const isSelected = selected.includes(school.id);
+        const disabled = !isSelected && limitReached;
+        if (disabled) label.classList.add('is-disabled');
+
+        label.innerHTML = `
+          <input type="checkbox" value="${school.id}" ${isSelected ? 'checked' : ''} ${disabled ? 'disabled' : ''}>
+          <span class="compare-option-title">${school.name}</span>
+          <span class="compare-option-meta">${school.location}</span>
+        `;
+
+        const input = label.querySelector('input');
+        input.addEventListener('change', () => {
+          if (input.checked) {
+            if (!selected.includes(school.id) && selected.length < MAX_SELECTION) selected.push(school.id);
+          } else {
+            selected = selected.filter((id) => id !== school.id);
+          }
+          saveSelection();
+          updateUrl();
+          renderAll();
+        });
+
+        chooser.appendChild(label);
+      });
+    }
+
+    function renderStatus() {
+      status.textContent = selected.length
+        ? `Showing ${selected.length} selected school${selected.length === 1 ? '' : 's'}.`
+        : 'Showing all Bath schools.';
+    }
+
+    function renderPills() {
+      pillRow.innerHTML = '';
+      selected.forEach((id) => {
+        const school = schools.find((item) => item.id === id);
+        if (!school) return;
+        const pill = document.createElement('button');
+        pill.className = 'compare-pill';
+        pill.type = 'button';
+        pill.innerHTML = `<span>${school.name}</span><span aria-hidden="true">×</span>`;
+        pill.addEventListener('click', () => {
+          selected = selected.filter((item) => item !== id);
+          saveSelection();
+          updateUrl();
+          renderAll();
+        });
+        pillRow.appendChild(pill);
+      });
+    }
+
+    function renderTable() {
+      const columns = currentView === 'alevel' ? alevelColumns : overviewColumns;
+      const rows = visibleSchools();
+      thead.innerHTML = `<tr>${columns.map((col) => `<th scope="col">${col.label}</th>`).join('')}</tr>`;
+
+      tbody.innerHTML = rows.map((school) => {
+        return `<tr>${columns.map((col) => {
+          if (col.key === 'name') return `<th scope="row"><a href="${school.slug}">${school.name}</a></th>`;
+          if (currentView === 'alevel') {
+            const data = school.alevel || {};
+            const value = data[col.key];
+            if (col.key === 'totalExams' || col.key === 'uniqueSubjects') return `<td>${formatCount(value)}</td>`;
+            return `<td>${formatPercent(value)}</td>`;
+          }
+          return `<td>${school[col.key] || '—'}</td>`;
+        }).join('')}</tr>`;
+      }).join('');
+
+      tableNote.textContent = currentView === 'alevel'
+        ? 'A-level view covers total exams, grades, unique subjects and subject mix.'
+        : 'Overview view covers ages, gender, day or boarding format, fees, bursaries and location.';
+    }
+
+    function renderViewButtons() {
+      viewButtons.forEach((button) => {
+        const active = button.getAttribute('data-compare-view') === currentView;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+    }
+
+    function renderAll() {
+      renderChooser();
+      renderStatus();
+      renderPills();
+      renderTable();
+      renderViewButtons();
+    }
+
+    viewButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        currentView = button.getAttribute('data-compare-view') || 'overview';
+        saveView();
+        updateUrl();
+        renderAll();
+      });
+    });
+
+    clearButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        selected = [];
+        saveSelection();
+        updateUrl();
+        renderAll();
+      });
+    });
+
+    updateUrl();
+    renderAll();
+  </script>
+</BaseLayout>

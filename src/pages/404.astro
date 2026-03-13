@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+---
+<BaseLayout title="Page not found | The Private School Guide" description="Page not found" canonicalPath="/404/">
+  <Fragment slot="head">
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+  </Fragment>
+  <SiteHeader minimal={true} />
+  <main class="page-shell">
+    <div class="shell" style="padding: 6rem 0; max-width: 52rem;">
+      <h1>Page not found</h1>
+      <p>The page you tried to open is not available.</p>
+      <p><a href="/">Return to the homepage</a></p>
+    </div>
+  </main>
+  <SiteFooter />
+</BaseLayout>

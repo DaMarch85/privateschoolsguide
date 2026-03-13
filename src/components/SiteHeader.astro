@@ -1,0 +1,8 @@
+---
+const { minimal = false } = Astro.props;
+---
+<header class="site-header">
+  <div class:list={["container", minimal ? "header-simple" : "header-simple"]}>
+    <a class="brand" href="/"><span class="brand-mark">PS</span><span class="brand-name">The Private School Guide</span></a>
+  </div>
+</header>

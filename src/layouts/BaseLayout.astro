@@ -1,0 +1,46 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+  canonicalPath?: string;
+  includeLeaflet?: boolean;
+  bodyClass?: string;
+}
+
+const {
+  title,
+  description = 'The Private School Guide',
+  canonicalPath = '/',
+  includeLeaflet = false,
+  bodyClass = ''
+} = Astro.props;
+
+const canonical = new URL(canonicalPath, Astro.site);
+---
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href={canonical.toString()} />
+    <meta name="theme-color" content="#2a2520" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    {includeLeaflet && (
+      <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""
+      />
+    )}
+    <slot name="head" />
+  </head>
+  <body class={bodyClass}>
+    <slot />
+  </body>
+</html>

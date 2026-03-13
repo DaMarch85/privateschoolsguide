@@ -1,0 +1,116 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SiteHeader from '../../../components/SiteHeader.astro';
+import SiteFooter from '../../../components/SiteFooter.astro';
+import schools from '../../../data/bath/schools.json';
+
+export async function getStaticPaths() {
+  return schools.map((school) => ({
+    params: { slug: school.slug },
+    props: { school }
+  }));
+}
+
+const { school } = Astro.props;
+const compareLinks = school.compareLinks || [];
+const currentSlug = school.slug;
+---
+<BaseLayout
+  title={`${school.name} | Bath school profile`}
+  description={school.metaDescription || school.subhead}
+  canonicalPath={school.canonicalPath}
+  includeLeaflet={true}
+  bodyClass="school-profile-page"
+>
+  <Fragment slot="head">
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+    <link rel="stylesheet" href="/assets/css/bath-refined.css" />
+  </Fragment>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+  <SiteHeader minimal={true} />
+
+  <section aria-labelledby="school-page-title" class="school-profile-hero">
+    <img alt="" src={school.heroImage} />
+    <div class="school-profile-hero-copy">
+      <h1 class="school-profile-title" id="school-page-title">{school.name}</h1>
+      <p class="school-profile-subhead">{school.subhead}</p>
+    </div>
+  </section>
+  <div class="school-back-strip"><div class="shell"><a class="school-back-link" href="/bath/">← Back to Bath</a></div></div>
+
+  <main class="page-shell" id="main">
+    <div class="shell school-profile-layout">
+      <aside class="school-side-column">
+        <section class="school-side-section">
+          <p class="nav-kicker">At a glance</p>
+          <div class="school-glance-table">
+            {school.atGlanceRows.map((row) => (
+              <div class="school-glance-row"><span class="school-glance-label">{row.label}</span><span class="school-glance-value">{row.value}</span></div>
+            ))}
+          </div>
+        </section>
+
+        <section class="school-side-section school-compare-section">
+          <p class="nav-kicker">Compare with</p>
+          <ul class="school-compare-links">
+            {compareLinks.map((link) => (
+              <li>
+                <a href={`/bath/compare/?schools=${currentSlug},${link.slug}`}>{link.name}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </aside>
+
+      <section class="school-profile-main">
+        <div class="school-feature-grid">
+          {school.featureTilesHtml.map((tileHtml) => <Fragment set:html={tileHtml} />)}
+        </div>
+      </section>
+
+      <aside class="location-map-panel school-map-panel">
+        <div class="location-map-head">
+          <p class="nav-kicker">Map</p>
+          <h2>School location</h2>
+        </div>
+        <div aria-label={`Map showing ${school.name}`} class="bath-location-map school-page-map" id="school-page-map"></div>
+        <p class="map-caption">{school.address}</p>
+      </aside>
+    </div>
+  </main>
+
+  <SiteFooter />
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script define:vars={{ schoolMapData: school.mapData }}>
+    const mapTarget = document.getElementById('school-page-map');
+    if (mapTarget && window.L && schoolMapData) {
+      const map = window.L.map(mapTarget, { zoomControl: true, scrollWheelZoom: false });
+      window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap contributors' }).addTo(map);
+      const marker = window.L.marker([schoolMapData.lat, schoolMapData.lng]).addTo(map);
+      marker.bindPopup(`<div class="school-map-popup"><h3>${schoolMapData.name}</h3><p>${schoolMapData.note}</p><p><a href="${schoolMapData.slug}">View school</a></p></div>`);
+      map.setView([schoolMapData.lat, schoolMapData.lng], schoolMapData.zoom || 13);
+    }
+
+    const subjectTiles = Array.from(document.querySelectorAll('.school-feature-tile'));
+    subjectTiles.forEach((tile) => {
+      const opener = tile.querySelector('[data-subject-toggle="expand"]');
+      const closer = tile.querySelector('[data-subject-toggle="collapse"]');
+      const extra = tile.querySelector('.subject-extra, [data-subject-extra]');
+      if (!opener || !closer || !extra) return;
+
+      const sync = (expanded) => {
+        extra.hidden = !expanded;
+        opener.hidden = expanded;
+        opener.style.display = expanded ? 'none' : '';
+        closer.hidden = !expanded;
+        closer.style.display = !expanded ? 'none' : '';
+      };
+
+      sync(false);
+      opener.addEventListener('click', () => sync(true));
+      closer.addEventListener('click', () => sync(false));
+    });
+  </script>
+</BaseLayout>

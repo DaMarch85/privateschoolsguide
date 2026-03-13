@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Bath",
+    "href": "/bath/",
+    "state": "Live now",
+    "isLive": true
+  },
+  {
+    "name": "Bristol",
+    "href": "/bristol/",
+    "state": "Coming soon",
+    "isLive": false
+  },
+  {
+    "name": "Cheltenham",
+    "href": "/cheltenham/",
+    "state": "Coming soon",
+    "isLive": false
+  },
+  {
+    "name": "Oxford",
+    "href": "/oxford/",
+    "state": "Coming soon",
+    "isLive": false
+  },
+  {
+    "name": "Winchester",
+    "href": "/winchester/",
+    "state": "Coming soon",
+    "isLive": false
+  },
+  {
+    "name": "Sevenoaks",
+    "href": "/sevenoaks/",
+    "state": "Coming soon",
+    "isLive": false
+  },
+  {
+    "name": "St Albans",
+    "href": "/st-albans/",
+    "state": "Coming soon",
+    "isLive": false
+  }
+]

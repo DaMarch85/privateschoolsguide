@@ -1,0 +1,101 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import locations from '../data/homeLocations.json';
+import bathLocation from '../data/bath/location.json';
+---
+<BaseLayout
+  title="The Private School Guide"
+  description="Find your location and move into the relevant private school guide."
+  canonicalPath="/"
+  includeLeaflet={true}
+  bodyClass="home-minimal"
+>
+  <Fragment slot="head">
+    <link rel="stylesheet" href="/assets/css/homepage.css" />
+  </Fragment>
+
+  <main id="main">
+    <section aria-labelledby="home-title" class="home-hero">
+      <video autoplay class="hero-video hero-video-desktop" loop muted playsinline poster="/assets/video/home-hero-poster.jpg" preload="metadata">
+        <source src="/assets/video/home-hero-desktop.mp4" type="video/mp4" />
+      </video>
+      <video autoplay class="hero-video hero-video-mobile" loop muted playsinline poster="/assets/video/home-hero-mobile-poster.jpg" preload="metadata">
+        <source src="/assets/video/home-hero-mobile.mp4" type="video/mp4" />
+      </video>
+      <div aria-hidden="true" class="hero-wash"></div>
+      <div class="hero-centre shell">
+        <h1 class="hero-title" id="home-title">
+          <span>THE</span>
+          <span>PRIVATE SCHOOL</span>
+          <span>GUIDE</span>
+        </h1>
+      </div>
+    </section>
+
+    <section aria-labelledby="finder-title" class="home-finder shell">
+      <div class="finder-grid">
+        <div class="finder-panel finder-locations">
+          <p class="section-kicker">Find a location</p>
+          <h2 id="finder-title">Choose the guide you want.</h2>
+          <label class="visually-hidden" for="location-search">Search locations</label>
+          <input autocomplete="off" class="location-search" id="location-search" placeholder="Search locations" type="search" />
+          <ul class="location-list" id="location-list">
+            {locations.map((location) => (
+              <li>
+                <a class:list={["location-link", location.isLive && "is-live"]} data-location-item data-name={location.name} href={location.href}>
+                  <span class="location-name">{location.name}</span>
+                  <span class="location-state">{location.state}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div class="finder-panel finder-map-panel">
+          <div class="finder-map-head">
+            <div>
+              <p class="section-kicker">Current live guide</p>
+              <h2>Bath map</h2>
+            </div>
+          </div>
+          <div aria-label="Bath school map" class="homepage-map" id="homepage-map"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter full={true} />
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script define:vars={{ mapSchools: bathLocation.mapSchools }}>
+    const mapTarget = document.getElementById('homepage-map');
+    if (mapTarget && window.L) {
+      const map = window.L.map(mapTarget, { zoomControl: true, scrollWheelZoom: false });
+      window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      const markers = mapSchools.map((school) => {
+        const marker = window.L.marker([school.lat, school.lng]);
+        marker.bindPopup(`<div class="map-popup"><h3 class="map-popup-title">${school.name}</h3><p class="map-popup-meta">${school.note}</p><a class="map-popup-link" href="${school.slug}">View school</a></div>`);
+        marker.addTo(map);
+        return marker;
+      });
+
+      const group = window.L.featureGroup(markers);
+      map.fitBounds(group.getBounds(), { padding: [28, 28], maxZoom: 11 });
+    }
+
+    const search = document.getElementById('location-search');
+    const items = Array.from(document.querySelectorAll('[data-location-item]'));
+    search?.addEventListener('input', () => {
+      const query = search.value.trim().toLowerCase();
+      items.forEach((item) => {
+        const name = item.getAttribute('data-name')?.toLowerCase() || '';
+        item.parentElement.style.display = !query || name.includes(query) ? '' : 'none';
+      });
+    });
+  </script>
+</BaseLayout>
