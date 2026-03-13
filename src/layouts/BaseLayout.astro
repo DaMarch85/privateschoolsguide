@@ -5,6 +5,8 @@ interface Props {
   canonicalPath?: string;
   includeLeaflet?: boolean;
   bodyClass?: string;
+  dataLocationSlug?: string;
+  dataSchoolSlug?: string;
 }
 
 const {
@@ -12,7 +14,9 @@ const {
   description = 'The Private School Guide',
   canonicalPath = '/',
   includeLeaflet = false,
-  bodyClass = ''
+  bodyClass = '',
+  dataLocationSlug,
+  dataSchoolSlug
 } = Astro.props;
 
 const canonical = new URL(canonicalPath, Astro.site);
@@ -40,7 +44,7 @@ const canonical = new URL(canonicalPath, Astro.site);
     )}
     <slot name="head" />
   </head>
-  <body class={bodyClass}>
+  <body class={bodyClass} data-location-slug={dataLocationSlug} data-school-slug={dataSchoolSlug}>
     <slot />
   </body>
 </html>

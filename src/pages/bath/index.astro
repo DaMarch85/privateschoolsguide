@@ -54,31 +54,5 @@ import bathLocation from '../../data/bath/location.json';
   <SiteFooter />
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script define:vars={{ schools: bathLocation.mapSchools }}>
-    const mapTarget = document.getElementById('bath-location-map');
-    if (mapTarget && window.L) {
-      const map = window.L.map(mapTarget, { zoomControl: true, scrollWheelZoom: false });
-      window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap contributors' }).addTo(map);
-
-      function icon(type) {
-        return window.L.divIcon({
-          className: 'school-map-icon',
-          html: `<span class="school-map-marker ${type}"></span>`,
-          iconSize: [16, 16],
-          iconAnchor: [8, 8],
-          popupAnchor: [0, -8]
-        });
-      }
-
-      const markers = schools.map((school) => {
-        const marker = window.L.marker([school.lat, school.lng], { icon: icon(school.type) });
-        marker.bindPopup(`<div class="map-popup"><h3 class="map-popup-title">${school.name}</h3><p class="map-popup-meta">${school.note}</p><a class="map-popup-link" href="${school.slug}">View school</a></div>`);
-        marker.addTo(map);
-        return marker;
-      });
-
-      const group = window.L.featureGroup(markers);
-      map.fitBounds(group.getBounds(), { padding: [28, 28], maxZoom: 11 });
-    }
-  </script>
+  <script src="/assets/js/bath-refined.js"></script>
 </BaseLayout>

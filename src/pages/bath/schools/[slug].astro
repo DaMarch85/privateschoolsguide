@@ -13,7 +13,7 @@ export async function getStaticPaths() {
 
 const { school } = Astro.props;
 const compareLinks = school.compareLinks || [];
-const currentSlug = school.slug;
+const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(school.mapData)};`;
 ---
 <BaseLayout
   title={`${school.name} | Bath school profile`}
@@ -21,6 +21,8 @@ const currentSlug = school.slug;
   canonicalPath={school.canonicalPath}
   includeLeaflet={true}
   bodyClass="school-profile-page"
+  dataLocationSlug={school.locationSlug}
+  dataSchoolSlug={school.slug}
 >
   <Fragment slot="head">
     <link rel="stylesheet" href="/assets/css/styles.css" />
@@ -56,7 +58,7 @@ const currentSlug = school.slug;
           <ul class="school-compare-links">
             {compareLinks.map((link) => (
               <li>
-                <a href={`/bath/compare/?schools=${currentSlug},${link.slug}`}>{link.name}</a>
+                <a data-compare-school={link.slug} href={`?compare=${link.slug}`}>{link.name}</a>
               </li>
             ))}
           </ul>
@@ -82,35 +84,8 @@ const currentSlug = school.slug;
 
   <SiteFooter />
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script define:vars={{ schoolMapData: school.mapData }}>
-    const mapTarget = document.getElementById('school-page-map');
-    if (mapTarget && window.L && schoolMapData) {
-      const map = window.L.map(mapTarget, { zoomControl: true, scrollWheelZoom: false });
-      window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap contributors' }).addTo(map);
-      const marker = window.L.marker([schoolMapData.lat, schoolMapData.lng]).addTo(map);
-      marker.bindPopup(`<div class="school-map-popup"><h3>${schoolMapData.name}</h3><p>${schoolMapData.note}</p><p><a href="${schoolMapData.slug}">View school</a></p></div>`);
-      map.setView([schoolMapData.lat, schoolMapData.lng], schoolMapData.zoom || 13);
-    }
-
-    const subjectTiles = Array.from(document.querySelectorAll('.school-feature-tile'));
-    subjectTiles.forEach((tile) => {
-      const opener = tile.querySelector('[data-subject-toggle="expand"]');
-      const closer = tile.querySelector('[data-subject-toggle="collapse"]');
-      const extra = tile.querySelector('.subject-extra, [data-subject-extra]');
-      if (!opener || !closer || !extra) return;
-
-      const sync = (expanded) => {
-        extra.hidden = !expanded;
-        opener.hidden = expanded;
-        opener.style.display = expanded ? 'none' : '';
-        closer.hidden = !expanded;
-        closer.style.display = !expanded ? 'none' : '';
-      };
-
-      sync(false);
-      opener.addEventListener('click', () => sync(true));
-      closer.addEventListener('click', () => sync(false));
-    });
-  </script>
+  <script is:inline set:html={schoolMapScript}></script>
+  <script defer src="/assets/js/site.js"></script>
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script defer src="/assets/js/school-pages.js"></script>
 </BaseLayout>
