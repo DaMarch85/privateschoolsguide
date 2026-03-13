@@ -965,3 +965,28 @@
     line-height:1.02;
   }
 }
+
+
+/* --- April 2026 map / subject / fee alignment fixes --- */
+.school-profile-page .subject-extra{
+  margin-top:0;
+}
+.school-profile-page .subject-extra .metric-list{
+  margin-top:0;
+}
+.school-profile-page .subject-extra .metric-row:first-child{
+  border-top:1px solid var(--psg-line);
+  padding-top:8px;
+}
+.school-profile-page .fee-switch-spacer{
+  display:block;
+  height:43px;
+  margin-top:4px;
+}
+.school-profile-page .school-map-icon-wrap{
+  background:transparent;
+  border:none;
+}
+.school-profile-page .school-map-marker--primary{
+  background:var(--psg-accent);
+}

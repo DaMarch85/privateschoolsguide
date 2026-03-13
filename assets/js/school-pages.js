@@ -146,13 +146,13 @@
 
   function getMarkerIcon(kind) {
     if (!window.L) return null;
-    const classes = {
-      primary: "school-map-icon school-map-icon--primary",
-      secondary: "school-map-icon school-map-icon--secondary",
-    };
+    const markerClass =
+      kind === "secondary"
+        ? "school-map-marker school-map-marker--secondary"
+        : "school-map-marker school-map-marker--primary";
     return window.L.divIcon({
-      className: classes[kind] || classes.primary,
-      html: "",
+      className: "school-map-icon-wrap",
+      html: `<span class="${markerClass}"></span>`,
       iconSize: [16, 16],
       iconAnchor: [8, 8],
       popupAnchor: [0, -8],
@@ -272,15 +272,14 @@
   }
 
   function feeRowCandidates(tile) {
+    const directRows = Array.from(tile.querySelectorAll(".fee-year-row"));
+    if (directRows.length) return directRows;
+
     const selectors = [
       "[data-fee-pane] li",
       "[data-fee-pane] tr",
-      "[data-fee-pane] p",
-      "[data-fee-pane] div",
       "li",
       "tr",
-      "p",
-      "div",
     ];
     const all = Array.from(tile.querySelectorAll(selectors.join(",")));
     const seen = new Set();
@@ -290,6 +289,21 @@
       const text = (el.textContent || "").replace(/\s+/g, " ").trim();
       return /^(Reception|Year\s+[0-9]{1,2})\b/i.test(text);
     });
+  }
+
+  function ensureFeeSwitchSpacer(tile) {
+    if (!tile || tile.dataset.feeSpacerBound === "true") return;
+    tile.dataset.feeSpacerBound = "true";
+
+    if (tile.querySelector("[data-fee-switch]")) return;
+
+    const firstPane = tile.querySelector("[data-fee-pane]");
+    if (!firstPane || tile.querySelector(".fee-switch-spacer")) return;
+
+    const spacer = document.createElement("div");
+    spacer.className = "fee-switch-spacer";
+    spacer.setAttribute("aria-hidden", "true");
+    firstPane.parentElement.insertBefore(spacer, firstPane);
   }
 
   function wireFeeHideToggle(tile) {
@@ -388,7 +402,10 @@
     scope.querySelectorAll(".school-feature-tile").forEach((tile) => {
       const title = tile.querySelector("h2")?.textContent.trim() || "";
       if (/popular subjects/i.test(title)) wireSubjectToggle(tile);
-      if (/fee profile/i.test(title)) wireFeeHideToggle(tile);
+      if (/fee profile/i.test(title)) {
+        ensureFeeSwitchSpacer(tile);
+        wireFeeHideToggle(tile);
+      }
     });
 
     normalizePercentages(scope);
