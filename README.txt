@@ -1,8 +1,11 @@
-Patch contents:
-- assets/css/homepage.css
+Patch contents
 - assets/css/bath-refined.css
+- assets/js/bath-refined.js
+- assets/js/school-pages.js
 - bath/index.html
-
-Purpose:
-- centres the mobile homepage hero title properly
-- changes the Bath location hero title from "Bath Private Schools" to "Bath"
+- bath/fees/index.html
+- bath/bursaries/index.html
+- index.html
+- methodology/index.html
+- privacy/index.html
+- cookies/index.html

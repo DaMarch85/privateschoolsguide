@@ -291,19 +291,25 @@
     });
   }
 
-  function ensureFeeSwitchSpacer(tile) {
-    if (!tile || tile.dataset.feeSpacerBound === "true") return;
-    tile.dataset.feeSpacerBound = "true";
-
-    if (tile.querySelector("[data-fee-switch]")) return;
-
+  function ensureFeeSwitchSpacer(tile, shouldShow) {
+    if (!tile) return;
+    let spacer = tile.querySelector(".fee-switch-spacer");
+    if (tile.querySelector("[data-fee-switch]")) {
+      if (spacer) spacer.remove();
+      return;
+    }
+    if (!shouldShow) {
+      if (spacer) spacer.remove();
+      return;
+    }
     const firstPane = tile.querySelector("[data-fee-pane]");
-    if (!firstPane || tile.querySelector(".fee-switch-spacer")) return;
-
-    const spacer = document.createElement("div");
-    spacer.className = "fee-switch-spacer";
-    spacer.setAttribute("aria-hidden", "true");
-    firstPane.parentElement.insertBefore(spacer, firstPane);
+    if (!firstPane) return;
+    if (!spacer) {
+      spacer = document.createElement("div");
+      spacer.className = "fee-switch-spacer";
+      spacer.setAttribute("aria-hidden", "true");
+      firstPane.parentElement.insertBefore(spacer, firstPane);
+    }
   }
 
   function wireFeeHideToggle(tile) {
@@ -403,7 +409,6 @@
       const title = tile.querySelector("h2")?.textContent.trim() || "";
       if (/popular subjects/i.test(title)) wireSubjectToggle(tile);
       if (/fee profile/i.test(title)) {
-        ensureFeeSwitchSpacer(tile);
         wireFeeHideToggle(tile);
       }
     });
@@ -486,6 +491,22 @@
     return wrapper;
   }
 
+  function syncComparisonFeeSpacers(scope) {
+    if (!scope) return;
+    scope.querySelectorAll(".school-compare-row").forEach((row) => {
+      const tiles = Array.from(row.querySelectorAll(".school-feature-tile"));
+      if (tiles.length < 2) return;
+      const feeTiles = tiles.filter((tile) =>
+        /fee profile/i.test(tile.querySelector("h2")?.textContent || "")
+      );
+      if (!feeTiles.length) return;
+      const hasSwitch = feeTiles.map((tile) => Boolean(tile.querySelector("[data-fee-switch]")));
+      const shouldPad = hasSwitch.some(Boolean) && hasSwitch.some((value) => !value);
+      feeTiles.forEach((tile) => ensureFeeSwitchSpacer(tile, shouldPad));
+    });
+  }
+
+
   async function applyComparison(slug) {
     if (!slug || slug === currentSlug || !main || !baseGrid) return;
     try {
@@ -505,6 +526,7 @@
       compareMount.appendChild(headerRow);
       compareMount.appendChild(createPairedComparison(currentData, comparisonData));
       bindTileInteractions(compareMount);
+      syncComparisonFeeSpacers(compareMount);
       baseGrid.style.display = "none";
       compareMount.style.display = "block";
       body.classList.add("is-compare-mode");

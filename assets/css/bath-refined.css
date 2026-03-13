@@ -990,3 +990,195 @@
 .school-profile-page .school-map-marker--primary{
   background:var(--psg-accent);
 }
+
+
+/* 2026-03-13 tweaks: location map colours, square text-only cards, data pages, and fee/subject fixes */
+.location-side-nav a.is-current{
+  color:var(--psg-accent);
+  transform:translateX(6px);
+}
+
+.location-layout--no-map{
+  grid-template-columns:260px minmax(0,1fr);
+}
+
+.location-page .school-square-grid{
+  align-items:stretch;
+}
+.location-page .school-square-card{
+  aspect-ratio:1 / 1;
+  min-height:0;
+}
+.location-page .school-square-media{
+  display:none !important;
+}
+.location-page .school-square-body{
+  justify-content:flex-start;
+  padding:22px;
+}
+.location-page .school-square-body h2{
+  margin-bottom:12px;
+}
+.location-page .school-square-text{
+  font-size:1.02rem;
+}
+.location-page .school-square-text + .school-square-text{
+  margin-top:8px;
+}
+.location-page .school-square-card--allthrough{
+  border-top:3px solid #b35b2e;
+}
+.location-page .school-square-card--junior{
+  border-top:3px solid #6a5b46;
+}
+.location-page .school-square-card--senior{
+  border-top:3px solid #2a2520;
+}
+
+.bath-location-map .school-map-marker{
+  background:var(--psg-dark);
+}
+.bath-location-map .school-map-marker.allthrough{
+  background:var(--psg-accent);
+}
+.bath-location-map .school-map-marker.junior{
+  background:#9d7a44;
+}
+.bath-location-map .school-map-marker.senior{
+  background:#2a2520;
+}
+
+.data-page-head{
+  margin:0 0 22px;
+}
+.data-page-note{
+  margin:0;
+  color:var(--psg-muted);
+  max-width:74ch;
+}
+.fees-switch{
+  display:inline-flex;
+  border:1px solid var(--psg-line);
+  margin:0 0 18px;
+}
+.fees-switch button{
+  border:none;
+  background:transparent;
+  padding:11px 16px;
+  color:var(--psg-dark);
+  font:600 .82rem/1.2 "Inter",sans-serif;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+.fees-switch button + button{
+  border-left:1px solid var(--psg-line);
+}
+.fees-switch button.is-active{
+  background:var(--psg-accent);
+  color:var(--psg-white);
+}
+.data-table-wrap{
+  overflow:auto;
+}
+.fees-matrix{
+  width:100%;
+  border-collapse:collapse;
+  min-width:980px;
+}
+.fees-matrix th,
+.fees-matrix td{
+  border-bottom:1px solid var(--psg-line);
+  padding:12px 12px;
+  text-align:right;
+  vertical-align:top;
+  white-space:nowrap;
+}
+.fees-matrix thead th{
+  position:sticky;
+  top:0;
+  background:rgba(179,91,46,.07);
+  z-index:1;
+  font:600 .78rem/1.2 "Inter",sans-serif;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--psg-dark);
+}
+.fees-matrix thead th:first-child,
+.fees-matrix tbody th{
+  text-align:left;
+}
+.fees-matrix tbody th{
+  color:var(--psg-muted);
+  font:600 .8rem/1.2 "Inter",sans-serif;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  background:rgba(255,255,255,.45);
+}
+.fees-matrix .th-note{
+  display:block;
+  margin-top:2px;
+  font-size:.68rem;
+  letter-spacing:.12em;
+}
+.bursary-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:22px;
+}
+.bursary-square-card{
+  aspect-ratio:1 / 1;
+  background:var(--psg-paper);
+  border:1px solid var(--psg-line);
+  display:flex;
+}
+.bursary-square-card .school-square-body{
+  width:100%;
+  padding:22px;
+}
+.bursary-card-text{
+  margin:0;
+  color:var(--psg-ink);
+  line-height:1.55;
+  font-size:.96rem;
+}
+
+.school-profile-page .subject-extra{
+  border-top:1px solid rgba(41,36,33,.12);
+}
+.school-profile-page .subject-extra .metric-list .metric-row:first-child{
+  margin-top:0;
+}
+.school-profile-page .fee-switch-spacer{
+  display:block;
+  height:44px;
+  margin-top:4px;
+}
+.school-profile-page .fee-pane.is-active{
+  margin-top:12px;
+}
+.school-profile-page .fee-year-columns{
+  grid-template-columns:1fr;
+}
+
+@media (max-width: 900px){
+  .location-layout--no-map{
+    grid-template-columns:1fr;
+  }
+  .bursary-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media (max-width: 640px){
+  .location-page .school-square-card{
+    aspect-ratio:auto;
+    min-height:220px;
+  }
+  .location-page .school-square-body{
+    padding:18px;
+  }
+  .fees-matrix{
+    min-width:760px;
+  }
+}
