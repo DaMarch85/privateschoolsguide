@@ -16,8 +16,6 @@ type SchoolRow = {
   age_max: number | null;
   day_boarding: string | null;
   description: string | null;
-  latitude: number | null;
-  longitude: number | null;
 };
 
 const fallbackMetaTitle = 'Bath private schools | The Private School Guide';
@@ -48,7 +46,7 @@ const schoolIds = (locationSchools || []).map((row) => row.school_id);
 
 const { data: schoolsRaw, error: schoolsError } = await supabase
   .from('schools')
-  .select('id, slug, name, phase, gender, age_min, age_max, day_boarding, description, latitude, longitude')
+  .select('id, slug, name, phase, gender, age_min, age_max, day_boarding, description')
   .in('id', schoolIds);
 
 if (schoolsError) {
@@ -114,17 +112,6 @@ const schoolCards = schools.map((school) => ({
     getAgeLabel(school.age_min, school.age_max)
   ]
 }));
-
-const mapSchools = schools
-  .filter((school) => school.latitude !== null && school.longitude !== null)
-  .map((school) => ({
-    name: school.name,
-    slug: `/bath/schools/${school.slug}/`,
-    lat: school.latitude,
-    lng: school.longitude,
-    type: getMapType(school),
-    note: `${getPhaseLabel(school)} · ${getGenderLabel(school.gender)} · ${getFormatLabel(school.day_boarding)} · ${getAgeLabel(school.age_min, school.age_max).replace(/^Ages /, 'Ages ')}`
-  }));
 ---
 <BaseLayout
   title={location.meta_title || fallbackMetaTitle}
@@ -175,60 +162,6 @@ const mapSchools = schools
 
   <SiteFooter />
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script define:vars={{ schools: mapSchools }}>
-    function initBathMap() {
-      const mapTarget = document.getElementById('bath-location-map');
-      if (!mapTarget || !window.L || !schools.length) return false;
-
-      if (mapTarget.dataset.initialized === 'true') return true;
-      mapTarget.dataset.initialized = 'true';
-
-      const map = window.L.map(mapTarget, { zoomControl: true, scrollWheelZoom: false });
-
-      window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(map);
-
-      function icon(type) {
-        return window.L.divIcon({
-          className: 'school-map-icon',
-          html: `<span class="school-map-marker ${type}"></span>`,
-          iconSize: [16, 16],
-          iconAnchor: [8, 8],
-          popupAnchor: [0, -8]
-        });
-      }
-
-      const markers = schools.map((school) => {
-        const marker = window.L.marker([school.lat, school.lng], { icon: icon(school.type) });
-        marker.bindPopup(
-          `<div class="map-popup"><h3 class="map-popup-title">${school.name}</h3><p class="map-popup-meta">${school.note}</p><a class="map-popup-link" href="${school.slug}">View school</a></div>`
-        );
-        marker.addTo(map);
-        return marker;
-      });
-
-      const group = window.L.featureGroup(markers);
-      map.fitBounds(group.getBounds(), { padding: [28, 28], maxZoom: 11 });
-
-      setTimeout(() => map.invalidateSize(), 300);
-      return true;
-    }
-
-    function waitForLeaflet() {
-      let attempts = 0;
-      const timer = setInterval(() => {
-        attempts += 1;
-        if (initBathMap() || attempts > 20) clearInterval(timer);
-      }, 250);
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', waitForLeaflet);
-    } else {
-      waitForLeaflet();
-    }
-  </script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script defer src="/assets/js/bath-refined.js"></script>
 </BaseLayout>
