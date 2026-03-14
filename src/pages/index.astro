@@ -2,10 +2,55 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import homeLocations from '../data/homeLocations.json';
-import { getHomepageMapSchools, getLiveLocations } from '../lib/directory';
+import {
+  getLiveLocations,
+  getLocationDirectoryData,
+  getAgeLabel,
+  getFormatLabel,
+  getGenderLabel,
+  getPhaseLabel,
+  toNumber
+} from '../lib/directory';
+
+const BATH_COORDINATE_FALLBACKS: Record<string, { lat: number; lng: number }> = {
+  'king-edwards-school': { lat: 51.386488, lng: -2.343663 },
+  'kingswood-school': { lat: 51.398883, lng: -2.370005 },
+  'kingswood-preparatory-school': { lat: 51.397143, lng: -2.373238 },
+  'prior-park-college': { lat: 51.364523, lng: -2.343082 },
+  'paragon-school': { lat: 51.370494, lng: -2.355122 },
+  'monkton-combe-school': { lat: 51.357305, lng: -2.326354 },
+  'royal-high-school-bath-gdst': { lat: 51.397185, lng: -2.365419 },
+  'bath-academy': { lat: 51.383903, lng: -2.363978 },
+  'downside-school': { lat: 51.253899, lng: -2.495195 }
+};
+
+function resolveSchoolCoordinates(
+  locationSlug: string,
+  school: { slug: string; latitude: number | null; longitude: number | null }
+) {
+  const lat = toNumber(school.latitude);
+  const lng = toNumber(school.longitude);
+
+  if (lat !== null && lng !== null) {
+    return { lat, lng };
+  }
+
+  if (locationSlug === 'bath') {
+    return BATH_COORDINATE_FALLBACKS[school.slug] || null;
+  }
+
+  return null;
+}
+
+function getHomepageMarkerType(dayBoarding: string | null) {
+  const value = (dayBoarding || '').toLowerCase();
+  if (value.includes('boarding')) return 'boarding';
+  return 'day';
+}
 
 const liveLocations = await getLiveLocations();
 const liveLocationHrefs = new Set(liveLocations.map((location) => `/${location.slug}/`));
+
 const locations = homeLocations.map((location) => {
   if (liveLocationHrefs.has(location.href)) {
     return {
@@ -18,7 +63,33 @@ const locations = homeLocations.map((location) => {
   return location;
 });
 
-const homeMapSchools = await getHomepageMapSchools();
+const liveLocationDirectoryData = await Promise.all(
+  liveLocations.map(async (liveLocation) => {
+    const directoryData = await getLocationDirectoryData(liveLocation.slug);
+    return {
+      location: directoryData.location,
+      schools: directoryData.schools
+    };
+  })
+);
+
+const homeMapSchools = liveLocationDirectoryData.flatMap(({ location, schools }) =>
+  schools
+    .map((school) => {
+      const coordinates = resolveSchoolCoordinates(location.slug, school);
+      if (!coordinates) return null;
+
+      return {
+        name: school.name,
+        slug: `/${location.slug}/schools/${school.slug}/`,
+        lat: coordinates.lat,
+        lng: coordinates.lng,
+        type: getHomepageMarkerType(school.day_boarding),
+        note: `${location.name} · ${getPhaseLabel(school.phase, school.age_max)} · ${getGenderLabel(school.gender)} · ${getFormatLabel(school.day_boarding)} · Ages ${getAgeLabel(school.age_min, school.age_max)}`
+      };
+    })
+    .filter(Boolean)
+);
 ---
 <BaseLayout
   title="The Private School Guide"
@@ -75,14 +146,7 @@ const homeMapSchools = await getHomepageMapSchools();
               <h2>School map</h2>
             </div>
           </div>
-          <div
-            aria-label="Private school map"
-            class="homepage-map"
-            id="homepage-map"
-            data-directory-map
-            data-map-data-id="homepage-map-data"
-            data-empty-state-id="homepage-map-empty"
-          ></div>
+          <div aria-label="Private school map" class="homepage-map" id="homepage-map"></div>
           <p id="homepage-map-empty" hidden>School locations are being updated.</p>
         </div>
       </div>
@@ -91,8 +155,103 @@ const homeMapSchools = await getHomepageMapSchools();
 
   <SiteFooter full={true} />
 
-  <script type="application/json" id="homepage-map-data">{JSON.stringify(homeMapSchools)}</script>
-  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script defer src="/assets/js/homepage.js?v=20260314b"></script>
-  <script defer src="/assets/js/location-pages.js?v=20260314b"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script define:vars={{ mapSchools: homeMapSchools }}>
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    const search = document.getElementById('location-search');
+    const items = Array.from(document.querySelectorAll('[data-location-item]'));
+
+    function filterLocations() {
+      const query = (search?.value || '').trim().toLowerCase();
+      let firstVisibleHref = '';
+
+      items.forEach((item) => {
+        const name = item.getAttribute('data-name')?.toLowerCase() || '';
+        const match = !query || name.includes(query);
+        if (item.parentElement) {
+          item.parentElement.style.display = match ? '' : 'none';
+        }
+        if (match && !firstVisibleHref) {
+          firstVisibleHref = item.getAttribute('href') || '';
+        }
+      });
+
+      if (search) {
+        search.dataset.firstVisibleHref = firstVisibleHref;
+      }
+    }
+
+    if (search) {
+      search.addEventListener('input', filterLocations);
+      search.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          const href = search.dataset.firstVisibleHref;
+          if (href) {
+            event.preventDefault();
+            window.location.href = href;
+          }
+        }
+      });
+      filterLocations();
+    }
+
+    const mapTarget = document.getElementById('homepage-map');
+    const emptyState = document.getElementById('homepage-map-empty');
+
+    if (mapTarget && window.L) {
+      const validSchools = Array.isArray(mapSchools)
+        ? mapSchools.filter((school) => Number.isFinite(Number(school.lat)) && Number.isFinite(Number(school.lng)))
+        : [];
+
+      if (!validSchools.length) {
+        mapTarget.style.display = 'none';
+        if (emptyState) emptyState.hidden = false;
+      } else {
+        const map = window.L.map(mapTarget, { zoomControl: true, scrollWheelZoom: false });
+
+        window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 18,
+          attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        const markers = validSchools.map((school) => {
+          const icon = window.L.divIcon({
+            className: 'school-map-icon',
+            html: `<span class="school-map-marker ${escapeHtml(school.type)}"></span>`,
+            iconSize: [14, 14],
+            iconAnchor: [7, 7],
+            popupAnchor: [0, -8]
+          });
+
+          const marker = window.L.marker([school.lat, school.lng], { icon });
+          marker.bindPopup(`
+            <div class="map-popup">
+              <h3 class="map-popup-title">${escapeHtml(school.name)}</h3>
+              <p class="map-popup-meta">${escapeHtml(school.note)}</p>
+              <a class="map-popup-link" href="${escapeHtml(school.slug)}">Open school page</a>
+            </div>
+          `);
+          marker.addTo(map);
+          return marker;
+        });
+
+        if (markers.length === 1) {
+          map.setView(markers[0].getLatLng(), 12);
+        } else {
+          const group = window.L.featureGroup(markers);
+          map.fitBounds(group.getBounds(), { padding: [24, 24], maxZoom: 12 });
+        }
+
+        setTimeout(() => map.invalidateSize(), 0);
+      }
+    }
+  </script>
 </BaseLayout>
