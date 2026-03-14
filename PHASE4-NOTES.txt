@@ -1,4 +1,4 @@
-Add/replace these files in the repo:
+Add/replace these files in the repo: 
 - src/lib/directory.ts
 - src/components/LocationSideNav.astro
 - src/pages/[location]/compare/index.astro
