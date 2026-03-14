@@ -2,6 +2,13 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getLocationDirectoryData } from "../../lib/directory";
 
+export async function getStaticPaths() {
+  return [
+    { params: { location: "bath" } },
+    { params: { location: "bristol" } },
+  ];
+}
+
 const { location } = Astro.params;
 
 if (!location) {
@@ -11,7 +18,7 @@ if (!location) {
 const pageData = await getLocationDirectoryData(location);
 
 if (!pageData || !pageData.location) {
-  return Astro.redirect("/404");
+  throw new Error(`No location data found for slug: ${location}`);
 }
 
 const { location: locationRecord, schools } = pageData;
