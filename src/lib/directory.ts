@@ -1,5 +1,17 @@
 import { supabase } from './supabase';
 
+const BATH_COORDINATE_FALLBACKS: Record<string, { lat: number; lng: number; zoom?: number }> = {
+  'king-edwards-school': { lat: 51.386488, lng: -2.343663, zoom: 13 },
+  'kingswood-school': { lat: 51.398883, lng: -2.370005, zoom: 13 },
+  'kingswood-preparatory-school': { lat: 51.397143, lng: -2.373238, zoom: 13 },
+  'prior-park-college': { lat: 51.364523, lng: -2.343082, zoom: 13 },
+  'paragon-school': { lat: 51.370494, lng: -2.355122, zoom: 13 },
+  'monkton-combe-school': { lat: 51.357305, lng: -2.326354, zoom: 13 },
+  'royal-high-school-bath-gdst': { lat: 51.397185, lng: -2.365419, zoom: 13 },
+  'bath-academy': { lat: 51.383903, lng: -2.363978, zoom: 13 },
+  'downside-school': { lat: 51.253899, lng: -2.495195, zoom: 13 }
+};
+
 export type LocationRecord = {
   id: string;
   name: string;
