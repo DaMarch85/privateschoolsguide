@@ -1,0 +1,312 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SiteHeader from '../../../components/SiteHeader.astro';
+import SiteFooter from '../../../components/SiteFooter.astro';
+import {
+  getAllLocationSchoolPaths,
+  getLocationSchoolProfile,
+  formatCurrency,
+  formatPercent,
+  formatInteger,
+  splitParagraphs
+} from '../../../lib/directory';
+
+export async function getStaticPaths() {
+  return await getAllLocationSchoolPaths();
+}
+
+const { location: locationSlug, slug } = Astro.params;
+if (!locationSlug || !slug) throw new Error('Missing location or school slug');
+
+const profile = await getLocationSchoolProfile(locationSlug, slug);
+const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(profile.mapData)};`;
+---
+<BaseLayout
+  title={`${profile.school.name} | ${profile.location.name} school profile`}
+  description={profile.subhead}
+  canonicalPath={profile.canonicalPath}
+  includeLeaflet={true}
+  bodyClass="school-profile-page"
+  dataLocationSlug={profile.location.slug}
+  dataSchoolSlug={profile.school.slug}
+>
+  <Fragment slot="head">
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+    <link rel="stylesheet" href="/assets/css/bath-refined.css" />
+  </Fragment>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+  <SiteHeader minimal={true} />
+
+  <section aria-labelledby="school-page-title" class="school-profile-hero">
+    <img alt={profile.heroImageAlt} src={profile.heroImageUrl} />
+    <div class="school-profile-hero-copy">
+      <h1 class="school-profile-title" id="school-page-title">{profile.school.name}</h1>
+      <p class="school-profile-subhead">{profile.subhead}</p>
+    </div>
+  </section>
+  <div class="school-back-strip"><div class="shell"><a class="school-back-link" href={`/${profile.location.slug}/`}>← Back to {profile.location.name}</a></div></div>
+
+  <main class="page-shell" id="main">
+    <div class="shell school-profile-layout">
+      <aside class="school-side-column">
+        <section class="school-side-section">
+          <p class="nav-kicker">At a glance</p>
+          <div class="school-glance-table">
+            {profile.atGlanceRows.map((row) => (
+              <div class="school-glance-row"><span class="school-glance-label">{row.label}</span><span class="school-glance-value">{row.value}</span></div>
+            ))}
+          </div>
+        </section>
+
+        <section class="school-side-section school-compare-section">
+          <p class="nav-kicker">Compare with</p>
+          <ul class="school-compare-links">
+            {profile.compareLinks.map((link) => (
+              <li>
+                <a data-compare-school={link.slug} href={`?compare=${link.slug}`}>{link.name}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </aside>
+
+      <section class="school-profile-main">
+        <div class="school-feature-grid">
+          {profile.alevelResult && (
+            <article class="school-feature-tile">
+              <h2>A-level results</h2>
+              <div class="school-feature-body">
+                <div class="tile-kpis">
+                  <div class="tile-kpi"><span class="tile-kpi-label">% A*–A</span><span class="tile-kpi-value">{formatPercent(profile.alevelResult.pct_a_star_a)}</span></div>
+                  <div class="tile-kpi"><span class="tile-kpi-label">% A*–B</span><span class="tile-kpi-value">{formatPercent(profile.alevelResult.pct_a_star_b)}</span></div>
+                  <div class="tile-kpi"><span class="tile-kpi-label">Different A-level subjects</span><span class="tile-kpi-value">{formatInteger(profile.alevelResult.unique_subjects)}</span></div>
+                </div>
+                <p class="tile-note">Results shown for {profile.alevelResult.result_year}.</p>
+              </div>
+            </article>
+          )}
+
+          {profile.subjectRows.length > 0 && (
+            <article class={`school-feature-tile ${profile.subjectExtraRows.length ? 'tile-expandable' : ''}`}>
+              <h2>Popular subjects</h2>
+              <div class="school-feature-body">
+                <div class="metric-list">
+                  {profile.subjectTopRows.map((subject) => (
+                    <div class="metric-row"><span class="metric-name">{subject.subject_name}</span><span class="metric-value">{formatPercent(subject.share_of_entries)}</span></div>
+                  ))}
+                </div>
+                {profile.subjectExtraRows.length > 0 && (
+                  <Fragment>
+                    <button class="subject-toggle" data-subject-toggle="expand" type="button">Show full subject mix</button>
+                    <div class="subject-extra" hidden>
+                      <div class="metric-list">
+                        {profile.subjectExtraRows.map((subject) => (
+                          <div class="metric-row"><span class="metric-name">{subject.subject_name}</span><span class="metric-value">{formatPercent(subject.share_of_entries)}</span></div>
+                        ))}
+                      </div>
+                      <button class="subject-toggle subject-toggle--collapse" data-subject-toggle="collapse" type="button">Collapse subject mix</button>
+                    </div>
+                  </Fragment>
+                )}
+              </div>
+            </article>
+          )}
+
+          {profile.content?.academic_snapshot ? (
+            <article class="school-feature-tile">
+              <h2>Academic snapshot</h2>
+              <div class="school-feature-body">
+                <div class="school-card-copy">
+                  {splitParagraphs(profile.content.academic_snapshot).map((paragraph) => <p>{paragraph}</p>)}
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {profile.content?.inspection_snapshot || profile.school.inspection_rating ? (
+            <article class="school-feature-tile">
+              <h2>Inspection snapshot</h2>
+              <div class="school-feature-body">
+                <div class="school-card-copy">
+                  {profile.inspectionBullets.length > 1 ? (
+                    <ul>
+                      {profile.inspectionBullets.map((item) => <li>{item}</li>)}
+                    </ul>
+                  ) : (
+                    splitParagraphs(profile.content?.inspection_snapshot || profile.school.inspection_rating).map((paragraph) => <p>{paragraph}</p>)
+                  )}
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {profile.content?.assessment_approach ? (
+            <article class="school-feature-tile">
+              <h2>Assessment approach</h2>
+              <div class="school-feature-body">
+                <div class="school-card-copy">
+                  {profile.assessmentBullets.length > 1 ? (
+                    <ul>
+                      {profile.assessmentBullets.map((item) => <li>{item}</li>)}
+                    </ul>
+                  ) : (
+                    splitParagraphs(profile.content.assessment_approach).map((paragraph) => <p>{paragraph}</p>)
+                  )}
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {profile.content?.scholarships ? (
+            <article class="school-feature-tile">
+              <h2>Scholarships</h2>
+              <div class="school-feature-body">
+                <div class="school-card-copy">
+                  {profile.scholarshipBullets.length > 1 ? (
+                    <ul>
+                      {profile.scholarshipBullets.map((item) => <li>{item}</li>)}
+                    </ul>
+                  ) : (
+                    splitParagraphs(profile.content.scholarships).map((paragraph) => <p>{paragraph}</p>)
+                  )}
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {profile.content?.destinations ? (
+            <article class="school-feature-tile">
+              <h2>Leavers destinations</h2>
+              <div class="school-feature-body">
+                <div class="school-card-copy">
+                  {profile.destinationsBullets.length > 1 ? (
+                    <ul>
+                      {profile.destinationsBullets.map((item) => <li>{item}</li>)}
+                    </ul>
+                  ) : (
+                    splitParagraphs(profile.content.destinations).map((paragraph) => <p>{paragraph}</p>)
+                  )}
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {profile.parentLikes.length > 0 ? (
+            <article class="school-feature-tile">
+              <h2>Parents like</h2>
+              <div class="school-feature-body">
+                <div class="school-card-copy">
+                  <ul>
+                    {profile.parentLikes.map((item) => <li>{item}</li>)}
+                  </ul>
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {profile.schoolVoice.length > 0 ? (
+            <article class="school-feature-tile">
+              <h2>How the school describes itself</h2>
+              <div class="school-feature-body">
+                <div class="school-card-copy">
+                  <ul>
+                    {profile.schoolVoice.map((item) => <li>{item}</li>)}
+                  </ul>
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {profile.feePanes.length > 0 && (
+            <article class={`school-feature-tile ${profile.feePanes.length > 1 ? 'tile-expandable' : ''}`}>
+              <h2>Fee profile</h2>
+              <div class="school-feature-body">
+                <p class="tile-note">
+                  {profile.allFeesIncludeVat ? 'Annual fees including VAT.' : 'Annual fees. Please check the school for VAT treatment.'}
+                  {profile.currentAcademicYear ? ` ${profile.currentAcademicYear}.` : ''}
+                </p>
+
+                {profile.feePanes.length > 1 && (
+                  <div class="fee-switch" data-fee-switch>
+                    {profile.feePanes.map((pane, index) => (
+                      <button class={index === 0 ? 'is-active' : undefined} data-fee-target={pane.feeType} type="button">{pane.label}</button>
+                    ))}
+                  </div>
+                )}
+
+                {profile.feePanes.map((pane, index) => (
+                  <div class={`fee-pane ${index === 0 ? 'is-active' : ''}`} data-fee-pane={pane.feeType}>
+                    <div class="fee-year-columns">
+                      {pane.columns.map((column) => (
+                        <div class="fee-year-column">
+                          {column.map((row) => (
+                            <div class="fee-year-row"><span class="fee-year">{row.year_group_label}</span><span class="fee-amount">{formatCurrency(row.amount_gbp)}</span></div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </article>
+          )}
+
+          {profile.bursary ? (
+            <article class="school-feature-tile">
+              <h2>Bursaries</h2>
+              <div class="school-feature-body">
+                {profile.bursary.summary ? <p>{profile.bursary.summary}</p> : null}
+                {profile.bursaryBullets.length > 0 ? (
+                  <div class="school-card-copy">
+                    <ul>
+                      {profile.bursaryBullets.map((item) => <li>{item}</li>)}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            </article>
+          ) : null}
+
+          {profile.content?.admissions_summary ? (
+            <article class="school-feature-tile">
+              <h2>Admissions</h2>
+              <div class="school-feature-body">
+                <div class="school-card-copy">
+                  {splitParagraphs(profile.content.admissions_summary).map((paragraph) => <p>{paragraph}</p>)}
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {profile.content?.editor_notes ? (
+            <article class="school-feature-tile">
+              <h2>Editor notes</h2>
+              <div class="school-feature-body">
+                <div class="school-card-copy">
+                  {splitParagraphs(profile.content.editor_notes).map((paragraph) => <p>{paragraph}</p>)}
+                </div>
+              </div>
+            </article>
+          ) : null}
+        </div>
+      </section>
+
+      <aside class="location-map-panel school-map-panel">
+        <div class="location-map-head">
+          <p class="nav-kicker">Map</p>
+          <h2>School location</h2>
+        </div>
+        <div aria-label={`Map showing ${profile.school.name}`} class="bath-location-map school-page-map" id="school-page-map"></div>
+        <p class="map-caption">{profile.address}</p>
+      </aside>
+    </div>
+  </main>
+
+  <SiteFooter />
+
+  <script is:inline set:html={schoolMapScript}></script>
+  <script defer src="/assets/js/site.js"></script>
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script defer src="/assets/js/school-pages.js"></script>
+</BaseLayout>
