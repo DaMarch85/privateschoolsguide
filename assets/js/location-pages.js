@@ -1,116 +1,154 @@
-function parseMapData(scriptId) {
-  const script = document.getElementById(scriptId);
-  if (!script) return [];
-
-  try {
-    const parsed = JSON.parse(script.textContent || "[]");
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    console.error(`Failed to parse map data from #${scriptId}`, error);
-    return [];
-  }
-}
-
-function normalisePoint(item) {
-  const lat = Number(item.latitude);
-  const lng = Number(item.longitude);
-
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-    return null;
+(function () {
+  function toNumber(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
   }
 
-  return {
-    name: item.name || "School",
-    slug: item.slug || "",
-    locationSlug: item.locationSlug || "",
-    href: item.href || "",
-    addressLine1: item.addressLine1 || "",
-    latitude: lat,
-    longitude: lng,
-  };
-}
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function buildPopupHtml(point) {
-  const title = escapeHtml(point.name);
-  const address = point.addressLine1 ? `<div>${escapeHtml(point.addressLine1)}</div>` : "";
-  const link = point.href
-    ? `<div style="margin-top:6px;"><a href="${escapeHtml(point.href)}">View school</a></div>`
-    : "";
-
-  return `<strong>${title}</strong>${address}${link}`;
-}
-
-function createMap(mapEl) {
-  const dataScriptId = mapEl.dataset.mapDataId;
-  if (!dataScriptId) {
-    console.warn("Map container missing data-map-data-id:", mapEl);
-    return;
+  function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, function (match) {
+      return {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[match];
+    });
   }
 
-  const rawData = parseMapData(dataScriptId);
-  const points = rawData.map(normalisePoint).filter(Boolean);
+  function parseMapData(scriptId) {
+    const script = document.getElementById(scriptId);
+    if (!script) return [];
 
-  if (!points.length) {
-    mapEl.style.display = "none";
-    const emptyStateId = mapEl.dataset.emptyStateId;
-    if (emptyStateId) {
-      const emptyStateEl = document.getElementById(emptyStateId);
-      if (emptyStateEl) emptyStateEl.hidden = false;
+    try {
+      const parsed = JSON.parse(script.textContent || '[]');
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      console.error('Failed to parse map data from #' + scriptId, error);
+      return [];
     }
-    return;
   }
 
-  const map = L.map(mapEl, {
-    scrollWheelZoom: false,
-  });
+  function normalisePoint(item) {
+    if (!item || typeof item !== 'object') return null;
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 18,
-    attribution: '&copy; OpenStreetMap contributors',
-  }).addTo(map);
+    const lat = toNumber(item.lat ?? item.latitude);
+    const lng = toNumber(item.lng ?? item.longitude);
 
-  const markers = points.map((point) => {
-    const marker = L.marker([point.latitude, point.longitude]).addTo(map);
-    marker.bindPopup(buildPopupHtml(point));
-    return marker;
-  });
+    if (lat === null || lng === null) return null;
 
-  const latLngs = markers.map((marker) => marker.getLatLng());
-  const bounds = L.latLngBounds(latLngs);
+    return {
+      name: item.name || 'School',
+      href: item.slug || item.href || '',
+      note: item.note || item.addressLine1 || item.address_line1 || '',
+      type: item.type || '',
+      lat: lat,
+      lng: lng
+    };
+  }
 
-  if (latLngs.length === 1) {
-    map.setView(latLngs[0], 13);
+  function buildPopupHtml(point) {
+    const title = '<h3 class="map-popup-title">' + escapeHtml(point.name) + '</h3>';
+    const note = point.note ? '<p class="map-popup-meta">' + escapeHtml(point.note) + '</p>' : '';
+    const link = point.href
+      ? '<a class="map-popup-link" href="' + escapeHtml(point.href) + '">View school</a>'
+      : '';
+
+    return '<div class="map-popup">' + title + note + link + '</div>';
+  }
+
+  function buildIcon(type) {
+    if (!window.L) return null;
+
+    const typeClass = String(type || '').trim();
+    return window.L.divIcon({
+      className: 'school-map-icon',
+      html: '<span class="school-map-marker ' + escapeHtml(typeClass) + '"></span>',
+      iconSize: [16, 16],
+      iconAnchor: [8, 8],
+      popupAnchor: [0, -8]
+    });
+  }
+
+  function createMap(mapEl) {
+    if (!mapEl || mapEl.dataset.initialized === 'true') return true;
+
+    const dataScriptId = mapEl.dataset.mapDataId;
+    if (!dataScriptId) return false;
+
+    const points = parseMapData(dataScriptId).map(normalisePoint).filter(Boolean);
+    if (!points.length) {
+      mapEl.hidden = true;
+      const emptyStateId = mapEl.dataset.emptyStateId;
+      if (emptyStateId) {
+        const emptyState = document.getElementById(emptyStateId);
+        if (emptyState) emptyState.hidden = false;
+      }
+      return false;
+    }
+
+    const map = window.L.map(mapEl, {
+      zoomControl: true,
+      scrollWheelZoom: false
+    });
+
+    window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const markers = points.map(function (point) {
+      const marker = window.L.marker([point.lat, point.lng], {
+        icon: buildIcon(point.type)
+      });
+      marker.bindPopup(buildPopupHtml(point));
+      marker.addTo(map);
+      return marker;
+    });
+
+    const group = window.L.featureGroup(markers);
+    const bounds = group.getBounds();
+
+    if (markers.length === 1) {
+      map.setView(markers[0].getLatLng(), 13);
+    } else if (bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [28, 28], maxZoom: 12 });
+    }
+
+    mapEl.dataset.initialized = 'true';
+    setTimeout(function () {
+      map.invalidateSize();
+    }, 80);
+
+    return true;
+  }
+
+  function initAllMaps() {
+    if (!window.L) return false;
+
+    const maps = Array.from(document.querySelectorAll('[data-directory-map]'));
+    maps.forEach(createMap);
+    return true;
+  }
+
+  function boot(attempt) {
+    if (initAllMaps()) return;
+    if (attempt >= 40) return;
+    setTimeout(function () {
+      boot(attempt + 1);
+    }, 100);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+      boot(0);
+    }, { once: true });
   } else {
-    map.fitBounds(bounds, { padding: [30, 30] });
+    boot(0);
   }
 
-  setTimeout(() => {
-    map.invalidateSize();
-  }, 100);
-}
-
-function initDirectoryMaps() {
-  if (typeof window === "undefined") return;
-  if (typeof window.L === "undefined") {
-    console.error("Leaflet is not available on this page.");
-    return;
-  }
-
-  const mapEls = document.querySelectorAll("[data-directory-map]");
-  mapEls.forEach(createMap);
-}
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initDirectoryMaps);
-} else {
-  initDirectoryMaps();
-}
+  window.addEventListener('pageshow', function () {
+    boot(0);
+  });
+})();

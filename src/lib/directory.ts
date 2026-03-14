@@ -305,6 +305,30 @@ function formatLocationLabel(school: SchoolSummaryRecord, fallbackLocationName: 
   return parts.length ? parts.join(', ') : fallbackLocationName;
 }
 
+
+function getSchoolCoordinateFallback(locationSlug: string, schoolSlug: string) {
+  if (locationSlug !== 'bath') return null;
+  return BATH_COORDINATE_FALLBACKS[schoolSlug] || null;
+}
+
+function getSchoolCoordinates(locationSlug: string, school: Pick<SchoolSummaryRecord, 'slug' | 'latitude' | 'longitude'>) {
+  const lat = toNumber(school.latitude);
+  const lng = toNumber(school.longitude);
+
+  if (lat !== null && lng !== null) {
+    return { lat, lng, zoom: 13 };
+  }
+
+  const fallback = getSchoolCoordinateFallback(locationSlug, school.slug);
+  if (!fallback) return null;
+
+  return {
+    lat: fallback.lat,
+    lng: fallback.lng,
+    zoom: fallback.zoom || 13
+  };
+}
+
 function normalizeSubjectName(subjectName: string): string {
   return subjectName
     .toLowerCase()
@@ -444,15 +468,20 @@ export async function getLocationDirectoryData(locationSlug: string) {
   }));
 
   const mapSchools: MapSchool[] = schools
-    .filter((school) => school.latitude !== null && school.longitude !== null)
-    .map((school) => ({
-      name: school.name,
-      slug: `/${location.slug}/schools/${school.slug}/`,
-      lat: Number(school.latitude),
-      lng: Number(school.longitude),
-      type: getMapType(school.phase, school.age_max),
-      note: `${getPhaseLabel(school.phase, school.age_max)} · ${getGenderLabel(school.gender)} · ${getFormatLabel(school.day_boarding)} · Ages ${getAgeLabel(school.age_min, school.age_max)}`
-    }));
+    .map((school) => {
+      const coordinates = getSchoolCoordinates(location.slug, school);
+      if (!coordinates) return null;
+
+      return {
+        name: school.name,
+        slug: `/${location.slug}/schools/${school.slug}/`,
+        lat: coordinates.lat,
+        lng: coordinates.lng,
+        type: getMapType(school.phase, school.age_max),
+        note: `${getPhaseLabel(school.phase, school.age_max)} · ${getGenderLabel(school.gender)} · ${getFormatLabel(school.day_boarding)} · Ages ${getAgeLabel(school.age_min, school.age_max)}`
+      };
+    })
+    .filter((school): school is MapSchool => Boolean(school));
 
   return { location, locationLinks, schools, schoolCards, mapSchools };
 }
@@ -547,16 +576,19 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
       location: formatLocationLabel(school, location.name),
       subhead: school.description || `${phaseLabel} in ${school.town || location.name}.`,
       heroImage: '/assets/img/bath/default-school.jpg',
-      map: school.latitude !== null && school.longitude !== null
-        ? {
-            name: school.name,
-            slug: `/${location.slug}/schools/${school.slug}/`,
-            lat: Number(school.latitude),
-            lng: Number(school.longitude),
-            type: getMapType(school.phase, school.age_max),
-            note: `${phaseLabel} · ${genderLabel} · ${formatLabel} · Ages ${ageLabel}`
-          }
-        : null,
+      map: (() => {
+        const coordinates = getSchoolCoordinates(location.slug, school);
+        if (!coordinates) return null;
+
+        return {
+          name: school.name,
+          slug: `/${location.slug}/schools/${school.slug}/`,
+          lat: coordinates.lat,
+          lng: coordinates.lng,
+          type: getMapType(school.phase, school.age_max),
+          note: `${phaseLabel} · ${genderLabel} · ${formatLabel} · Ages ${ageLabel}`
+        };
+      })(),
       alevel: aggregateAlevelMetrics(latestExam, latestSubjects)
     };
   });
@@ -715,18 +747,16 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const address = buildAddress(school);
   const subhead = school.description || `${phaseLabel} in ${school.town || location.name}.`;
   const canonicalPath = `/${location.slug}/schools/${school.slug}/`;
-   const bathFallback = location.slug === 'bath' ? BATH_COORDINATE_FALLBACKS[school.slug] : null;
-  const mapLat = school.latitude !== null ? Number(school.latitude) : bathFallback?.lat ?? null;
-  const mapLng = school.longitude !== null ? Number(school.longitude) : bathFallback?.lng ?? null;
+  const coordinates = getSchoolCoordinates(location.slug, school);
 
-  const mapData = mapLat !== null && mapLng !== null
+  const mapData = coordinates
     ? {
         name: school.name,
         slug: canonicalPath,
-        lat: mapLat,
-        lng: mapLng,
+        lat: coordinates.lat,
+        lng: coordinates.lng,
         note: `${phaseLabel} · ${genderLabel} · ${formatLabel} · Ages ${ageLabel}`,
-        zoom: bathFallback?.zoom || 13
+        zoom: coordinates.zoom || 13
       }
     : null;
 

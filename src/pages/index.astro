@@ -1,98 +1,84 @@
 ---
-import BaseLayout from "../layouts/BaseLayout.astro";
-import { getLocationDirectoryData } from "../lib/directory";
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import locations from '../data/homeLocations.json';
+import { getLocationDirectoryData } from '../lib/directory';
 
-const [bathData, bristolData] = await Promise.all([
-  getLocationDirectoryData("bath"),
-  getLocationDirectoryData("bristol"),
-]);
-
-const locations = [bathData?.location, bristolData?.location].filter(Boolean);
-
-const homeMapSchools = [bathData, bristolData]
-  .filter(Boolean)
-  .flatMap((entry) => {
-    const locationRecord = entry.location;
-    const schools = entry.schools || [];
-
-    return schools
-      .filter((school) => school && school.latitude != null && school.longitude != null)
-      .map((school) => ({
-        name: school.name,
-        slug: school.slug,
-        locationSlug: locationRecord.slug,
-        href: `/${locationRecord.slug}/schools/${school.slug}/`,
-        addressLine1: school.address_line1 || "",
-        latitude: school.latitude,
-        longitude: school.longitude,
-      }));
-  });
-
-const pageTitle = "Private School Guide";
-const pageDescription =
-  "Compare independent schools, browse city pages, and explore private school profiles across the UK.";
+const { mapSchools: homeMapSchools } = await getLocationDirectoryData('bath');
 ---
+<BaseLayout
+  title="The Private School Guide"
+  description="Find your location and move into the relevant private school guide."
+  canonicalPath="/"
+  includeLeaflet={true}
+  bodyClass="home-minimal"
+>
+  <Fragment slot="head">
+    <link rel="stylesheet" href="/assets/css/homepage.css" />
+  </Fragment>
 
-<BaseLayout title={pageTitle} description={pageDescription}>
-  <main class="home-page">
-    <section class="hero">
-      <div class="container">
-        <h1>Private School Guide</h1>
-        <p>Find and compare private schools across the UK.</p>
+  <main id="main">
+    <section aria-labelledby="home-title" class="home-hero">
+      <video autoplay class="hero-video hero-video-desktop" loop muted playsinline poster="/assets/video/home-hero-poster.jpg" preload="metadata">
+        <source src="/assets/video/home-hero-desktop.mp4" type="video/mp4" />
+      </video>
+      <video autoplay class="hero-video hero-video-mobile" loop muted playsinline poster="/assets/video/home-hero-mobile-poster.jpg" preload="metadata">
+        <source src="/assets/video/home-hero-mobile.mp4" type="video/mp4" />
+      </video>
+      <div aria-hidden="true" class="hero-wash"></div>
+      <div class="hero-centre shell">
+        <h1 class="hero-title" id="home-title">
+          <span>THE</span>
+          <span>PRIVATE SCHOOL</span>
+          <span>GUIDE</span>
+        </h1>
       </div>
     </section>
 
-    <section class="locations-section">
-      <div class="container">
-        <h2>Browse locations</h2>
-
-        <div class="location-grid">
-          {locations.map((location) => (
-            <article class="location-card">
-              <h3>
-                <a href={`/${location.slug}/`}>{location.name}</a>
-              </h3>
-              {location.intro_text && <p>{location.intro_text}</p>}
-            </article>
-          ))}
+    <section aria-labelledby="finder-title" class="home-finder shell">
+      <div class="finder-grid">
+        <div class="finder-panel finder-locations">
+          <p class="section-kicker">Find a location</p>
+          <h2 id="finder-title">Choose the guide you want.</h2>
+          <label class="visually-hidden" for="location-search">Search locations</label>
+          <input autocomplete="off" class="location-search" id="location-search" placeholder="Search locations" type="search" />
+          <ul class="location-list" id="location-list">
+            {locations.map((location) => (
+              <li>
+                <a class:list={["location-link", location.isLive && "is-live"]} data-location-item data-name={location.name} href={location.href}>
+                  <span class="location-name">{location.name}</span>
+                  <span class="location-state">{location.state}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
-      </div>
-    </section>
 
-    <section class="map-section">
-      <div class="container">
-        <h2>School map</h2>
-
-        <div
-          id="homepage-directory-map"
-          data-directory-map
-          data-map-data-id="homepage-map-data"
-          data-empty-state-id="homepage-map-empty"
-          style="height: 460px; width: 100%; border-radius: 12px; overflow: hidden;"
-        ></div>
-
-        <p id="homepage-map-empty" hidden>
-          School locations are being added.
-        </p>
-
-        <script type="application/json" id="homepage-map-data">
-          {JSON.stringify(homeMapSchools)}
-        </script>
+        <div class="finder-panel finder-map-panel">
+          <div class="finder-map-head">
+            <div>
+              <p class="section-kicker">Current live guide</p>
+              <h2>Bath map</h2>
+            </div>
+          </div>
+          <div
+            aria-label="Bath school map"
+            class="homepage-map"
+            id="homepage-map"
+            data-directory-map
+            data-map-data-id="homepage-map-data"
+            data-empty-state-id="homepage-map-empty"
+          ></div>
+          <p id="homepage-map-empty" hidden>Bath school locations are being updated.</p>
+        </div>
       </div>
     </section>
   </main>
 
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
-  />
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-    defer
-  ></script>
+  <SiteFooter full={true} />
+
+  <script type="application/json" id="homepage-map-data">{JSON.stringify(homeMapSchools)}</script>
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script defer src="/assets/js/homepage.js"></script>
   <script defer src="/assets/js/location-pages.js"></script>
 </BaseLayout>

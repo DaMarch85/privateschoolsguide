@@ -1,114 +1,83 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getLocationDirectoryData } from "../../lib/directory";
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import LocationSideNav from '../../components/LocationSideNav.astro';
+import SchoolSquareCard from '../../components/SchoolSquareCard.astro';
+import { getLocationPaths, getLocationDirectoryData } from '../../lib/directory';
 
 export async function getStaticPaths() {
-  return [
-    { params: { location: "bath" } },
-    { params: { location: "bristol" } },
-  ];
+  return await getLocationPaths();
 }
 
-const { location } = Astro.params;
+const { location: locationSlug } = Astro.params;
+if (!locationSlug) throw new Error('Missing location slug');
 
-if (!location) {
-  throw new Error("Missing location slug.");
-}
-
-const pageData = await getLocationDirectoryData(location);
-
-if (!pageData || !pageData.location) {
-  throw new Error(`No location data found for slug: ${location}`);
-}
-
-const { location: locationRecord, schools } = pageData;
-
-const pageTitle =
-  locationRecord.meta_title || `${locationRecord.name} Private Schools | Private School Guide`;
-
-const pageDescription =
-  locationRecord.meta_description ||
-  `Browse private schools in ${locationRecord.name}, compare options, and explore school profiles.`;
-
-const introText = locationRecord.intro_text || "";
-
-const mapSchools = (schools || [])
-  .filter((school) => school && school.latitude != null && school.longitude != null)
-  .map((school) => ({
-    name: school.name,
-    slug: school.slug,
-    locationSlug: locationRecord.slug,
-    href: `/${locationRecord.slug}/schools/${school.slug}/`,
-    addressLine1: school.address_line1 || "",
-    latitude: school.latitude,
-    longitude: school.longitude,
-  }));
+const { location, schoolCards, mapSchools } = await getLocationDirectoryData(locationSlug);
+const fallbackMetaTitle = `${location.name} private schools | The Private School Guide`;
+const fallbackMetaDescription = `Independent guide to ${location.name} private schools. Compare schools, review fees and bursaries, explore open days, and use the map to narrow your shortlist.`;
+const heroImage = '/assets/img/bath/bath-location-hero.jpg';
 ---
+<BaseLayout
+  title={location.meta_title || fallbackMetaTitle}
+  description={location.meta_description || fallbackMetaDescription}
+  canonicalPath={`/${location.slug}/`}
+  includeLeaflet={true}
+  bodyClass="location-page"
+  dataLocationSlug={location.slug}
+>
+  <Fragment slot="head">
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+    <link rel="stylesheet" href="/assets/css/bath-refined.css" />
+  </Fragment>
 
-<BaseLayout title={pageTitle} description={pageDescription}>
-  <main class="location-page">
-    <section class="hero">
-      <div class="container">
-        <h1>{locationRecord.hero_title || `${locationRecord.name} Private Schools`}</h1>
-        {introText && <p>{introText}</p>}
-      </div>
-    </section>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <SiteHeader minimal={true} />
 
-    <section class="map-section">
-      <div class="container">
-        <h2>Map of schools in {locationRecord.name}</h2>
+  <section class="location-hero" aria-labelledby="location-hero-title">
+    <img src={heroImage} alt={`${location.name} skyline`} />
+    <div class="location-hero-copy">
+      <h1 id="location-hero-title" class="location-hero-title location-hero-title-single">
+        <span>{location.hero_title || location.name}</span>
+      </h1>
+    </div>
+  </section>
 
+  <main id="main" class="page-shell">
+    <div class="shell location-layout">
+      <LocationSideNav locationSlug={location.slug} locationName={location.name} showBathExtras={location.slug === 'bath'} />
+
+      <section class="location-main-column" aria-labelledby="location-grid-title">
+        <h2 id="location-grid-title" class="location-grid-title">{location.name} school overview</h2>
+        {location.intro_text ? <p class="location-intro">{location.intro_text}</p> : null}
+        <div class="school-square-grid">
+          {schoolCards.map((school) => (
+            <SchoolSquareCard {...school} />
+          ))}
+        </div>
+      </section>
+
+      <aside class="location-map-panel">
+        <div class="location-map-head">
+          <p class="nav-kicker">{location.name} map</p>
+          <h2>School locations</h2>
+        </div>
         <div
           id="location-directory-map"
+          class="bath-location-map"
+          aria-label={`${location.name} school map`}
           data-directory-map
           data-map-data-id="location-map-data"
           data-empty-state-id="location-map-empty"
-          style="height: 420px; width: 100%; border-radius: 12px; overflow: hidden;"
         ></div>
-
-        <p id="location-map-empty" hidden>
-          School locations are being added.
-        </p>
-
-        <script type="application/json" id="location-map-data">
-          {JSON.stringify(mapSchools)}
-        </script>
-      </div>
-    </section>
-
-    <section class="schools-section">
-      <div class="container">
-        <h2>Schools in {locationRecord.name}</h2>
-
-        {schools?.length ? (
-          <div class="school-grid">
-            {schools.map((school) => (
-              <article class="school-card">
-                <h3>
-                  <a href={`/${locationRecord.slug}/schools/${school.slug}/`}>{school.name}</a>
-                </h3>
-                {school.address_line1 && <p>{school.address_line1}</p>}
-              </article>
-            ))}
-          </div>
-        ) : (
-          <p>No schools found yet for this location.</p>
-        )}
-      </div>
-    </section>
+        <p id="location-map-empty" hidden>School location pins are being updated.</p>
+      </aside>
+    </div>
   </main>
 
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
-  />
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-    defer
-  ></script>
+  <SiteFooter />
+
+  <script type="application/json" id="location-map-data">{JSON.stringify(mapSchools)}</script>
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script defer src="/assets/js/location-pages.js"></script>
 </BaseLayout>
