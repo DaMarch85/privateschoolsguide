@@ -31,7 +31,7 @@ export type SchoolSummaryRecord = {
   age_min: number | null;
   age_max: number | null;
   day_boarding: string | null;
-  address: string | null;
+  address_line1: string | null;
   town: string | null;
   county: string | null;
   postcode: string | null;
@@ -109,7 +109,6 @@ export type FeePane = {
   label: string;
   columns: FeeRecord[][];
 };
-
 
 export type CompareAlevelMetrics = {
   totalExams: number | null;
@@ -218,8 +217,8 @@ export function getAgeLabel(ageMin: number | null, ageMax: number | null): strin
   return 'To be confirmed';
 }
 
-export function buildAddress(school: Pick<SchoolSummaryRecord, 'address' | 'town' | 'postcode'>): string {
-  return [school.address, school.town, school.postcode].filter(Boolean).join(', ');
+export function buildAddress(school: Pick<SchoolSummaryRecord, 'address_line1' | 'town' | 'postcode'>): string {
+  return [school.address_line1, school.town, school.postcode].filter(Boolean).join(', ');
 }
 
 export function splitPipeList(text: string | null | undefined): string[] {
@@ -267,7 +266,6 @@ function splitColumns<T>(rows: T[]): T[][] {
   const midpoint = Math.ceil(rows.length / 2);
   return [rows.slice(0, midpoint), rows.slice(midpoint)];
 }
-
 
 function formatFeeRange(rows: FeeRecord[]): string {
   const amounts = rows
@@ -403,7 +401,7 @@ async function getSchoolsByIds(schoolIds: Array<string | number>): Promise<Schoo
 
   const { data, error } = await supabase
     .from('schools')
-    .select('id, slug, name, school_type, phase, gender, age_min, age_max, day_boarding, address, town, county, postcode, latitude, longitude, website, pupil_numbers, fees_from, description, inspection_rating')
+    .select('id, slug, name, school_type, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, fees_from, description, inspection_rating')
     .in('id', schoolIds);
 
   if (error) fail('Could not load schools', error);
@@ -446,7 +444,6 @@ export async function getLocationDirectoryData(locationSlug: string) {
 
   return { location, locationLinks, schools, schoolCards, mapSchools };
 }
-
 
 export async function getLocationCompareData(locationSlug: string): Promise<{ location: LocationRecord; compareSchools: CompareSchoolRecord[] }> {
   const location = await getLocationBySlug(locationSlug);
@@ -597,7 +594,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
 
   const { data: schoolData, error: schoolError } = await supabase
     .from('schools')
-    .select('id, slug, name, school_type, phase, gender, age_min, age_max, day_boarding, address, town, county, postcode, latitude, longitude, website, pupil_numbers, fees_from, description, inspection_rating')
+    .select('id, slug, name, school_type, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, fees_from, description, inspection_rating')
     .eq('slug', schoolSlug)
     .single();
 
