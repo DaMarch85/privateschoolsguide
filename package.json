@@ -1,0 +1,16 @@
+{
+  "name": "privateschoolsguide-astro-migration",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare:public": "node scripts/prepare-public.mjs",
+    "dev": "npm run prepare:public && astro dev",
+    "build": "npm run prepare:public && astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^6.0.0",
+    "@supabase/supabase-js": "^2.43.0"
+  }
+}

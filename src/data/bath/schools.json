@@ -1,0 +1,826 @@
+[
+  {
+    "slug": "bath-academy",
+    "locationSlug": "bath",
+    "name": "Bath Academy",
+    "subhead": "Small day and boarding college in central Bath focused on GCSE and A-level pathways, with personalised academic support and a compact sixth form.",
+    "heroImage": "/assets/img/bath/bath-location-hero.jpg",
+    "canonicalPath": "/bath/schools/bath-academy/",
+    "metaDescription": "Small day and boarding college in central Bath focused on GCSE and A-level pathways, with personalised academic support and a compact sixth form.",
+    "atGlanceRows": [
+      {
+        "label": "Ages",
+        "value": "14\u201319"
+      },
+      {
+        "label": "Gender",
+        "value": "Co-ed"
+      },
+      {
+        "label": "Format",
+        "value": "Day, full boarding"
+      },
+      {
+        "label": "Pupils",
+        "value": "114 pupils"
+      },
+      {
+        "label": "Day fees from",
+        "value": "\u00a327,060 / year"
+      },
+      {
+        "label": "Bursaries",
+        "value": "Coming soon"
+      }
+    ],
+    "compareLinks": [
+      {
+        "slug": "king-edwards-school",
+        "name": "King Edward's School"
+      },
+      {
+        "slug": "kingswood-preparatory-school",
+        "name": "Kingswood Preparatory School"
+      },
+      {
+        "slug": "kingswood-school",
+        "name": "Kingswood School"
+      },
+      {
+        "slug": "monkton-combe-school",
+        "name": "Monkton Combe School"
+      },
+      {
+        "slug": "paragon-school",
+        "name": "Paragon School"
+      },
+      {
+        "slug": "prior-park-college",
+        "name": "Prior Park College"
+      },
+      {
+        "slug": "royal-high-school-bath-gdst",
+        "name": "Royal High School Bath, GDST"
+      },
+      {
+        "slug": "downside-school",
+        "name": "Downside School"
+      }
+    ],
+    "featureTilesHtml": [
+      "<article class=\"school-feature-tile\"><h2>A-level Results</h2><div class=\"school-feature-body\"><div class=\"tile-kpis\">\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">% A*\u2013A</span><span class=\"tile-kpi-value\">25%</span></div>\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">% A*\u2013B</span><span class=\"tile-kpi-value\">36%</span></div>\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">Different A-level subjects</span><span class=\"tile-kpi-value\">19</span></div>\n</div></div></article>",
+      "<article class=\"school-feature-tile tile-expandable\"><h2>Popular Subjects</h2><div class=\"school-feature-body\"><div class=\"metric-list\"><div class=\"metric-row\"><span class=\"metric-name\">Mathematics</span><span class=\"metric-value\">24%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Biology</span><span class=\"metric-value\">18%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Chemistry</span><span class=\"metric-value\">15%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Physics</span><span class=\"metric-value\">9%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Psychology</span><span class=\"metric-value\">8%</span></div></div><button class=\"subject-toggle\" data-subject-toggle=\"expand\" type=\"button\">Show full subject mix</button><div class=\"subject-extra\" hidden=\"hidden\"><div class=\"metric-list\"><div class=\"metric-row\"><span class=\"metric-name\">Languages</span><span class=\"metric-value\">7%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Geography</span><span class=\"metric-value\">4%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Sociology</span><span class=\"metric-value\">4%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Economics</span><span class=\"metric-value\">3%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Finance &amp; business</span><span class=\"metric-value\">3%</span></div><div class=\"metric-row\"><span class=\"metric-name\">English</span><span class=\"metric-value\">2%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Art</span><span class=\"metric-value\">1%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Classics</span><span class=\"metric-value\">1%</span></div><div class=\"metric-row\"><span class=\"metric-name\">History</span><span class=\"metric-value\">1%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Philosophy</span><span class=\"metric-value\">1%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Politics</span><span class=\"metric-value\">1%</span></div></div><button class=\"subject-toggle subject-toggle--collapse\" data-subject-toggle=\"collapse\" type=\"button\">Collapse subject mix</button></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Parents Like</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>Its scale feels very different from the larger Bath schools.</li><li>Families looking for a more personalised sixth-form route often notice it early.</li><li>The city-centre location is practical for older students.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>How the School Describes Itself</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>Bath Academy describes itself as highly personalised and tailored to individual need.</li><li>Its language focuses on academic support, flexibility and outcomes.</li><li>The school also positions itself as international in outlook.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile tile-expandable\"><h2>Fee Profile</h2><div class=\"school-feature-body\"><p class=\"tile-note\">Annual fees including VAT.</p><div class=\"fee-pane is-active\" data-fee-pane=\"day\"><div class=\"fee-year-columns\"><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 10</span><span class=\"fee-amount\">\u00a327,060</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 11</span><span class=\"fee-amount\">\u00a327,060</span></div></div><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 12</span><span class=\"fee-amount\">\u00a327,060</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 13</span><span class=\"fee-amount\">\u00a327,060</span></div></div></div></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Bursaries</h2><div class=\"school-feature-body\"><p>Bath Academy\u2019s official materials do not set out a formal published bursary scheme or means-tested criteria. The school says scholarships may be offered to students who show academic potential, and that requests for scholarships or bursaries can be discussed during the application stage. Families interested in financial support need to raise this directly with admissions.</p></div></article>"
+    ],
+    "mapData": {
+      "name": "Bath Academy",
+      "slug": "/bath/schools/bath-academy/",
+      "lat": 51.383903,
+      "lng": -2.363978,
+      "note": "Senior school \u00b7 Co-ed \u00b7 Day, full boarding \u00b7 Ages 14\u201319",
+      "zoom": 13
+    },
+    "address": "27 Queen Square, Bath, BA1 2HX"
+  },
+  {
+    "slug": "downside-school",
+    "locationSlug": "bath",
+    "name": "Downside School",
+    "subhead": "Co-educational day and boarding school near Radstock, included in the Bath guide for families willing to look beyond the city itself.",
+    "heroImage": "/assets/img/bath/bath-location-hero.jpg",
+    "canonicalPath": "/bath/schools/downside-school/",
+    "metaDescription": "Co-educational day and boarding school near Radstock, included in the Bath guide for families willing to look beyond the city itself.",
+    "atGlanceRows": [
+      {
+        "label": "Ages",
+        "value": "11\u201318"
+      },
+      {
+        "label": "Gender",
+        "value": "Co-ed"
+      },
+      {
+        "label": "Format",
+        "value": "Day, weekly/flexible boarding, full boarding"
+      },
+      {
+        "label": "Pupils",
+        "value": "273 pupils"
+      },
+      {
+        "label": "Day fees from",
+        "value": "\u00a323,385 / year"
+      },
+      {
+        "label": "Boarding from",
+        "value": "\u00a338,985 / year"
+      },
+      {
+        "label": "Bursaries",
+        "value": "Coming soon"
+      }
+    ],
+    "compareLinks": [
+      {
+        "slug": "king-edwards-school",
+        "name": "King Edward's School"
+      },
+      {
+        "slug": "kingswood-preparatory-school",
+        "name": "Kingswood Preparatory School"
+      },
+      {
+        "slug": "kingswood-school",
+        "name": "Kingswood School"
+      },
+      {
+        "slug": "monkton-combe-school",
+        "name": "Monkton Combe School"
+      },
+      {
+        "slug": "paragon-school",
+        "name": "Paragon School"
+      },
+      {
+        "slug": "prior-park-college",
+        "name": "Prior Park College"
+      },
+      {
+        "slug": "royal-high-school-bath-gdst",
+        "name": "Royal High School Bath, GDST"
+      },
+      {
+        "slug": "bath-academy",
+        "name": "Bath Academy"
+      }
+    ],
+    "featureTilesHtml": [
+      "<article class=\"school-feature-tile\"><h2>A-level Results</h2><div class=\"school-feature-body\"><div class=\"tile-kpis\">\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">% A*\u2013A</span><span class=\"tile-kpi-value\">27%</span></div>\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">% A*\u2013B</span><span class=\"tile-kpi-value\">48%</span></div>\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">Different A-level subjects</span><span class=\"tile-kpi-value\">21</span></div>\n</div></div></article>",
+      "<article class=\"school-feature-tile tile-expandable\"><h2>Popular Subjects</h2><div class=\"school-feature-body\"><div class=\"metric-list\"><div class=\"metric-row\"><span class=\"metric-name\">Mathematics</span><span class=\"metric-value\">15%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Economics</span><span class=\"metric-value\">13%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Art</span><span class=\"metric-value\">10%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Biology</span><span class=\"metric-value\">7%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Languages</span><span class=\"metric-value\">7%</span></div></div><button class=\"subject-toggle\" data-subject-toggle=\"expand\" type=\"button\">Show full subject mix</button><div class=\"subject-extra\" hidden=\"hidden\"><div class=\"metric-list\"><div class=\"metric-row\"><span class=\"metric-name\">Physics</span><span class=\"metric-value\">7%</span></div><div class=\"metric-row\"><span class=\"metric-name\">English</span><span class=\"metric-value\">6%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Religious studies</span><span class=\"metric-value\">6%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Computing</span><span class=\"metric-value\">5%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Design &amp; technology</span><span class=\"metric-value\">5%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Psychology</span><span class=\"metric-value\">5%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Geography</span><span class=\"metric-value\">4%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Chemistry</span><span class=\"metric-value\">3%</span></div><div class=\"metric-row\"><span class=\"metric-name\">History</span><span class=\"metric-value\">3%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Drama</span><span class=\"metric-value\">2%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Music</span><span class=\"metric-value\">2%</span></div></div><button class=\"subject-toggle subject-toggle--collapse\" data-subject-toggle=\"collapse\" type=\"button\">Collapse subject mix</button></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Parents Like</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>It offers a much smaller scale than several Bath competitors.</li><li>Boarding is central to the feel of the school rather than an add-on.</li><li>Families sometimes shortlist it when they want a Bath-area option with a stronger boarding identity.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>How the School Describes Itself</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>Downside tends to describe itself as academically serious, values-led and strongly community-focused.</li><li>Its Catholic heritage is a visible part of how it presents the school.</li><li>The school also leans into depth of pastoral relationships and a broad boarding life.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile tile-expandable\"><h2>Fee Profile</h2><div class=\"school-feature-body\"><p class=\"tile-note\">Annual fees including VAT.</p><div class=\"fee-switch\" data-fee-switch=\"\"><button class=\"is-active\" data-fee-target=\"day\" type=\"button\">Day</button><button data-fee-target=\"boarding\" type=\"button\">Full boarding</button></div><div class=\"fee-pane is-active\" data-fee-pane=\"day\"><div class=\"fee-year-columns\"><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 7</span><span class=\"fee-amount\">\u00a323,385</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 8</span><span class=\"fee-amount\">\u00a323,385</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 9</span><span class=\"fee-amount\">\u00a329,985</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 10</span><span class=\"fee-amount\">\u00a329,985</span></div></div><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 11</span><span class=\"fee-amount\">\u00a329,985</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 12</span><span class=\"fee-amount\">\u00a329,985</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 13</span><span class=\"fee-amount\">\u00a329,985</span></div></div></div></div><div class=\"fee-pane\" data-fee-pane=\"boarding\"><div class=\"fee-year-columns\"><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 7</span><span class=\"fee-amount\">\u00a338,985</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 8</span><span class=\"fee-amount\">\u00a338,985</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 9</span><span class=\"fee-amount\">\u00a352,155</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 10</span><span class=\"fee-amount\">\u00a352,155</span></div></div><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 11</span><span class=\"fee-amount\">\u00a352,155</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 12</span><span class=\"fee-amount\">\u00a352,155</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 13</span><span class=\"fee-amount\">\u00a352,155</span></div></div></div></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Bursaries</h2><div class=\"school-feature-body\"><p>Downside says its means-tested bursaries are available to pupils entering the school at all age levels and can also support current families whose financial circumstances change unexpectedly. The school\u2019s bursary fund page says around one-third of pupils receive financial assistance, with awards ranging from 10% to fully funded transformational places and requiring around \u00a32 million a year. Applications are handled in strict confidence and reviewed annually.</p></div></article>"
+    ],
+    "mapData": {
+      "name": "Downside School",
+      "slug": "/bath/schools/downside-school/",
+      "lat": 51.253899,
+      "lng": -2.495195,
+      "note": "Senior school \u00b7 Co-ed \u00b7 Day, weekly/flexible boarding, full boarding \u00b7 Ages 11\u201318",
+      "zoom": 11
+    },
+    "address": "Stratton-on-the-Fosse, Bath, BA3 4RJ"
+  },
+  {
+    "slug": "king-edwards-school",
+    "locationSlug": "bath",
+    "name": "King Edward's School",
+    "subhead": "All-through day school in central Bath, with nursery-to-sixth-form continuity, strong academic breadth and a broad co-curricular programme.",
+    "heroImage": "/assets/img/bath/king-edwards-school.jpg",
+    "canonicalPath": "/bath/schools/king-edwards-school/",
+    "metaDescription": "All-through day school in central Bath, with nursery-to-sixth-form continuity, strong academic breadth and a broad co-curricular programme.",
+    "atGlanceRows": [
+      {
+        "label": "Ages",
+        "value": "3\u201318"
+      },
+      {
+        "label": "Gender",
+        "value": "Co-ed"
+      },
+      {
+        "label": "Format",
+        "value": "Day"
+      },
+      {
+        "label": "Pupils",
+        "value": "1,193 pupils"
+      },
+      {
+        "label": "Nursery",
+        "value": "Yes"
+      },
+      {
+        "label": "Day fees from",
+        "value": "\u00a314,454 / year"
+      },
+      {
+        "label": "Bursaries",
+        "value": "Coming soon"
+      }
+    ],
+    "compareLinks": [
+      {
+        "slug": "kingswood-preparatory-school",
+        "name": "Kingswood Preparatory School"
+      },
+      {
+        "slug": "kingswood-school",
+        "name": "Kingswood School"
+      },
+      {
+        "slug": "monkton-combe-school",
+        "name": "Monkton Combe School"
+      },
+      {
+        "slug": "paragon-school",
+        "name": "Paragon School"
+      },
+      {
+        "slug": "prior-park-college",
+        "name": "Prior Park College"
+      },
+      {
+        "slug": "royal-high-school-bath-gdst",
+        "name": "Royal High School Bath, GDST"
+      },
+      {
+        "slug": "bath-academy",
+        "name": "Bath Academy"
+      },
+      {
+        "slug": "downside-school",
+        "name": "Downside School"
+      }
+    ],
+    "featureTilesHtml": [
+      "<article class=\"school-feature-tile\"><h2>A-level Results</h2><div class=\"school-feature-body\"><div class=\"tile-kpis\">\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">% A*\u2013A</span><span class=\"tile-kpi-value\">62%</span></div>\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">% A*\u2013B</span><span class=\"tile-kpi-value\">90%</span></div>\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">Different A-level subjects</span><span class=\"tile-kpi-value\">28</span></div>\n</div></div></article>",
+      "<article class=\"school-feature-tile tile-expandable\"><h2>Popular Subjects</h2><div class=\"school-feature-body\"><div class=\"metric-list\"><div class=\"metric-row\"><span class=\"metric-name\">Mathematics</span><span class=\"metric-value\">20%</span></div><div class=\"metric-row\"><span class=\"metric-name\">English</span><span class=\"metric-value\">9%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Chemistry</span><span class=\"metric-value\">8%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Economics</span><span class=\"metric-value\">8%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Languages</span><span class=\"metric-value\">7%</span></div></div><button class=\"subject-toggle\" data-subject-toggle=\"expand\" type=\"button\">Show full subject mix</button><div class=\"subject-extra\" hidden=\"hidden\"><div class=\"metric-list\"><div class=\"metric-row\"><span class=\"metric-name\">Biology</span><span class=\"metric-value\">7%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Art</span><span class=\"metric-value\">5%</span></div><div class=\"metric-row\"><span class=\"metric-name\">History</span><span class=\"metric-value\">5%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Physics</span><span class=\"metric-value\">5%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Psychology</span><span class=\"metric-value\">5%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Geography</span><span class=\"metric-value\">5%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Computing</span><span class=\"metric-value\">3%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Politics</span><span class=\"metric-value\">3%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Sports</span><span class=\"metric-value\">2%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Finance &amp; business</span><span class=\"metric-value\">2%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Philosophy</span><span class=\"metric-value\">2%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Drama</span><span class=\"metric-value\">2%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Classics</span><span class=\"metric-value\">1%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Design &amp; technology</span><span class=\"metric-value\">1%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Religious studies</span><span class=\"metric-value\">1%</span></div></div><button class=\"subject-toggle subject-toggle--collapse\" data-subject-toggle=\"collapse\" type=\"button\">Collapse subject mix</button></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Scholarships</h2><div class=\"school-feature-body\"><p>For the move into Year 7, applicants from both King Edward's Junior School and external schools may be considered for a scholarship and/or award. Special Talent Awards are available in art, drama, music and sport.</p></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Inspection Snapshot</h2><div class=\"school-feature-body\"><p>In the January 2023 ISI inspection, the school met the required standards and the quality of pupils' academic and other achievements and personal development were both judged excellent.</p></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Assessment Approach</h2><div class=\"school-feature-body\"><p>King Edward's uses its own assessment framework across the junior school; ISI said in 2023 that this framework showed pupils making good progress. In pre-prep, the school records a Reception baseline, tracks progress through the year and uses daily formative assessment to shape next steps.</p></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Parents Like</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>One site from nursery through sixth form makes the journey feel coherent.</li><li>The city-centre setting is unusually practical for Bath families.</li><li>The sixth form has enough breadth to keep both humanities and STEM options open.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>How the School Describes Itself</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>The school presents itself as ambitious, broad-minded and energetic rather than narrowly selective.</li><li>It stresses academic, sporting and creative excellence in equal measure.</li><li>Its own language leans heavily on curiosity, discovery and adventure.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile tile-expandable\"><h2>Fee Profile</h2><div class=\"school-feature-body\"><p class=\"tile-note\">Annual fees including VAT.</p><div class=\"fee-pane is-active\" data-fee-pane=\"day\"><div class=\"fee-year-columns\"><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Reception</span><span class=\"fee-amount\">\u00a314,454</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 1</span><span class=\"fee-amount\">\u00a314,454</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 2</span><span class=\"fee-amount\">\u00a314,454</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 3</span><span class=\"fee-amount\">\u00a317,208</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 4</span><span class=\"fee-amount\">\u00a317,208</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 5</span><span class=\"fee-amount\">\u00a317,208</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 6</span><span class=\"fee-amount\">\u00a317,208</span></div></div><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 7</span><span class=\"fee-amount\">\u00a321,762</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 8</span><span class=\"fee-amount\">\u00a321,762</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 9</span><span class=\"fee-amount\">\u00a321,762</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 10</span><span class=\"fee-amount\">\u00a321,762</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 11</span><span class=\"fee-amount\">\u00a321,762</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 12</span><span class=\"fee-amount\">\u00a322,140</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 13</span><span class=\"fee-amount\">\u00a322,140</span></div></div></div></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Bursaries</h2><div class=\"school-feature-body\"><p>King Edward\u2019s does not offer financial assistance for entry to the Junior School. Means-tested bursaries are available for Year 7 and Year 12 entrants, and the school also offers hardship/emergency bursaries for current Senior School families whose circumstances change. In 2025\u201326 KES says it provided almost \u00a31.3 million in bursary support to more than 100 Senior School pupils, with many Year 7 awards covering 40% to 100% of fees and up to 100% available.</p></div></article>"
+    ],
+    "mapData": {
+      "name": "King Edward's School",
+      "slug": "/bath/schools/king-edwards-school/",
+      "lat": 51.386488,
+      "lng": -2.343663,
+      "note": "All-through school \u00b7 Co-ed \u00b7 Day \u00b7 Ages 3\u201318",
+      "zoom": 13
+    },
+    "address": "North Road, Bath, BA2 6HU"
+  },
+  {
+    "slug": "kingswood-preparatory-school",
+    "locationSlug": "bath",
+    "name": "Kingswood Preparatory School",
+    "subhead": "Prep school in Lansdown with a linked senior-school route, broad co-curricular life and day-only format from nursery through Year 6.",
+    "heroImage": "/assets/img/bath/bath-location-hero.jpg",
+    "canonicalPath": "/bath/schools/kingswood-preparatory-school/",
+    "metaDescription": "Prep school in Lansdown with a linked senior-school route, broad co-curricular life and day-only format from nursery through Year 6.",
+    "atGlanceRows": [
+      {
+        "label": "Ages",
+        "value": "0.75\u201311"
+      },
+      {
+        "label": "Gender",
+        "value": "Co-ed"
+      },
+      {
+        "label": "Format",
+        "value": "Day"
+      },
+      {
+        "label": "Pupils",
+        "value": "479 pupils"
+      },
+      {
+        "label": "Nursery",
+        "value": "Yes"
+      },
+      {
+        "label": "Day fees from",
+        "value": "\u00a315,108 / year"
+      },
+      {
+        "label": "Bursaries",
+        "value": "Coming soon"
+      }
+    ],
+    "compareLinks": [
+      {
+        "slug": "king-edwards-school",
+        "name": "King Edward's School"
+      },
+      {
+        "slug": "kingswood-school",
+        "name": "Kingswood School"
+      },
+      {
+        "slug": "monkton-combe-school",
+        "name": "Monkton Combe School"
+      },
+      {
+        "slug": "paragon-school",
+        "name": "Paragon School"
+      },
+      {
+        "slug": "prior-park-college",
+        "name": "Prior Park College"
+      },
+      {
+        "slug": "royal-high-school-bath-gdst",
+        "name": "Royal High School Bath, GDST"
+      },
+      {
+        "slug": "bath-academy",
+        "name": "Bath Academy"
+      },
+      {
+        "slug": "downside-school",
+        "name": "Downside School"
+      }
+    ],
+    "featureTilesHtml": [
+      "<article class=\"school-feature-tile\"><h2>Leavers Destinations</h2><div class=\"school-feature-body\"><p>Kingswood Prep is the linked junior school within the Kingswood Foundation. Published inspection material says most pupils transfer to Kingswood Senior School.</p></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Scholarships</h2><div class=\"school-feature-body\"><p>Published inspection material says several prep leavers have secured scholarships in music, design and technology, drama and sport.</p></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Inspection Snapshot</h2><div class=\"school-feature-body\"><p>In the May 2024 ISI report, the prep school met the independent school standards, with inspectors highlighting a broad curriculum, good progress and strong safeguarding. The same inspection found that the separately registered early-years childcare provision, The Garden, did not consistently meet all childcare requirements.</p></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Assessment Approach</h2><div class=\"school-feature-body\"><p>Kingswood says it tracks progress through annual national standardised tests in English (PTE), mathematics (PTM) and general ability (CATs), plus a termly NGRT reading test and half-termly internal English and maths assessments.</p></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Parents Like</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>Families often value the direct link into Kingswood Senior School.</li><li>It offers a genuine prep-school atmosphere without needing boarding.</li><li>The Lansdown setting feels separate from the city while remaining close to Bath.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>How the School Describes Itself</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>The school describes itself as part of the wider Kingswood Foundation rather than a standalone prep.</li><li>It places emphasis on breadth, confidence and a rounded junior-school experience.</li><li>Published material also leans into continuity with the senior school.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile tile-expandable\"><h2>Fee Profile</h2><div class=\"school-feature-body\"><p class=\"tile-note\">Annual fees including VAT.</p><div class=\"fee-pane is-active\" data-fee-pane=\"day\"><div class=\"fee-year-columns\"><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Reception</span><span class=\"fee-amount\">\u00a315,108</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 1</span><span class=\"fee-amount\">\u00a315,108</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 2</span><span class=\"fee-amount\">\u00a315,108</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 3</span><span class=\"fee-amount\">\u00a318,060</span></div></div><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 4</span><span class=\"fee-amount\">\u00a318,060</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 5</span><span class=\"fee-amount\">\u00a318,342</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 6</span><span class=\"fee-amount\">\u00a318,342</span></div></div></div></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Bursaries</h2><div class=\"school-feature-body\"><p>Kingswood says bursaries are not available for children attending Kingswood Preparatory School unless there are very exceptional circumstances. Its published bursary scheme is otherwise aimed at Senior School entry in Years 7, 9 and 12. No standard Prep bursary tariff or application route is published online.</p></div></article>"
+    ],
+    "mapData": {
+      "name": "Kingswood Preparatory School",
+      "slug": "/bath/schools/kingswood-preparatory-school/",
+      "lat": 51.397143,
+      "lng": -2.373238,
+      "note": "Junior school \u00b7 Co-ed \u00b7 Day \u00b7 Ages 0.75\u201311",
+      "zoom": 13
+    },
+    "address": "College Road, Lansdown, Bath, BA1 5SD"
+  },
+  {
+    "slug": "kingswood-school",
+    "locationSlug": "bath",
+    "name": "Kingswood School",
+    "subhead": "Large co-educational senior school on Lansdown, combining day places with boarding and broad A-level depth across sciences, humanities and economics.",
+    "heroImage": "/assets/img/bath/bath-location-hero.jpg",
+    "canonicalPath": "/bath/schools/kingswood-school/",
+    "metaDescription": "Large co-educational senior school on Lansdown, combining day places with boarding and broad A-level depth across sciences, humanities and economics.",
+    "atGlanceRows": [
+      {
+        "label": "Ages",
+        "value": "11\u201319"
+      },
+      {
+        "label": "Gender",
+        "value": "Co-ed"
+      },
+      {
+        "label": "Format",
+        "value": "Day, weekly/flexible boarding, full boarding"
+      },
+      {
+        "label": "Pupils",
+        "value": "894 pupils"
+      },
+      {
+        "label": "Day fees from",
+        "value": "\u00a323,262 / year"
+      },
+      {
+        "label": "Boarding from",
+        "value": "\u00a342,057 / year"
+      },
+      {
+        "label": "Bursaries",
+        "value": "Coming soon"
+      }
+    ],
+    "compareLinks": [
+      {
+        "slug": "king-edwards-school",
+        "name": "King Edward's School"
+      },
+      {
+        "slug": "kingswood-preparatory-school",
+        "name": "Kingswood Preparatory School"
+      },
+      {
+        "slug": "monkton-combe-school",
+        "name": "Monkton Combe School"
+      },
+      {
+        "slug": "paragon-school",
+        "name": "Paragon School"
+      },
+      {
+        "slug": "prior-park-college",
+        "name": "Prior Park College"
+      },
+      {
+        "slug": "royal-high-school-bath-gdst",
+        "name": "Royal High School Bath, GDST"
+      },
+      {
+        "slug": "bath-academy",
+        "name": "Bath Academy"
+      },
+      {
+        "slug": "downside-school",
+        "name": "Downside School"
+      }
+    ],
+    "featureTilesHtml": [
+      "<article class=\"school-feature-tile\"><h2>A-level Results</h2><div class=\"school-feature-body\"><div class=\"tile-kpis\">\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">% A*\u2013A</span><span class=\"tile-kpi-value\">49%</span></div>\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">% A*\u2013B</span><span class=\"tile-kpi-value\">77%</span></div>\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">Different A-level subjects</span><span class=\"tile-kpi-value\">26</span></div>\n</div></div></article>",
+      "<article class=\"school-feature-tile tile-expandable\"><h2>Popular Subjects</h2><div class=\"school-feature-body\"><div class=\"metric-list\"><div class=\"metric-row\"><span class=\"metric-name\">Mathematics</span><span class=\"metric-value\">18%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Geography</span><span class=\"metric-value\">10%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Economics</span><span class=\"metric-value\">9%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Biology</span><span class=\"metric-value\">8%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Chemistry</span><span class=\"metric-value\">7%</span></div></div><button class=\"subject-toggle\" data-subject-toggle=\"expand\" type=\"button\">Show full subject mix</button><div class=\"subject-extra\" hidden=\"hidden\"><div class=\"metric-list\"><div class=\"metric-row\"><span class=\"metric-name\">Psychology</span><span class=\"metric-value\">7%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Languages</span><span class=\"metric-value\">7%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Physics</span><span class=\"metric-value\">6%</span></div><div class=\"metric-row\"><span class=\"metric-name\">English</span><span class=\"metric-value\">6%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Politics</span><span class=\"metric-value\">4%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Finance &amp; business</span><span class=\"metric-value\">4%</span></div><div class=\"metric-row\"><span class=\"metric-name\">History</span><span class=\"metric-value\">4%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Art</span><span class=\"metric-value\">2%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Sports</span><span class=\"metric-value\">2%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Computing</span><span class=\"metric-value\">2%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Religious studies</span><span class=\"metric-value\">2%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Design &amp; technology</span><span class=\"metric-value\">1%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Drama</span><span class=\"metric-value\">1%</span></div></div><button class=\"subject-toggle subject-toggle--collapse\" data-subject-toggle=\"collapse\" type=\"button\">Collapse subject mix</button></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Parents Like</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>Boarding is available without making the whole school feel boarding-led.</li><li>There is real sixth-form breadth, especially across sciences, geography and economics.</li><li>The Lansdown campus gives it a distinctive country-edge feel for Bath.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>How the School Describes Itself</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>Kingswood tends to present itself as grounded, rounded and outward-looking.</li><li>Its messaging blends academic seriousness with character, community and co-curricular breadth.</li><li>The school often foregrounds its Methodist foundation without feeling narrowly confessional.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile tile-expandable\"><h2>Fee Profile</h2><div class=\"school-feature-body\"><p class=\"tile-note\">Annual fees including VAT.</p><div class=\"fee-switch\" data-fee-switch=\"\"><button class=\"is-active\" data-fee-target=\"day\" type=\"button\">Day</button><button data-fee-target=\"boarding\" type=\"button\">Full boarding</button></div><div class=\"fee-pane is-active\" data-fee-pane=\"day\"><div class=\"fee-year-columns\"><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 7</span><span class=\"fee-amount\">\u00a323,262</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 8</span><span class=\"fee-amount\">\u00a323,262</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 9</span><span class=\"fee-amount\">\u00a323,262</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 10</span><span class=\"fee-amount\">\u00a323,262</span></div></div><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 11</span><span class=\"fee-amount\">\u00a323,262</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 12</span><span class=\"fee-amount\">\u00a323,262</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 13</span><span class=\"fee-amount\">\u00a323,262</span></div></div></div></div><div class=\"fee-pane\" data-fee-pane=\"boarding\"><div class=\"fee-year-columns\"><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 7</span><span class=\"fee-amount\">\u00a342,057</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 8</span><span class=\"fee-amount\">\u00a342,057</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 9</span><span class=\"fee-amount\">\u00a350,376</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 10</span><span class=\"fee-amount\">\u00a350,376</span></div></div><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 11</span><span class=\"fee-amount\">\u00a350,376</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 12</span><span class=\"fee-amount\">\u00a350,376</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 13</span><span class=\"fee-amount\">\u00a350,376</span></div></div></div></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Bursaries</h2><div class=\"school-feature-body\"><p>Kingswood offers means-tested bursaries for pupils joining Years 7, 9 and 12. The school says support ranges from 10% to over 100% of fees and that bursary holders are spread across every Senior School year, including day, flexi-boarding and boarding places. Families are encouraged to discuss eligibility early, before formal assessment.</p></div></article>"
+    ],
+    "mapData": {
+      "name": "Kingswood School",
+      "slug": "/bath/schools/kingswood-school/",
+      "lat": 51.398883,
+      "lng": -2.370005,
+      "note": "Senior school \u00b7 Co-ed \u00b7 Day, weekly/flexible boarding, full boarding \u00b7 Ages 11\u201319",
+      "zoom": 13
+    },
+    "address": "Lansdown Road, Bath, BA1 5RG"
+  },
+  {
+    "slug": "monkton-combe-school",
+    "locationSlug": "bath",
+    "name": "Monkton Combe School",
+    "subhead": "All-through day and boarding school just outside Bath, with a countryside setting and a sixth form notable for art, sciences and broad subject choice.",
+    "heroImage": "/assets/img/bath/bath-location-hero.jpg",
+    "canonicalPath": "/bath/schools/monkton-combe-school/",
+    "metaDescription": "All-through day and boarding school just outside Bath, with a countryside setting and a sixth form notable for art, sciences and broad subject choice.",
+    "atGlanceRows": [
+      {
+        "label": "Ages",
+        "value": "2\u201319"
+      },
+      {
+        "label": "Gender",
+        "value": "Co-ed"
+      },
+      {
+        "label": "Format",
+        "value": "Day, weekly/flexible boarding, full boarding"
+      },
+      {
+        "label": "Pupils",
+        "value": "645 pupils"
+      },
+      {
+        "label": "Nursery",
+        "value": "Yes"
+      },
+      {
+        "label": "Day fees from",
+        "value": "\u00a312,495 / year"
+      },
+      {
+        "label": "Boarding from",
+        "value": "\u00a329,280 / year"
+      },
+      {
+        "label": "Bursaries",
+        "value": "Coming soon"
+      }
+    ],
+    "compareLinks": [
+      {
+        "slug": "king-edwards-school",
+        "name": "King Edward's School"
+      },
+      {
+        "slug": "kingswood-preparatory-school",
+        "name": "Kingswood Preparatory School"
+      },
+      {
+        "slug": "kingswood-school",
+        "name": "Kingswood School"
+      },
+      {
+        "slug": "paragon-school",
+        "name": "Paragon School"
+      },
+      {
+        "slug": "prior-park-college",
+        "name": "Prior Park College"
+      },
+      {
+        "slug": "royal-high-school-bath-gdst",
+        "name": "Royal High School Bath, GDST"
+      },
+      {
+        "slug": "bath-academy",
+        "name": "Bath Academy"
+      },
+      {
+        "slug": "downside-school",
+        "name": "Downside School"
+      }
+    ],
+    "featureTilesHtml": [
+      "<article class=\"school-feature-tile\"><h2>A-level Results</h2><div class=\"school-feature-body\"><div class=\"tile-kpis\">\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">% A*\u2013A</span><span class=\"tile-kpi-value\">37%</span></div>\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">% A*\u2013B</span><span class=\"tile-kpi-value\">67%</span></div>\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">Different A-level subjects</span><span class=\"tile-kpi-value\">24</span></div>\n</div></div></article>",
+      "<article class=\"school-feature-tile tile-expandable\"><h2>Popular Subjects</h2><div class=\"school-feature-body\"><div class=\"metric-list\"><div class=\"metric-row\"><span class=\"metric-name\">Art</span><span class=\"metric-value\">27%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Mathematics</span><span class=\"metric-value\">11%</span></div><div class=\"metric-row\"><span class=\"metric-name\">English</span><span class=\"metric-value\">9%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Psychology</span><span class=\"metric-value\">8%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Biology</span><span class=\"metric-value\">7%</span></div></div><button class=\"subject-toggle\" data-subject-toggle=\"expand\" type=\"button\">Show full subject mix</button><div class=\"subject-extra\" hidden=\"hidden\"><div class=\"metric-list\"><div class=\"metric-row\"><span class=\"metric-name\">Finance &amp; business</span><span class=\"metric-value\">6%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Chemistry</span><span class=\"metric-value\">5%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Economics</span><span class=\"metric-value\">5%</span></div><div class=\"metric-row\"><span class=\"metric-name\">History</span><span class=\"metric-value\">5%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Media</span><span class=\"metric-value\">4%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Sports</span><span class=\"metric-value\">4%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Religious studies</span><span class=\"metric-value\">3%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Physics</span><span class=\"metric-value\">3%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Languages</span><span class=\"metric-value\">2%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Computing</span><span class=\"metric-value\">2%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Drama</span><span class=\"metric-value\">2%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Music</span><span class=\"metric-value\">2%</span></div></div><button class=\"subject-toggle subject-toggle--collapse\" data-subject-toggle=\"collapse\" type=\"button\">Collapse subject mix</button></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Scholarships</h2><div class=\"school-feature-body\"><p>Monkton offers scholarships for academic, sporting, artistic and leadership potential. Successful applicants can receive up to 20% off day fees, while the Monktonian scholarship offers 10% off full boarding.</p></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Inspection Snapshot</h2><div class=\"school-feature-body\"><p>Monkton's published ISI highlights from May 2024 say the school passed inspection in all areas. The school highlights a broad curriculum, typically good progress, strong pastoral systems and rigorous safeguarding, with next-step recommendations around lesson planning and further embedding financial literacy.</p></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Assessment Approach</h2><div class=\"school-feature-body\"><p>Monkton says assessment data is tracked and analysed by leaders, managers and teachers so that pupils receive the right support and challenge and make typically good progress. One-to-one tutoring and targeted support form part of the wider prep support structure.</p></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Parents Like</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>The setting feels more rural and self-contained than most Bath options.</li><li>Families looking for boarding flexibility often shortlist Monkton early.</li><li>Its A-level profile is notably broad, with art unusually prominent.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>How the School Describes Itself</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>Monkton presents itself as energetic, values-led and highly relational.</li><li>It talks about character, purpose and the development of the whole person.</li><li>Published material also leans into adventure, leadership and broad opportunity.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile tile-expandable\"><h2>Fee Profile</h2><div class=\"school-feature-body\"><p class=\"tile-note\">Annual fees including VAT.</p><div class=\"fee-switch\" data-fee-switch=\"\"><button class=\"is-active\" data-fee-target=\"day\" type=\"button\">Day</button><button data-fee-target=\"boarding\" type=\"button\">Full boarding</button></div><div class=\"fee-pane is-active\" data-fee-pane=\"day\"><div class=\"fee-year-columns\"><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Reception</span><span class=\"fee-amount\">\u00a312,495</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 1</span><span class=\"fee-amount\">\u00a312,855</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 2</span><span class=\"fee-amount\">\u00a312,855</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 3</span><span class=\"fee-amount\">\u00a315,075</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 4</span><span class=\"fee-amount\">\u00a315,075</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 5</span><span class=\"fee-amount\">\u00a315,075</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 6</span><span class=\"fee-amount\">\u00a315,540</span></div></div><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 7</span><span class=\"fee-amount\">\u00a321,960</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 8</span><span class=\"fee-amount\">\u00a321,960</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 9</span><span class=\"fee-amount\">\u00a325,500</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 10</span><span class=\"fee-amount\">\u00a325,500</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 11</span><span class=\"fee-amount\">\u00a325,500</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 12</span><span class=\"fee-amount\">\u00a326,790</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 13</span><span class=\"fee-amount\">\u00a326,790</span></div></div></div></div><div class=\"fee-pane\" data-fee-pane=\"boarding\"><div class=\"fee-year-columns\"><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 3</span><span class=\"fee-amount\">\u00a329,280</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 4</span><span class=\"fee-amount\">\u00a330,450</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 5</span><span class=\"fee-amount\">\u00a330,450</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 6</span><span class=\"fee-amount\">\u00a330,450</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 7</span><span class=\"fee-amount\">\u00a331,650</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 8</span><span class=\"fee-amount\">\u00a331,650</span></div></div><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 9</span><span class=\"fee-amount\">\u00a341,625</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 10</span><span class=\"fee-amount\">\u00a341,625</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 11</span><span class=\"fee-amount\">\u00a341,625</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 12</span><span class=\"fee-amount\">\u00a342,735</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 13</span><span class=\"fee-amount\">\u00a342,735</span></div></div></div></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Bursaries</h2><div class=\"school-feature-body\"><p>Monkton says it offers bursaries alongside scholarships to support families who require financial assistance. Its public admissions pages do not currently publish a separate bursary policy, award range or formal eligibility thresholds online, but they do state that scholarship holders are looked on favourably when bursaries are awarded. The school also advertises separate discounts for military families.</p></div></article>"
+    ],
+    "mapData": {
+      "name": "Monkton Combe School",
+      "slug": "/bath/schools/monkton-combe-school/",
+      "lat": 51.357305,
+      "lng": -2.326354,
+      "note": "All-through school \u00b7 Co-ed \u00b7 Day, weekly/flexible boarding, full boarding \u00b7 Ages 2\u201319",
+      "zoom": 13
+    },
+    "address": "Church Lane, Monkton Combe, Bath, BA2 7HG"
+  },
+  {
+    "slug": "paragon-school",
+    "locationSlug": "bath",
+    "name": "Paragon School",
+    "subhead": "Prep school in Bath with a linked route into Prior Park College, a broad curriculum and a strong emphasis on small classes.",
+    "heroImage": "/assets/img/bath/bath-location-hero.jpg",
+    "canonicalPath": "/bath/schools/paragon-school/",
+    "metaDescription": "Prep school in Bath with a linked route into Prior Park College, a broad curriculum and a strong emphasis on small classes.",
+    "atGlanceRows": [
+      {
+        "label": "Ages",
+        "value": "3\u201311"
+      },
+      {
+        "label": "Gender",
+        "value": "Co-ed"
+      },
+      {
+        "label": "Format",
+        "value": "Day"
+      },
+      {
+        "label": "Pupils",
+        "value": "231 pupils"
+      },
+      {
+        "label": "Nursery",
+        "value": "Yes"
+      },
+      {
+        "label": "Day fees from",
+        "value": "\u00a314,630 / year"
+      },
+      {
+        "label": "Bursaries",
+        "value": "Coming soon"
+      }
+    ],
+    "compareLinks": [
+      {
+        "slug": "king-edwards-school",
+        "name": "King Edward's School"
+      },
+      {
+        "slug": "kingswood-preparatory-school",
+        "name": "Kingswood Preparatory School"
+      },
+      {
+        "slug": "kingswood-school",
+        "name": "Kingswood School"
+      },
+      {
+        "slug": "monkton-combe-school",
+        "name": "Monkton Combe School"
+      },
+      {
+        "slug": "prior-park-college",
+        "name": "Prior Park College"
+      },
+      {
+        "slug": "royal-high-school-bath-gdst",
+        "name": "Royal High School Bath, GDST"
+      },
+      {
+        "slug": "bath-academy",
+        "name": "Bath Academy"
+      },
+      {
+        "slug": "downside-school",
+        "name": "Downside School"
+      }
+    ],
+    "featureTilesHtml": [
+      "<article class=\"school-feature-tile\"><h2>Leavers Destinations</h2><div class=\"school-feature-body\"><p>The Paragon is the junior school of Prior Park College. In 2025, the school said 72% of its Year 6 cohort would continue to Prior Park College, and it presents leavers' destinations as part of an annual secondary-destination update.</p></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Scholarships</h2><div class=\"school-feature-body\"><p>Paragon highlights awards and scholarships won by its Year 6 leavers at destination senior schools, and links these alongside destinations in its recent end-of-year leavers' coverage.</p></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Inspection Snapshot</h2><div class=\"school-feature-body\"><p>In the June 2025 ISI report, all the relevant standards were met. Inspectors highlighted a comprehensive curriculum, good progress including for pupils with SEND and EAL, and effective safeguarding, while recommending more consistent use of assessment data across all subjects.</p></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Assessment Approach</h2><div class=\"school-feature-body\"><p>Paragon's 2025 ISI report says English and maths are monitored through regular assessments, including standardised tests and teacher-led evaluations, with termly pupil progress meetings used to identify where pupils need extra support or more challenge.</p></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Parents Like</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>It gives families a prep option inside the Prior Park family of schools.</li><li>The smaller size can feel more personal than some Bath rivals.</li><li>Its setting and access to Prior Park facilities stand out at this age range.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>How the School Describes Itself</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>The school describes itself as broad, warm and academically ambitious.</li><li>Published language repeatedly highlights small classes and specialist teaching.</li><li>It also leans on its woodland setting and close relationship with Prior Park College.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile tile-expandable\"><h2>Fee Profile</h2><div class=\"school-feature-body\"><p class=\"tile-note\">Annual fees including VAT.</p><div class=\"fee-pane is-active\" data-fee-pane=\"day\"><div class=\"fee-year-columns\"><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Reception</span><span class=\"fee-amount\">\u00a314,630</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 1</span><span class=\"fee-amount\">\u00a314,630</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 2</span><span class=\"fee-amount\">\u00a314,630</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 3</span><span class=\"fee-amount\">\u00a316,272</span></div></div><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 4</span><span class=\"fee-amount\">\u00a316,272</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 5</span><span class=\"fee-amount\">\u00a316,682</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 6</span><span class=\"fee-amount\">\u00a316,682</span></div></div></div></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Bursaries</h2><div class=\"school-feature-body\"><p>Paragon\u2019s fees page says bursaries are awarded under the Prior Park Schools means-tested policy in response to parental need, either to relieve difficulty for an existing Paragon family or to support entry to Prior Park College. The 2025 admissions policy adds that bursaries for new entrants to The Paragon are not generally considered. Any award replaces other discounts and is reviewed as family circumstances change.</p></div></article>"
+    ],
+    "mapData": {
+      "name": "Paragon School",
+      "slug": "/bath/schools/paragon-school/",
+      "lat": 51.370494,
+      "lng": -2.355122,
+      "note": "Junior school \u00b7 Co-ed \u00b7 Day \u00b7 Ages 3\u201311",
+      "zoom": 13
+    },
+    "address": "Lyncombe House, Lyncombe Vale, Bath, BA2 4LT"
+  },
+  {
+    "slug": "prior-park-college",
+    "locationSlug": "bath",
+    "name": "Prior Park College",
+    "subhead": "Co-educational senior school above Bath with day and boarding places, a Catholic foundation and a sixth form with broad humanities-science balance.",
+    "heroImage": "/assets/img/bath/bath-location-hero.jpg",
+    "canonicalPath": "/bath/schools/prior-park-college/",
+    "metaDescription": "Co-educational senior school above Bath with day and boarding places, a Catholic foundation and a sixth form with broad humanities-science balance.",
+    "atGlanceRows": [
+      {
+        "label": "Ages",
+        "value": "11\u201318"
+      },
+      {
+        "label": "Gender",
+        "value": "Co-ed"
+      },
+      {
+        "label": "Format",
+        "value": "Day, weekly/flexible boarding, full boarding"
+      },
+      {
+        "label": "Pupils",
+        "value": "563 pupils"
+      },
+      {
+        "label": "Day fees from",
+        "value": "\u00a322,415 / year"
+      },
+      {
+        "label": "Boarding from",
+        "value": "\u00a348,685 / year"
+      },
+      {
+        "label": "Bursaries",
+        "value": "Coming soon"
+      }
+    ],
+    "compareLinks": [
+      {
+        "slug": "king-edwards-school",
+        "name": "King Edward's School"
+      },
+      {
+        "slug": "kingswood-preparatory-school",
+        "name": "Kingswood Preparatory School"
+      },
+      {
+        "slug": "kingswood-school",
+        "name": "Kingswood School"
+      },
+      {
+        "slug": "monkton-combe-school",
+        "name": "Monkton Combe School"
+      },
+      {
+        "slug": "paragon-school",
+        "name": "Paragon School"
+      },
+      {
+        "slug": "royal-high-school-bath-gdst",
+        "name": "Royal High School Bath, GDST"
+      },
+      {
+        "slug": "bath-academy",
+        "name": "Bath Academy"
+      },
+      {
+        "slug": "downside-school",
+        "name": "Downside School"
+      }
+    ],
+    "featureTilesHtml": [
+      "<article class=\"school-feature-tile\"><h2>A-level Results</h2><div class=\"school-feature-body\"><div class=\"tile-kpis\">\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">% A*\u2013A</span><span class=\"tile-kpi-value\">36%</span></div>\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">% A*\u2013B</span><span class=\"tile-kpi-value\">63%</span></div>\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">Different A-level subjects</span><span class=\"tile-kpi-value\">28</span></div>\n</div></div></article>",
+      "<article class=\"school-feature-tile tile-expandable\"><h2>Popular Subjects</h2><div class=\"school-feature-body\"><div class=\"metric-list\"><div class=\"metric-row\"><span class=\"metric-name\">Art</span><span class=\"metric-value\">13%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Mathematics</span><span class=\"metric-value\">12%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Biology</span><span class=\"metric-value\">8%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Languages</span><span class=\"metric-value\">8%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Psychology</span><span class=\"metric-value\">7%</span></div></div><button class=\"subject-toggle\" data-subject-toggle=\"expand\" type=\"button\">Show full subject mix</button><div class=\"subject-extra\" hidden=\"hidden\"><div class=\"metric-list\"><div class=\"metric-row\"><span class=\"metric-name\">History</span><span class=\"metric-value\">6%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Physics</span><span class=\"metric-value\">6%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Chemistry</span><span class=\"metric-value\">6%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Sports</span><span class=\"metric-value\">6%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Finance &amp; business</span><span class=\"metric-value\">5%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Sociology</span><span class=\"metric-value\">4%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Economics</span><span class=\"metric-value\">4%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Classics</span><span class=\"metric-value\">3%</span></div><div class=\"metric-row\"><span class=\"metric-name\">English</span><span class=\"metric-value\">3%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Geography</span><span class=\"metric-value\">3%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Drama</span><span class=\"metric-value\">2%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Music</span><span class=\"metric-value\">2%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Religious studies</span><span class=\"metric-value\">2%</span></div></div><button class=\"subject-toggle subject-toggle--collapse\" data-subject-toggle=\"collapse\" type=\"button\">Collapse subject mix</button></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Parents Like</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>The hilltop setting and boarding mix make it feel distinct from central Bath schools.</li><li>Families often value the balance between academics, pastoral care and co-curricular life.</li><li>Its A-level mix is notably broad rather than narrowly specialist.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>How the School Describes Itself</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>Prior Park tends to describe itself as academically ambitious, pastoral and values-led.</li><li>Its own language links scholarship with service, kindness and confidence.</li><li>The school also places visible weight on its Catholic identity and sense of community.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile tile-expandable\"><h2>Fee Profile</h2><div class=\"school-feature-body\"><p class=\"tile-note\">Annual fees including VAT.</p><div class=\"fee-switch\" data-fee-switch=\"\"><button class=\"is-active\" data-fee-target=\"day\" type=\"button\">Day</button><button data-fee-target=\"boarding\" type=\"button\">Full boarding</button></div><div class=\"fee-pane is-active\" data-fee-pane=\"day\"><div class=\"fee-year-columns\"><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 7</span><span class=\"fee-amount\">\u00a322,415</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 8</span><span class=\"fee-amount\">\u00a322,415</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 9</span><span class=\"fee-amount\">\u00a324,315</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 10</span><span class=\"fee-amount\">\u00a324,315</span></div></div><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 11</span><span class=\"fee-amount\">\u00a324,315</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 12</span><span class=\"fee-amount\">\u00a324,315</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 13</span><span class=\"fee-amount\">\u00a324,315</span></div></div></div></div><div class=\"fee-pane\" data-fee-pane=\"boarding\"><div class=\"fee-year-columns\"><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 7</span><span class=\"fee-amount\">\u00a348,685</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 8</span><span class=\"fee-amount\">\u00a348,685</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 9</span><span class=\"fee-amount\">\u00a348,685</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 10</span><span class=\"fee-amount\">\u00a348,685</span></div></div><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 11</span><span class=\"fee-amount\">\u00a348,685</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 12</span><span class=\"fee-amount\">\u00a348,685</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 13</span><span class=\"fee-amount\">\u00a348,685</span></div></div></div></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Bursaries</h2><div class=\"school-feature-body\"><p>Prior Park offers means-tested bursarial support to broaden access for eligible families. Families must be registered before applying, and the bursary application must be submitted before a place is offered; a bursary can also be added to a scholarship. Awards are reviewed each year.</p></div></article>"
+    ],
+    "mapData": {
+      "name": "Prior Park College",
+      "slug": "/bath/schools/prior-park-college/",
+      "lat": 51.364523,
+      "lng": -2.343082,
+      "note": "Senior school \u00b7 Co-ed \u00b7 Day, weekly/flexible boarding, full boarding \u00b7 Ages 11\u201318",
+      "zoom": 13
+    },
+    "address": "Ralph Allen Drive, Bath, BA2 5AH"
+  },
+  {
+    "slug": "royal-high-school-bath-gdst",
+    "locationSlug": "bath",
+    "name": "Royal High School Bath, GDST",
+    "subhead": "Girls\u2019 day and boarding school in Lansdown with all-through provision, a substantial sixth form and broad A-level take-up in psychology and sciences.",
+    "heroImage": "/assets/img/bath/bath-location-hero.jpg",
+    "canonicalPath": "/bath/schools/royal-high-school-bath-gdst/",
+    "metaDescription": "Girls\u2019 day and boarding school in Lansdown with all-through provision, a substantial sixth form and broad A-level take-up in psychology and sciences.",
+    "atGlanceRows": [
+      {
+        "label": "Ages",
+        "value": "3\u201318"
+      },
+      {
+        "label": "Gender",
+        "value": "Girls"
+      },
+      {
+        "label": "Format",
+        "value": "Day, weekly/flexible boarding, full boarding"
+      },
+      {
+        "label": "Pupils",
+        "value": "551 pupils"
+      },
+      {
+        "label": "Nursery",
+        "value": "Yes"
+      },
+      {
+        "label": "Day fees from",
+        "value": "\u00a314,501 / year"
+      },
+      {
+        "label": "Boarding from",
+        "value": "\u00a344,716 / year"
+      },
+      {
+        "label": "Bursaries",
+        "value": "Coming soon"
+      }
+    ],
+    "compareLinks": [
+      {
+        "slug": "king-edwards-school",
+        "name": "King Edward's School"
+      },
+      {
+        "slug": "kingswood-preparatory-school",
+        "name": "Kingswood Preparatory School"
+      },
+      {
+        "slug": "kingswood-school",
+        "name": "Kingswood School"
+      },
+      {
+        "slug": "monkton-combe-school",
+        "name": "Monkton Combe School"
+      },
+      {
+        "slug": "paragon-school",
+        "name": "Paragon School"
+      },
+      {
+        "slug": "prior-park-college",
+        "name": "Prior Park College"
+      },
+      {
+        "slug": "bath-academy",
+        "name": "Bath Academy"
+      },
+      {
+        "slug": "downside-school",
+        "name": "Downside School"
+      }
+    ],
+    "featureTilesHtml": [
+      "<article class=\"school-feature-tile\"><h2>A-level Results</h2><div class=\"school-feature-body\"><div class=\"tile-kpis\">\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">% A*\u2013A</span><span class=\"tile-kpi-value\">41%</span></div>\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">% A*\u2013B</span><span class=\"tile-kpi-value\">72%</span></div>\n<div class=\"tile-kpi\"><span class=\"tile-kpi-label\">Different A-level subjects</span><span class=\"tile-kpi-value\">25</span></div>\n</div></div></article>",
+      "<article class=\"school-feature-tile tile-expandable\"><h2>Popular Subjects</h2><div class=\"school-feature-body\"><div class=\"metric-list\"><div class=\"metric-row\"><span class=\"metric-name\">Psychology</span><span class=\"metric-value\">13%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Mathematics</span><span class=\"metric-value\">12%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Art</span><span class=\"metric-value\">10%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Languages</span><span class=\"metric-value\">8%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Biology</span><span class=\"metric-value\">7%</span></div></div><button class=\"subject-toggle\" data-subject-toggle=\"expand\" type=\"button\">Show full subject mix</button><div class=\"subject-extra\" hidden=\"hidden\"><div class=\"metric-list\"><div class=\"metric-row\"><span class=\"metric-name\">Chemistry</span><span class=\"metric-value\">7%</span></div><div class=\"metric-row\"><span class=\"metric-name\">English</span><span class=\"metric-value\">6%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Physics</span><span class=\"metric-value\">6%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Drama</span><span class=\"metric-value\">4%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Geography</span><span class=\"metric-value\">4%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Design &amp; technology</span><span class=\"metric-value\">4%</span></div><div class=\"metric-row\"><span class=\"metric-name\">History</span><span class=\"metric-value\">4%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Sports</span><span class=\"metric-value\">4%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Finance &amp; business</span><span class=\"metric-value\">3%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Computing</span><span class=\"metric-value\">2%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Music</span><span class=\"metric-value\">2%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Economics</span><span class=\"metric-value\">1%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Religious studies</span><span class=\"metric-value\">1%</span></div><div class=\"metric-row\"><span class=\"metric-name\">Classics</span><span class=\"metric-value\">1%</span></div></div><button class=\"subject-toggle subject-toggle--collapse\" data-subject-toggle=\"collapse\" type=\"button\">Collapse subject mix</button></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Parents Like</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>Families often like the girls-only senior environment combined with all-through continuity.</li><li>The sixth form still offers real breadth despite the school\u2019s more focused feel.</li><li>Boarding is there if needed, but the school still reads primarily as a Bath day option.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>How the School Describes Itself</h2><div class=\"school-feature-body\"><div class=\"school-card-copy\"><ul><li>The school frames itself as confident, empowering and academically serious.</li><li>Its own tone is about ambitious girls, individual character and a strong sense of belonging.</li><li>It also leans on the wider GDST network as part of its offer.</li></ul></div></div></article>",
+      "<article class=\"school-feature-tile tile-expandable\"><h2>Fee Profile</h2><div class=\"school-feature-body\"><p class=\"tile-note\">Annual fees including VAT.</p><div class=\"fee-switch\" data-fee-switch=\"\"><button class=\"is-active\" data-fee-target=\"day\" type=\"button\">Day</button><button data-fee-target=\"boarding\" type=\"button\">Full boarding</button></div><div class=\"fee-pane is-active\" data-fee-pane=\"day\"><div class=\"fee-year-columns\"><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Reception</span><span class=\"fee-amount\">\u00a314,501</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 1</span><span class=\"fee-amount\">\u00a314,501</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 2</span><span class=\"fee-amount\">\u00a314,501</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 3</span><span class=\"fee-amount\">\u00a315,278</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 4</span><span class=\"fee-amount\">\u00a315,278</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 5</span><span class=\"fee-amount\">\u00a315,278</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 6</span><span class=\"fee-amount\">\u00a315,278</span></div></div><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 7</span><span class=\"fee-amount\">\u00a319,696</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 8</span><span class=\"fee-amount\">\u00a319,696</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 9</span><span class=\"fee-amount\">\u00a319,696</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 10</span><span class=\"fee-amount\">\u00a320,071</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 11</span><span class=\"fee-amount\">\u00a320,071</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 12</span><span class=\"fee-amount\">\u00a320,557</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 13</span><span class=\"fee-amount\">\u00a320,557</span></div></div></div></div><div class=\"fee-pane\" data-fee-pane=\"boarding\"><div class=\"fee-year-columns\"><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 7</span><span class=\"fee-amount\">\u00a344,716</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 8</span><span class=\"fee-amount\">\u00a344,716</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 9</span><span class=\"fee-amount\">\u00a344,716</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 10</span><span class=\"fee-amount\">\u00a345,368</span></div></div><div class=\"fee-year-column\"><div class=\"fee-year-row\"><span class=\"fee-year\">Year 11</span><span class=\"fee-amount\">\u00a345,368</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 12</span><span class=\"fee-amount\">\u00a347,005</span></div><div class=\"fee-year-row\"><span class=\"fee-year\">Year 13</span><span class=\"fee-amount\">\u00a347,005</span></div></div></div></div></div></article>",
+      "<article class=\"school-feature-tile\"><h2>Bursaries</h2><div class=\"school-feature-body\"><p>Royal High Bath offers GDST means-tested bursaries for girls entering Year 7, external Year 9 and Sixth Form. Awards are for students with strong all-round academic ability whose families cannot cover the full fees; both income and assets are assessed, and bursaries are reviewed annually. The school says around 9% of pupils currently receive financial assistance, with all or part of fees paid.</p></div></article>"
+    ],
+    "mapData": {
+      "name": "Royal High School Bath, GDST",
+      "slug": "/bath/schools/royal-high-school-bath-gdst/",
+      "lat": 51.397185,
+      "lng": -2.365419,
+      "note": "All-through school \u00b7 Girls \u00b7 Day, weekly/flexible boarding, full boarding \u00b7 Ages 3\u201318",
+      "zoom": 13
+    },
+    "address": "Lansdown Road, Bath, BA1 5SZ"
+  }
+]

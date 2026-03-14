@@ -1,0 +1,273 @@
+{
+  "name": "Bath",
+  "slug": "bath",
+  "canonicalPath": "/bath/",
+  "heroImage": "/assets/img/bath/bath-location-hero.jpg",
+  "metaTitle": "Bath private schools | The Private School Guide",
+  "metaDescription": "Independent guide to Bath private schools. Compare schools, review fees and bursaries, explore open days, and use the map to narrow your shortlist.",
+  "schoolCards": [
+    {
+      "slug": "king-edwards-school",
+      "name": "King Edward\u2019s School",
+      "href": "/bath/schools/king-edwards-school/",
+      "cardClass": "school-square-card school-square-card--allthrough",
+      "texts": [
+        "All-through school",
+        "Co-ed \u00b7 Day",
+        "Ages 3\u201318"
+      ],
+      "subhead": "All-through day school in central Bath, with nursery-to-sixth-form continuity, strong academic breadth and a broad co-curricular programme.",
+      "heroImage": "/assets/img/bath/king-edwards-school.jpg",
+      "map": {
+        "name": "King Edward\u2019s School",
+        "slug": "/bath/schools/king-edwards-school/",
+        "lat": 51.386488,
+        "lng": -2.343663,
+        "type": "allthrough",
+        "note": "All-through school \u00b7 Co-ed \u00b7 Day \u00b7 Ages 3\u201318"
+      }
+    },
+    {
+      "slug": "kingswood-school",
+      "name": "Kingswood School",
+      "href": "/bath/schools/kingswood-school/",
+      "cardClass": "school-square-card school-square-card--senior",
+      "texts": [
+        "Senior school",
+        "Co-ed \u00b7 Day & boarding",
+        "Ages 11\u201319"
+      ],
+      "subhead": "Large co-educational senior school on Lansdown, combining day places with boarding and broad A-level depth across sciences, humanities and economics.",
+      "heroImage": "/assets/img/bath/bath-location-hero.jpg",
+      "map": {
+        "name": "Kingswood School",
+        "slug": "/bath/schools/kingswood-school/",
+        "lat": 51.398883,
+        "lng": -2.370005,
+        "type": "senior",
+        "note": "Senior school \u00b7 Co-ed \u00b7 Day & boarding \u00b7 Ages 11\u201319"
+      }
+    },
+    {
+      "slug": "kingswood-preparatory-school",
+      "name": "Kingswood Preparatory School",
+      "href": "/bath/schools/kingswood-preparatory-school/",
+      "cardClass": "school-square-card school-square-card--junior",
+      "texts": [
+        "Prep school",
+        "Co-ed \u00b7 Day",
+        "Ages 9 months\u201311"
+      ],
+      "subhead": "Prep school in Lansdown with a linked senior-school route, broad co-curricular life and day-only format from nursery through Year 6.",
+      "heroImage": "/assets/img/bath/bath-location-hero.jpg",
+      "map": {
+        "name": "Kingswood Preparatory School",
+        "slug": "/bath/schools/kingswood-preparatory-school/",
+        "lat": 51.397143,
+        "lng": -2.373238,
+        "type": "junior",
+        "note": "Prep school \u00b7 Co-ed \u00b7 Day \u00b7 Ages 9 months\u201311"
+      }
+    },
+    {
+      "slug": "prior-park-college",
+      "name": "Prior Park College",
+      "href": "/bath/schools/prior-park-college/",
+      "cardClass": "school-square-card school-square-card--senior",
+      "texts": [
+        "Senior school",
+        "Co-ed \u00b7 Day & boarding",
+        "Ages 11\u201318"
+      ],
+      "subhead": "Co-educational senior school above Bath with day and boarding places, a Catholic foundation and a sixth form with broad humanities-science balance.",
+      "heroImage": "/assets/img/bath/bath-location-hero.jpg",
+      "map": {
+        "name": "Prior Park College",
+        "slug": "/bath/schools/prior-park-college/",
+        "lat": 51.364523,
+        "lng": -2.343082,
+        "type": "senior",
+        "note": "Senior school \u00b7 Co-ed \u00b7 Day & boarding \u00b7 Ages 11\u201318"
+      }
+    },
+    {
+      "slug": "paragon-school",
+      "name": "Paragon School",
+      "href": "/bath/schools/paragon-school/",
+      "cardClass": "school-square-card school-square-card--junior",
+      "texts": [
+        "Prep school",
+        "Co-ed \u00b7 Day",
+        "Ages 3\u201311"
+      ],
+      "subhead": "Prep school in Bath with a linked route into Prior Park College, a broad curriculum and a strong emphasis on small classes.",
+      "heroImage": "/assets/img/bath/bath-location-hero.jpg",
+      "map": {
+        "name": "Paragon School",
+        "slug": "/bath/schools/paragon-school/",
+        "lat": 51.370494,
+        "lng": -2.355122,
+        "type": "junior",
+        "note": "Prep school \u00b7 Co-ed \u00b7 Day \u00b7 Ages 3\u201311"
+      }
+    },
+    {
+      "slug": "monkton-combe-school",
+      "name": "Monkton Combe School",
+      "href": "/bath/schools/monkton-combe-school/",
+      "cardClass": "school-square-card school-square-card--allthrough",
+      "texts": [
+        "All-through school",
+        "Co-ed \u00b7 Day & boarding",
+        "Ages 2\u201319"
+      ],
+      "subhead": "All-through day and boarding school just outside Bath, with a countryside setting and a sixth form notable for art, sciences and broad subject choice.",
+      "heroImage": "/assets/img/bath/bath-location-hero.jpg",
+      "map": {
+        "name": "Monkton Combe School",
+        "slug": "/bath/schools/monkton-combe-school/",
+        "lat": 51.357305,
+        "lng": -2.326354,
+        "type": "allthrough",
+        "note": "All-through school \u00b7 Co-ed \u00b7 Day & boarding \u00b7 Ages 2\u201319"
+      }
+    },
+    {
+      "slug": "royal-high-school-bath-gdst",
+      "name": "Royal High School Bath, GDST",
+      "href": "/bath/schools/royal-high-school-bath-gdst/",
+      "cardClass": "school-square-card school-square-card--allthrough",
+      "texts": [
+        "All-through school",
+        "Girls \u00b7 Day & boarding",
+        "Ages 3\u201318"
+      ],
+      "subhead": "Girls\u2019 day and boarding school in Lansdown with all-through provision, a substantial sixth form and broad A-level take-up in psychology and sciences.",
+      "heroImage": "/assets/img/bath/bath-location-hero.jpg",
+      "map": {
+        "name": "Royal High School Bath, GDST",
+        "slug": "/bath/schools/royal-high-school-bath-gdst/",
+        "lat": 51.397185,
+        "lng": -2.365419,
+        "type": "allthrough",
+        "note": "All-through school \u00b7 Girls \u00b7 Day & boarding \u00b7 Ages 3\u201318"
+      }
+    },
+    {
+      "slug": "bath-academy",
+      "name": "Bath Academy",
+      "href": "/bath/schools/bath-academy/",
+      "cardClass": "school-square-card school-square-card--senior",
+      "texts": [
+        "Senior school",
+        "Co-ed \u00b7 Day & boarding",
+        "Ages 14\u201319"
+      ],
+      "subhead": "Small day and boarding college in central Bath focused on GCSE and A-level pathways, with personalised academic support and a compact sixth form.",
+      "heroImage": "/assets/img/bath/bath-location-hero.jpg",
+      "map": {
+        "name": "Bath Academy",
+        "slug": "/bath/schools/bath-academy/",
+        "lat": 51.383903,
+        "lng": -2.363978,
+        "type": "senior",
+        "note": "Senior school \u00b7 Co-ed \u00b7 Day & boarding \u00b7 Ages 14\u201319"
+      }
+    },
+    {
+      "slug": "downside-school",
+      "name": "Downside School",
+      "href": "/bath/schools/downside-school/",
+      "cardClass": "school-square-card school-square-card--senior",
+      "texts": [
+        "Senior school",
+        "Co-ed \u00b7 Day & boarding",
+        "Ages 11\u201318"
+      ],
+      "subhead": "Co-educational day and boarding school near Radstock, included in the Bath guide for families willing to look beyond the city itself.",
+      "heroImage": "/assets/img/bath/bath-location-hero.jpg",
+      "map": {
+        "name": "Downside School",
+        "slug": "/bath/schools/downside-school/",
+        "lat": 51.253899,
+        "lng": -2.495195,
+        "type": "senior",
+        "note": "Senior school \u00b7 Bath-area \u00b7 Co-ed \u00b7 Day & boarding \u00b7 Ages 11\u201318"
+      }
+    }
+  ],
+  "mapSchools": [
+    {
+      "name": "King Edward\u2019s School",
+      "slug": "/bath/schools/king-edwards-school/",
+      "lat": 51.386488,
+      "lng": -2.343663,
+      "type": "allthrough",
+      "note": "All-through school \u00b7 Co-ed \u00b7 Day \u00b7 Ages 3\u201318"
+    },
+    {
+      "name": "Kingswood School",
+      "slug": "/bath/schools/kingswood-school/",
+      "lat": 51.398883,
+      "lng": -2.370005,
+      "type": "senior",
+      "note": "Senior school \u00b7 Co-ed \u00b7 Day & boarding \u00b7 Ages 11\u201319"
+    },
+    {
+      "name": "Kingswood Preparatory School",
+      "slug": "/bath/schools/kingswood-preparatory-school/",
+      "lat": 51.397143,
+      "lng": -2.373238,
+      "type": "junior",
+      "note": "Prep school \u00b7 Co-ed \u00b7 Day \u00b7 Ages 9 months\u201311"
+    },
+    {
+      "name": "Prior Park College",
+      "slug": "/bath/schools/prior-park-college/",
+      "lat": 51.364523,
+      "lng": -2.343082,
+      "type": "senior",
+      "note": "Senior school \u00b7 Co-ed \u00b7 Day & boarding \u00b7 Ages 11\u201318"
+    },
+    {
+      "name": "Paragon School",
+      "slug": "/bath/schools/paragon-school/",
+      "lat": 51.370494,
+      "lng": -2.355122,
+      "type": "junior",
+      "note": "Prep school \u00b7 Co-ed \u00b7 Day \u00b7 Ages 3\u201311"
+    },
+    {
+      "name": "Monkton Combe School",
+      "slug": "/bath/schools/monkton-combe-school/",
+      "lat": 51.357305,
+      "lng": -2.326354,
+      "type": "allthrough",
+      "note": "All-through school \u00b7 Co-ed \u00b7 Day & boarding \u00b7 Ages 2\u201319"
+    },
+    {
+      "name": "Royal High School Bath, GDST",
+      "slug": "/bath/schools/royal-high-school-bath-gdst/",
+      "lat": 51.397185,
+      "lng": -2.365419,
+      "type": "allthrough",
+      "note": "All-through school \u00b7 Girls \u00b7 Day & boarding \u00b7 Ages 3\u201318"
+    },
+    {
+      "name": "Bath Academy",
+      "slug": "/bath/schools/bath-academy/",
+      "lat": 51.383903,
+      "lng": -2.363978,
+      "type": "senior",
+      "note": "Senior school \u00b7 Co-ed \u00b7 Day & boarding \u00b7 Ages 14\u201319"
+    },
+    {
+      "name": "Downside School",
+      "slug": "/bath/schools/downside-school/",
+      "lat": 51.253899,
+      "lng": -2.495195,
+      "type": "senior",
+      "note": "Senior school \u00b7 Bath-area \u00b7 Co-ed \u00b7 Day & boarding \u00b7 Ages 11\u201318"
+    }
+  ]
+}

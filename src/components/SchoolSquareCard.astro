@@ -1,0 +1,16 @@
+---
+interface Props {
+  href: string;
+  name: string;
+  cardClass: string;
+  texts: string[];
+}
+
+const { href, name, cardClass, texts } = Astro.props;
+---
+<a class={cardClass} href={href}>
+  <div class="school-square-body">
+    <h2>{name}</h2>
+    {texts.map((text) => <p class="school-square-text">{text}</p>)}
+  </div>
+</a>

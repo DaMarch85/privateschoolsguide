@@ -1,0 +1,9 @@
+Add/replace these files in the repo: 
+- src/lib/directory.ts
+- src/components/LocationSideNav.astro
+- src/pages/[location]/compare/index.astro
+- assets/js/compare.js
+- assets/js/school-pages.js
+
+Delete this old Bath-only route so Bath uses the new generic compare page:
+- src/pages/bath/compare/index.astro

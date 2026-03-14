@@ -8,6 +8,15 @@
     body.dataset.locationSlug ||
     window.location.pathname.split("/").filter(Boolean)[0] ||
     "bath";
+  const locationName = (() => {
+    const backLinkText = document.querySelector(".school-back-link")?.textContent || "";
+    const cleaned = backLinkText.replace(/^\s*←?\s*Back to\s+/i, "").trim();
+    if (cleaned) return cleaned;
+    return locationSlug
+      .split("-")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+  })();
 
   const mapTarget = document.getElementById("school-page-map");
   const mapTitle = document.querySelector(".school-map-panel .location-map-head h2");
@@ -207,8 +216,8 @@
     if (mapTitle) mapTitle.textContent = secondary ? "School locations" : "School location";
     if (mapCaption) {
       mapCaption.textContent = secondary
-        ? `${primary.name} and ${secondary.name} in Bath`
-        : primary.address || "Bath, Somerset";
+        ? `${primary.name} and ${secondary.name} in ${locationName}`
+        : primary.address || locationName;
     }
 
     const existingLegend = document.querySelector(".school-map-legend");
