@@ -1,99 +1,83 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getLocationDirectoryData } from "../../lib/directory";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getLocationDirectoryData } from "../lib/directory";
 
-export async function getStaticPaths() {
-  return [
-    { params: { location: "bath" } },
-    { params: { location: "bristol" } },
-  ];
-}
+const [bathData, bristolData] = await Promise.all([
+  getLocationDirectoryData("bath"),
+  getLocationDirectoryData("bristol"),
+]);
 
-const { location } = Astro.params;
+const locations = [bathData?.location, bristolData?.location].filter(Boolean);
 
-if (!location) {
-  throw new Error("Missing location slug.");
-}
+const homeMapSchools = [bathData, bristolData]
+  .filter(Boolean)
+  .flatMap((entry) => {
+    const locationRecord = entry.location;
+    const schools = entry.schools || [];
 
-const pageData = await getLocationDirectoryData(location);
+    return schools
+      .filter((school) => school && school.latitude != null && school.longitude != null)
+      .map((school) => ({
+        name: school.name,
+        slug: school.slug,
+        locationSlug: locationRecord.slug,
+        href: `/${locationRecord.slug}/schools/${school.slug}/`,
+        addressLine1: school.address_line1 || "",
+        latitude: school.latitude,
+        longitude: school.longitude,
+      }));
+  });
 
-if (!pageData || !pageData.location) {
-  throw new Error(`No location data found for slug: ${location}`);
-}
-
-const { location: locationRecord, schools } = pageData;
-
-const pageTitle =
-  locationRecord.meta_title || `${locationRecord.name} Private Schools | Private School Guide`;
-
+const pageTitle = "Private School Guide";
 const pageDescription =
-  locationRecord.meta_description ||
-  `Browse private schools in ${locationRecord.name}, compare options, and explore school profiles.`;
-
-const introText = locationRecord.intro_text || "";
-
-const mapSchools = (schools || [])
-  .filter((school) => school && school.latitude != null && school.longitude != null)
-  .map((school) => ({
-    name: school.name,
-    slug: school.slug,
-    locationSlug: locationRecord.slug,
-    href: `/${locationRecord.slug}/schools/${school.slug}/`,
-    addressLine1: school.address_line1 || "",
-    latitude: school.latitude,
-    longitude: school.longitude,
-  }));
+  "Compare independent schools, browse city pages, and explore private school profiles across the UK.";
 ---
 
 <BaseLayout title={pageTitle} description={pageDescription}>
-  <main class="location-page">
+  <main class="home-page">
     <section class="hero">
       <div class="container">
-        <h1>{locationRecord.hero_title || `${locationRecord.name} Private Schools`}</h1>
-        {introText && <p>{introText}</p>}
+        <h1>Private School Guide</h1>
+        <p>Find and compare private schools across the UK.</p>
+      </div>
+    </section>
+
+    <section class="locations-section">
+      <div class="container">
+        <h2>Browse locations</h2>
+
+        <div class="location-grid">
+          {locations.map((location) => (
+            <article class="location-card">
+              <h3>
+                <a href={`/${location.slug}/`}>{location.name}</a>
+              </h3>
+              {location.intro_text && <p>{location.intro_text}</p>}
+            </article>
+          ))}
+        </div>
       </div>
     </section>
 
     <section class="map-section">
       <div class="container">
-        <h2>Map of schools in {locationRecord.name}</h2>
+        <h2>School map</h2>
 
         <div
-          id="location-directory-map"
+          id="homepage-directory-map"
           data-directory-map
-          data-map-data-id="location-map-data"
-          data-empty-state-id="location-map-empty"
-          style="height: 420px; width: 100%; border-radius: 12px; overflow: hidden;"
+          data-map-data-id="homepage-map-data"
+          data-empty-state-id="homepage-map-empty"
+          style="height: 460px; width: 100%; border-radius: 12px; overflow: hidden;"
         ></div>
 
-        <p id="location-map-empty" hidden>
+        <p id="homepage-map-empty" hidden>
           School locations are being added.
         </p>
 
-        <script type="application/json" id="location-map-data">
-          {JSON.stringify(mapSchools)}
+        <script type="application/json" id="homepage-map-data">
+          {JSON.stringify(homeMapSchools)}
         </script>
-      </div>
-    </section>
-
-    <section class="schools-section">
-      <div class="container">
-        <h2>Schools in {locationRecord.name}</h2>
-
-        {schools?.length ? (
-          <div class="school-grid">
-            {schools.map((school) => (
-              <article class="school-card">
-                <h3>
-                  <a href={`/${locationRecord.slug}/schools/${school.slug}/`}>{school.name}</a>
-                </h3>
-                {school.address_line1 && <p>{school.address_line1}</p>}
-              </article>
-            ))}
-          </div>
-        ) : (
-          <p>No schools found yet for this location.</p>
-        )}
       </div>
     </section>
   </main>
