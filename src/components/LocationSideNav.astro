@@ -1,0 +1,38 @@
+---
+interface Props {
+  locationSlug: string;
+  locationName: string;
+  showBathExtras?: boolean;
+}
+
+const { locationSlug, locationName, showBathExtras = false } = Astro.props;
+---
+<nav class="location-side-nav" aria-label={`${locationName} page navigation`}>
+  <p class="nav-kicker">Navigate {locationName}</p>
+
+  <div class="location-side-nav-group">
+    <a class="location-side-nav-title" href={`/${locationSlug}/`}>School overview</a>
+    <a class="sub-link" href={`/${locationSlug}/schools/`}>Full directory</a>
+  </div>
+
+  {showBathExtras && (
+    <Fragment>
+      <div class="location-side-nav-group">
+        <span class="location-side-nav-title">Compare schools</span>
+        <a class="sub-link" href={`/${locationSlug}/compare/?view=overview`}>School overview</a>
+        <a class="sub-link" href={`/${locationSlug}/compare/?view=alevel`}>A-levels</a>
+        <a class="sub-link" href={`/${locationSlug}/fees/`}>Fees</a>
+        <a class="sub-link" href={`/${locationSlug}/bursaries/`}>Bursaries</a>
+      </div>
+
+      <div class="location-side-nav-group">
+        <a class="location-side-nav-title" href={`/${locationSlug}/open-days/`}>Open days</a>
+      </div>
+    </Fragment>
+  )}
+
+  <div class="location-side-nav-group">
+    <span class="location-side-nav-title">Moving to {locationName}</span>
+    <span class="sub-label">Coming soon</span>
+  </div>
+</nav>

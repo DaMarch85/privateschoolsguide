@@ -1,0 +1,47 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SiteHeader from '../../../components/SiteHeader.astro';
+import SiteFooter from '../../../components/SiteFooter.astro';
+import SchoolSquareCard from '../../../components/SchoolSquareCard.astro';
+import { getLocationPaths, getLocationDirectoryData } from '../../../lib/directory';
+
+export async function getStaticPaths() {
+  return await getLocationPaths();
+}
+
+const { location: locationSlug } = Astro.params;
+if (!locationSlug) throw new Error('Missing location slug');
+
+const { location, schoolCards } = await getLocationDirectoryData(locationSlug);
+---
+<BaseLayout
+  title={`${location.name} schools directory | The Private School Guide`}
+  description={`Browse all ${location.name} private school profiles in one place.`}
+  canonicalPath={`/${location.slug}/schools/`}
+  bodyClass="location-page"
+  dataLocationSlug={location.slug}
+>
+  <Fragment slot="head">
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+    <link rel="stylesheet" href="/assets/css/bath-refined.css" />
+  </Fragment>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+  <SiteHeader minimal={true} />
+
+  <main id="main" class="page-shell">
+    <div class="shell" style="padding-top: 3rem; padding-bottom: 4rem;">
+      <div style="display:flex; gap:1rem; align-items:baseline; flex-wrap:wrap; margin-bottom:1.5rem;">
+        <h1 style="margin:0;">{location.name} schools</h1>
+        <a class="school-back-link" href={`/${location.slug}/`}>← Back to {location.name}</a>
+      </div>
+      <div class="school-square-grid">
+        {schoolCards.map((school) => (
+          <SchoolSquareCard {...school} />
+        ))}
+      </div>
+    </div>
+  </main>
+
+  <SiteFooter />
+</BaseLayout>
