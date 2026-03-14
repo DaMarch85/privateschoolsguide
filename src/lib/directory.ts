@@ -715,14 +715,18 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const address = buildAddress(school);
   const subhead = school.description || `${phaseLabel} in ${school.town || location.name}.`;
   const canonicalPath = `/${location.slug}/schools/${school.slug}/`;
-  const mapData = school.latitude !== null && school.longitude !== null
+   const bathFallback = location.slug === 'bath' ? BATH_COORDINATE_FALLBACKS[school.slug] : null;
+  const mapLat = school.latitude !== null ? Number(school.latitude) : bathFallback?.lat ?? null;
+  const mapLng = school.longitude !== null ? Number(school.longitude) : bathFallback?.lng ?? null;
+
+  const mapData = mapLat !== null && mapLng !== null
     ? {
         name: school.name,
         slug: canonicalPath,
-        lat: Number(school.latitude),
-        lng: Number(school.longitude),
+        lat: mapLat,
+        lng: mapLng,
         note: `${phaseLabel} · ${genderLabel} · ${formatLabel} · Ages ${ageLabel}`,
-        zoom: 13
+        zoom: bathFallback?.zoom || 13
       }
     : null;
 
