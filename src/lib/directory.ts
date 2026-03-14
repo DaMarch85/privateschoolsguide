@@ -110,6 +110,42 @@ export type FeePane = {
   columns: FeeRecord[][];
 };
 
+
+export type CompareAlevelMetrics = {
+  totalExams: number | null;
+  pctAStarA: number | null;
+  pctAStarB: number | null;
+  uniqueSubjects: number | null;
+  coreScience: number | null;
+  mathematics: number | null;
+  art: number | null;
+  languages: number | null;
+  economics: number | null;
+  english: number | null;
+  history: number | null;
+  geography: number | null;
+  psychology: number | null;
+  other: number | null;
+};
+
+export type CompareSchoolRecord = {
+  id: string;
+  schoolSlug: string;
+  name: string;
+  slug: string;
+  ages: string;
+  gender: string;
+  format: string;
+  dayFee: string;
+  boardingFee: string;
+  bursaries: string;
+  location: string;
+  subhead: string;
+  heroImage: string;
+  map: MapSchool | null;
+  alevel: CompareAlevelMetrics | null;
+};
+
 function fail(message: string, error?: { message?: string } | null): never {
   throw new Error(error?.message ? `${message}: ${error.message}` : message);
 }
@@ -232,6 +268,97 @@ function splitColumns<T>(rows: T[]): T[][] {
   return [rows.slice(0, midpoint), rows.slice(midpoint)];
 }
 
+
+function formatFeeRange(rows: FeeRecord[]): string {
+  const amounts = rows
+    .map((row) => toNumber(row.amount_gbp))
+    .filter((value): value is number => value !== null);
+
+  if (!amounts.length) return 'Not listed';
+
+  const min = Math.min(...amounts);
+  const max = Math.max(...amounts);
+  if (min === max) return `${formatCurrency(min)} / year`;
+  return `${formatCurrency(min)}–${formatCurrency(max)} / year`;
+}
+
+function formatBursaryStatus(bursary: BursaryRecord | null): string {
+  if (!bursary) return '—';
+  if (bursary.status_label) return bursary.status_label;
+  if (bursary.has_bursaries === true) return 'Available';
+  if (bursary.has_bursaries === false) return 'Not currently published';
+  return '—';
+}
+
+function formatLocationLabel(school: SchoolSummaryRecord, fallbackLocationName: string): string {
+  const parts = [school.town, school.county].filter(Boolean) as string[];
+  return parts.length ? parts.join(', ') : fallbackLocationName;
+}
+
+function normalizeSubjectName(subjectName: string): string {
+  return subjectName
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function bucketSubject(subjectName: string): keyof Omit<CompareAlevelMetrics, 'totalExams' | 'pctAStarA' | 'pctAStarB' | 'uniqueSubjects'> {
+  const value = normalizeSubjectName(subjectName);
+
+  if (/\benglish\b/.test(value)) return 'english';
+  if (/\b(french|spanish|german|latin|greek|mandarin|italian|russian|portuguese|japanese|chinese|arabic|language|languages)\b/.test(value)) return 'languages';
+  if (/\b(math|maths|mathematics|further mathematics|further maths|statistics)\b/.test(value)) return 'mathematics';
+  if (/\b(biology|chemistry|physics|science)\b/.test(value)) return 'coreScience';
+  if (/\b(economics|business|accounting)\b/.test(value)) return 'economics';
+  if (/\b(history|ancient history)\b/.test(value)) return 'history';
+  if (/\bgeography\b/.test(value)) return 'geography';
+  if (/\bpsychology\b/.test(value)) return 'psychology';
+  if (/\b(art|design|drama|theatre|music|photography|film|media|textiles)\b/.test(value)) return 'art';
+  return 'other';
+}
+
+function aggregateAlevelMetrics(examResult: ExamResultRecord | null, subjectRows: SubjectRecord[]): CompareAlevelMetrics | null {
+  if (!examResult) return null;
+
+  const buckets: Record<string, number> = {
+    coreScience: 0,
+    mathematics: 0,
+    art: 0,
+    languages: 0,
+    economics: 0,
+    english: 0,
+    history: 0,
+    geography: 0,
+    psychology: 0,
+    other: 0
+  };
+
+  subjectRows.forEach((row) => {
+    const bucket = bucketSubject(row.subject_name);
+    const share = toNumber(row.share_of_entries) ?? 0;
+    buckets[bucket] += share;
+  });
+
+  return {
+    totalExams: toNumber(examResult.entries_count),
+    pctAStarA: toNumber(examResult.pct_a_star_a),
+    pctAStarB: toNumber(examResult.pct_a_star_b),
+    uniqueSubjects: toNumber(examResult.unique_subjects),
+    coreScience: buckets.coreScience,
+    mathematics: buckets.mathematics,
+    art: buckets.art,
+    languages: buckets.languages,
+    economics: buckets.economics,
+    english: buckets.english,
+    history: buckets.history,
+    geography: buckets.geography,
+    psychology: buckets.psychology,
+    other: buckets.other
+  };
+}
+
 export async function getLiveLocations(): Promise<LocationRecord[]> {
   const { data, error } = await supabase
     .from('locations')
@@ -318,6 +445,114 @@ export async function getLocationDirectoryData(locationSlug: string) {
     }));
 
   return { location, locationLinks, schools, schoolCards, mapSchools };
+}
+
+
+export async function getLocationCompareData(locationSlug: string): Promise<{ location: LocationRecord; compareSchools: CompareSchoolRecord[] }> {
+  const location = await getLocationBySlug(locationSlug);
+  const locationLinks = await getLocationSchoolLinks(location.id);
+  const schoolIds = locationLinks.map((row) => row.school_id);
+  const schoolsRaw = await getSchoolsByIds(schoolIds);
+  const schoolMap = new Map(schoolsRaw.map((school) => [String(school.id), school]));
+  const orderedSchools = locationLinks
+    .map((link) => schoolMap.get(String(link.school_id)))
+    .filter(Boolean) as SchoolSummaryRecord[];
+
+  if (!orderedSchools.length) {
+    return { location, compareSchools: [] };
+  }
+
+  const { data: feeRowsRaw, error: feeRowsError } = await supabase
+    .from('school_fee_profiles')
+    .select('school_id, academic_year, fee_type, year_group_label, amount_gbp, includes_vat')
+    .in('school_id', schoolIds);
+
+  if (feeRowsError) fail(`Could not load compare fees for ${locationSlug}`, feeRowsError);
+
+  const { data: bursaryRowsRaw, error: bursaryRowsError } = await supabase
+    .from('school_bursaries')
+    .select('school_id, has_bursaries, status_label, summary, entry_points, published_support_level, application_and_review')
+    .in('school_id', schoolIds);
+
+  if (bursaryRowsError) fail(`Could not load compare bursaries for ${locationSlug}`, bursaryRowsError);
+
+  const { data: examRowsRaw, error: examRowsError } = await supabase
+    .from('school_exam_results')
+    .select('school_id, result_year, entries_count, pct_a_star_a, pct_a_star_b, unique_subjects')
+    .in('school_id', schoolIds)
+    .eq('exam_type', 'alevel')
+    .order('result_year', { ascending: false });
+
+  if (examRowsError) fail(`Could not load compare exam results for ${locationSlug}`, examRowsError);
+
+  const { data: subjectRowsRaw, error: subjectRowsError } = await supabase
+    .from('school_subject_popularity')
+    .select('school_id, result_year, subject_name, share_of_entries, sort_order')
+    .in('school_id', schoolIds)
+    .eq('exam_type', 'alevel')
+    .order('sort_order', { ascending: true });
+
+  if (subjectRowsError) fail(`Could not load compare subjects for ${locationSlug}`, subjectRowsError);
+
+  const feeRows = (feeRowsRaw || []) as Array<FeeRecord & { school_id: string | number }>;
+  const bursaryRows = (bursaryRowsRaw || []) as Array<BursaryRecord & { school_id: string | number }>;
+  const examRows = (examRowsRaw || []) as Array<ExamResultRecord & { school_id: string | number }>;
+  const subjectRows = (subjectRowsRaw || []) as Array<SubjectRecord & { school_id: string | number; result_year: number }>;
+
+  const bursaryBySchool = new Map(bursaryRows.map((row) => [String(row.school_id), row]));
+  const latestExamBySchool = new Map<string, ExamResultRecord>();
+  examRows.forEach((row) => {
+    const key = String(row.school_id);
+    if (!latestExamBySchool.has(key)) latestExamBySchool.set(key, row);
+  });
+
+  const compareSchools: CompareSchoolRecord[] = orderedSchools.map((school) => {
+    const key = String(school.id);
+    const schoolFeeRows = feeRows.filter((row) => String(row.school_id) === key);
+    const currentAcademicYear = Array.from(new Set(schoolFeeRows.map((row) => row.academic_year))).sort().at(-1) || null;
+    const currentFeeRows = currentAcademicYear
+      ? schoolFeeRows.filter((row) => row.academic_year === currentAcademicYear)
+      : [];
+
+    const latestExam = latestExamBySchool.get(key) || null;
+    const latestSubjects = latestExam
+      ? subjectRows.filter((row) => String(row.school_id) === key && row.result_year === latestExam.result_year)
+      : [];
+
+    const phaseLabel = getPhaseLabel(school.phase, school.age_max);
+    const genderLabel = getGenderLabel(school.gender);
+    const formatLabel = getFormatLabel(school.day_boarding);
+    const ageLabel = getAgeLabel(school.age_min, school.age_max);
+
+    return {
+      id: school.slug,
+      schoolSlug: school.slug,
+      name: school.name,
+      slug: `/${location.slug}/schools/${school.slug}/`,
+      ages: ageLabel,
+      gender: genderLabel,
+      format: formatLabel,
+      dayFee: formatFeeRange(currentFeeRows.filter((row) => row.fee_type === 'day')),
+      boardingFee: formatFeeRange(currentFeeRows.filter((row) => row.fee_type === 'weekly_boarding' || row.fee_type === 'full_boarding')),
+      bursaries: formatBursaryStatus(bursaryBySchool.get(key) || null),
+      location: formatLocationLabel(school, location.name),
+      subhead: school.description || `${phaseLabel} in ${school.town || location.name}.`,
+      heroImage: '/assets/img/bath/default-school.jpg',
+      map: school.latitude !== null && school.longitude !== null
+        ? {
+            name: school.name,
+            slug: `/${location.slug}/schools/${school.slug}/`,
+            lat: Number(school.latitude),
+            lng: Number(school.longitude),
+            type: getMapType(school.phase, school.age_max),
+            note: `${phaseLabel} · ${genderLabel} · ${formatLabel} · Ages ${ageLabel}`
+          }
+        : null,
+      alevel: aggregateAlevelMetrics(latestExam, latestSubjects)
+    };
+  });
+
+  return { location, compareSchools };
 }
 
 export async function getAllLocationSchoolPaths() {

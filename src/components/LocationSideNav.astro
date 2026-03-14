@@ -15,20 +15,18 @@ const { locationSlug, locationName, showBathExtras = false } = Astro.props;
     <a class="sub-link" href={`/${locationSlug}/schools/`}>Full directory</a>
   </div>
 
-  {showBathExtras && (
-    <Fragment>
-      <div class="location-side-nav-group">
-        <span class="location-side-nav-title">Compare schools</span>
-        <a class="sub-link" href={`/${locationSlug}/compare/?view=overview`}>School overview</a>
-        <a class="sub-link" href={`/${locationSlug}/compare/?view=alevel`}>A-levels</a>
-        <a class="sub-link" href={`/${locationSlug}/fees/`}>Fees</a>
-        <a class="sub-link" href={`/${locationSlug}/bursaries/`}>Bursaries</a>
-      </div>
+  <div class="location-side-nav-group">
+    <span class="location-side-nav-title">Compare schools</span>
+    <a class="sub-link" href={`/${locationSlug}/compare/?view=overview`}>School overview</a>
+    <a class="sub-link" href={`/${locationSlug}/compare/?view=alevel`}>A-levels</a>
+    {showBathExtras && <a class="sub-link" href={`/${locationSlug}/fees/`}>Fees</a>}
+    {showBathExtras && <a class="sub-link" href={`/${locationSlug}/bursaries/`}>Bursaries</a>}
+  </div>
 
-      <div class="location-side-nav-group">
-        <a class="location-side-nav-title" href={`/${locationSlug}/open-days/`}>Open days</a>
-      </div>
-    </Fragment>
+  {showBathExtras && (
+    <div class="location-side-nav-group">
+      <a class="location-side-nav-title" href={`/${locationSlug}/open-days/`}>Open days</a>
+    </div>
   )}
 
   <div class="location-side-nav-group">
