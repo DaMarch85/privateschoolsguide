@@ -1,10 +1,24 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SiteFooter from '../components/SiteFooter.astro';
-import locations from '../data/homeLocations.json';
-import { getLocationDirectoryData } from '../lib/directory';
+import homeLocations from '../data/homeLocations.json';
+import { getHomepageMapSchools, getLiveLocations } from '../lib/directory';
 
-const { mapSchools: homeMapSchools } = await getLocationDirectoryData('bath');
+const liveLocations = await getLiveLocations();
+const liveLocationHrefs = new Set(liveLocations.map((location) => `/${location.slug}/`));
+const locations = homeLocations.map((location) => {
+  if (liveLocationHrefs.has(location.href)) {
+    return {
+      ...location,
+      isLive: true,
+      state: 'Live now'
+    };
+  }
+
+  return location;
+});
+
+const homeMapSchools = await getHomepageMapSchools();
 ---
 <BaseLayout
   title="The Private School Guide"
@@ -57,19 +71,19 @@ const { mapSchools: homeMapSchools } = await getLocationDirectoryData('bath');
         <div class="finder-panel finder-map-panel">
           <div class="finder-map-head">
             <div>
-              <p class="section-kicker">Current live guide</p>
-              <h2>Bath map</h2>
+              <p class="section-kicker">Current live schools</p>
+              <h2>School map</h2>
             </div>
           </div>
           <div
-            aria-label="Bath school map"
+            aria-label="Private school map"
             class="homepage-map"
             id="homepage-map"
             data-directory-map
             data-map-data-id="homepage-map-data"
             data-empty-state-id="homepage-map-empty"
           ></div>
-          <p id="homepage-map-empty" hidden>Bath school locations are being updated.</p>
+          <p id="homepage-map-empty" hidden>School locations are being updated.</p>
         </div>
       </div>
     </section>
@@ -79,6 +93,6 @@ const { mapSchools: homeMapSchools } = await getLocationDirectoryData('bath');
 
   <script type="application/json" id="homepage-map-data">{JSON.stringify(homeMapSchools)}</script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script defer src="/assets/js/homepage.js"></script>
-  <script defer src="/assets/js/location-pages.js"></script>
+  <script defer src="/assets/js/homepage.js?v=20260314b"></script>
+  <script defer src="/assets/js/location-pages.js?v=20260314b"></script>
 </BaseLayout>

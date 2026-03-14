@@ -40,7 +40,7 @@
 
     return {
       name: item.name || 'School',
-      href: item.slug || item.href || '',
+      href: item.href || item.slug || '',
       note: item.note || item.addressLine1 || item.address_line1 || '',
       type: item.type || '',
       lat: lat,
@@ -64,27 +64,36 @@
     const typeClass = String(type || '').trim();
     return window.L.divIcon({
       className: 'school-map-icon',
-      html: '<span class="school-map-marker ' + escapeHtml(typeClass) + '"></span>',
+      html: '<span class="school-map-marker ' + typeClass + '"></span>',
       iconSize: [16, 16],
       iconAnchor: [8, 8],
       popupAnchor: [0, -8]
     });
   }
 
+  function showEmptyState(mapEl) {
+    if (!mapEl) return;
+    mapEl.hidden = true;
+
+    const emptyStateId = mapEl.dataset.emptyStateId;
+    if (!emptyStateId) return;
+
+    const emptyState = document.getElementById(emptyStateId);
+    if (emptyState) emptyState.hidden = false;
+  }
+
   function createMap(mapEl) {
     if (!mapEl || mapEl.dataset.initialized === 'true') return true;
 
     const dataScriptId = mapEl.dataset.mapDataId;
-    if (!dataScriptId) return false;
+    if (!dataScriptId) {
+      showEmptyState(mapEl);
+      return false;
+    }
 
     const points = parseMapData(dataScriptId).map(normalisePoint).filter(Boolean);
     if (!points.length) {
-      mapEl.hidden = true;
-      const emptyStateId = mapEl.dataset.emptyStateId;
-      if (emptyStateId) {
-        const emptyState = document.getElementById(emptyStateId);
-        if (emptyState) emptyState.hidden = false;
-      }
+      showEmptyState(mapEl);
       return false;
     }
 
@@ -119,15 +128,41 @@
     mapEl.dataset.initialized = 'true';
     setTimeout(function () {
       map.invalidateSize();
-    }, 80);
+    }, 100);
 
     return true;
+  }
+
+  function getMapElements() {
+    const explicitMaps = Array.from(document.querySelectorAll('[data-directory-map]'));
+    if (explicitMaps.length) return explicitMaps;
+
+    const fallbackMaps = [];
+    const homepageMap = document.getElementById('homepage-map');
+    if (homepageMap) {
+      homepageMap.dataset.directoryMap = '';
+      homepageMap.dataset.mapDataId = homepageMap.dataset.mapDataId || 'homepage-map-data';
+      homepageMap.dataset.emptyStateId = homepageMap.dataset.emptyStateId || 'homepage-map-empty';
+      fallbackMaps.push(homepageMap);
+    }
+
+    const locationMap = document.getElementById('location-directory-map');
+    if (locationMap) {
+      locationMap.dataset.directoryMap = '';
+      locationMap.dataset.mapDataId = locationMap.dataset.mapDataId || 'location-map-data';
+      locationMap.dataset.emptyStateId = locationMap.dataset.emptyStateId || 'location-map-empty';
+      fallbackMaps.push(locationMap);
+    }
+
+    return fallbackMaps;
   }
 
   function initAllMaps() {
     if (!window.L) return false;
 
-    const maps = Array.from(document.querySelectorAll('[data-directory-map]'));
+    const maps = getMapElements();
+    if (!maps.length) return true;
+
     maps.forEach(createMap);
     return true;
   }

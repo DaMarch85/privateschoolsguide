@@ -110,10 +110,16 @@ export type SchoolCard = {
 export type MapSchool = {
   name: string;
   slug: string;
+  href: string;
+  locationSlug: string;
   lat: number;
   lng: number;
+  latitude: number;
+  longitude: number;
   type: string;
   note: string;
+  addressLine1: string;
+  address_line1: string;
 };
 
 export type FeePane = {
@@ -233,6 +239,57 @@ export function buildAddress(school: Pick<SchoolSummaryRecord, 'address_line1' |
   return [school.address_line1, school.town, school.postcode].filter(Boolean).join(', ');
 }
 
+
+function getSchoolCoordinateFallback(locationSlug: string, schoolSlug: string) {
+  if (locationSlug !== 'bath') return null;
+  return BATH_COORDINATE_FALLBACKS[schoolSlug] || null;
+}
+
+function getSchoolCoordinates(
+  locationSlug: string,
+  school: Pick<SchoolSummaryRecord, 'slug' | 'latitude' | 'longitude'>
+) {
+  const lat = toNumber(school.latitude);
+  const lng = toNumber(school.longitude);
+
+  if (lat !== null && lng !== null) {
+    return { lat, lng, zoom: 13 };
+  }
+
+  const fallback = getSchoolCoordinateFallback(locationSlug, school.slug);
+  if (!fallback) return null;
+
+  return {
+    lat: fallback.lat,
+    lng: fallback.lng,
+    zoom: fallback.zoom || 13
+  };
+}
+
+function buildLocationMapSchool(location: LocationRecord, school: SchoolSummaryRecord): MapSchool | null {
+  const coordinates = getSchoolCoordinates(location.slug, school);
+  if (!coordinates) return null;
+
+  const href = `/${location.slug}/schools/${school.slug}/`;
+  const note = `${getPhaseLabel(school.phase, school.age_max)} · ${getGenderLabel(school.gender)} · ${getFormatLabel(school.day_boarding)} · Ages ${getAgeLabel(school.age_min, school.age_max)}`;
+  const addressLine1 = school.address_line1 || '';
+
+  return {
+    name: school.name,
+    slug: href,
+    href,
+    locationSlug: location.slug,
+    lat: coordinates.lat,
+    lng: coordinates.lng,
+    latitude: coordinates.lat,
+    longitude: coordinates.lng,
+    type: getMapType(school.phase, school.age_max),
+    note,
+    addressLine1,
+    address_line1: addressLine1
+  };
+}
+
 export function splitPipeList(text: string | null | undefined): string[] {
   return String(text || '')
     .split('|')
@@ -303,30 +360,6 @@ function formatBursaryStatus(bursary: BursaryRecord | null): string {
 function formatLocationLabel(school: SchoolSummaryRecord, fallbackLocationName: string): string {
   const parts = [school.town, school.county].filter(Boolean) as string[];
   return parts.length ? parts.join(', ') : fallbackLocationName;
-}
-
-
-function getSchoolCoordinateFallback(locationSlug: string, schoolSlug: string) {
-  if (locationSlug !== 'bath') return null;
-  return BATH_COORDINATE_FALLBACKS[schoolSlug] || null;
-}
-
-function getSchoolCoordinates(locationSlug: string, school: Pick<SchoolSummaryRecord, 'slug' | 'latitude' | 'longitude'>) {
-  const lat = toNumber(school.latitude);
-  const lng = toNumber(school.longitude);
-
-  if (lat !== null && lng !== null) {
-    return { lat, lng, zoom: 13 };
-  }
-
-  const fallback = getSchoolCoordinateFallback(locationSlug, school.slug);
-  if (!fallback) return null;
-
-  return {
-    lat: fallback.lat,
-    lng: fallback.lng,
-    zoom: fallback.zoom || 13
-  };
 }
 
 function normalizeSubjectName(subjectName: string): string {
@@ -468,22 +501,32 @@ export async function getLocationDirectoryData(locationSlug: string) {
   }));
 
   const mapSchools: MapSchool[] = schools
-    .map((school) => {
-      const coordinates = getSchoolCoordinates(location.slug, school);
-      if (!coordinates) return null;
-
-      return {
-        name: school.name,
-        slug: `/${location.slug}/schools/${school.slug}/`,
-        lat: coordinates.lat,
-        lng: coordinates.lng,
-        type: getMapType(school.phase, school.age_max),
-        note: `${getPhaseLabel(school.phase, school.age_max)} · ${getGenderLabel(school.gender)} · ${getFormatLabel(school.day_boarding)} · Ages ${getAgeLabel(school.age_min, school.age_max)}`
-      };
-    })
+    .map((school) => buildLocationMapSchool(location, school))
     .filter((school): school is MapSchool => Boolean(school));
 
   return { location, locationLinks, schools, schoolCards, mapSchools };
+}
+
+
+export async function getHomepageMapSchools(): Promise<MapSchool[]> {
+  const liveLocations = await getLiveLocations();
+  const directoryEntries = await Promise.all(
+    liveLocations.map((location) => getLocationDirectoryData(location.slug))
+  );
+
+  const seen = new Set<string>();
+  const mapSchools: MapSchool[] = [];
+
+  directoryEntries.forEach((entry) => {
+    entry.mapSchools.forEach((school) => {
+      const key = school.href || school.slug;
+      if (seen.has(key)) return;
+      seen.add(key);
+      mapSchools.push(school);
+    });
+  });
+
+  return mapSchools;
 }
 
 export async function getLocationCompareData(locationSlug: string): Promise<{ location: LocationRecord; compareSchools: CompareSchoolRecord[] }> {
@@ -576,19 +619,7 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
       location: formatLocationLabel(school, location.name),
       subhead: school.description || `${phaseLabel} in ${school.town || location.name}.`,
       heroImage: '/assets/img/bath/default-school.jpg',
-      map: (() => {
-        const coordinates = getSchoolCoordinates(location.slug, school);
-        if (!coordinates) return null;
-
-        return {
-          name: school.name,
-          slug: `/${location.slug}/schools/${school.slug}/`,
-          lat: coordinates.lat,
-          lng: coordinates.lng,
-          type: getMapType(school.phase, school.age_max),
-          note: `${phaseLabel} · ${genderLabel} · ${formatLabel} · Ages ${ageLabel}`
-        };
-      })(),
+      map: buildLocationMapSchool(location, school),
       alevel: aggregateAlevelMetrics(latestExam, latestSubjects)
     };
   });
@@ -753,8 +784,11 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
     ? {
         name: school.name,
         slug: canonicalPath,
+        href: canonicalPath,
         lat: coordinates.lat,
         lng: coordinates.lng,
+        latitude: coordinates.lat,
+        longitude: coordinates.lng,
         note: `${phaseLabel} · ${genderLabel} · ${formatLabel} · Ages ${ageLabel}`,
         zoom: coordinates.zoom || 13
       }
