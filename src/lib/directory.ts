@@ -12,6 +12,25 @@ export type LocationRecord = {
   latitude: number | null;
   longitude: number | null;
   is_live: boolean;
+  show_on_homepage?: boolean | null;
+  homepage_order?: number | null;
+  homepage_status_label?: string | null;
+};
+
+export type HomepageLocationRecord = {
+  name: string;
+  slug: string;
+  is_live: boolean;
+  show_on_homepage: boolean | null;
+  homepage_order: number | null;
+  homepage_status_label: string | null;
+};
+
+export type HomepageLocationItem = {
+  name: string;
+  href: string;
+  state: string;
+  isLive: boolean;
 };
 
 export type LocationSchoolLink = {
@@ -496,6 +515,24 @@ export async function getLiveLocations(): Promise<LocationRecord[]> {
 
   if (error) fail('Could not load live locations', error);
   return (data || []) as LocationRecord[];
+}
+
+export async function getHomepageLocations(): Promise<HomepageLocationItem[]> {
+  const { data, error } = await supabase
+    .from('locations')
+    .select('name, slug, is_live, show_on_homepage, homepage_order, homepage_status_label')
+    .eq('show_on_homepage', true)
+    .order('homepage_order', { ascending: true })
+    .order('name', { ascending: true });
+
+  if (error) fail('Could not load homepage locations', error);
+
+  return ((data || []) as HomepageLocationRecord[]).map((location) => ({
+    name: location.name,
+    href: `/${location.slug}/`,
+    state: String(location.homepage_status_label || '').trim() || (location.is_live ? 'Live now' : 'Coming soon'),
+    isLive: Boolean(location.is_live)
+  }));
 }
 
 export async function getLocationBySlug(locationSlug: string): Promise<LocationRecord> {

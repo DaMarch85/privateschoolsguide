@@ -1,58 +1,19 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SiteFooter from '../components/SiteFooter.astro';
-import homeLocations from '../data/homeLocations.json';
 import {
-  getAllLocationSchoolPaths,
-  getLiveLocations,
-  getLocationSchoolProfile
+  getHomepageLocations,
+  getHomepageMapSchools
 } from '../lib/directory';
 
-type HomeLocationItem = (typeof homeLocations)[number];
-
-type HomeMapSchool = {
-  name: string;
-  href: string;
-  lat: number;
-  lng: number;
-  note: string;
-};
-
-const liveLocations = await getLiveLocations();
-const liveLocationHrefs = new Set(liveLocations.map((location) => `/${location.slug}/`));
-
-const locations: HomeLocationItem[] = homeLocations.map((location) => {
-  if (liveLocationHrefs.has(location.href)) {
-    return {
-      ...location,
-      isLive: true,
-      state: 'Live now'
-    };
-  }
-
-  return location;
-});
-
-const schoolPaths = await getAllLocationSchoolPaths();
-const schoolProfiles = await Promise.all(
-  schoolPaths.map(({ params }) => getLocationSchoolProfile(params.location, params.slug))
-);
-
-const mapSchoolByHref = new Map<string, HomeMapSchool>();
-
-for (const profile of schoolProfiles) {
-  if (!profile.mapData) continue;
-
-  mapSchoolByHref.set(profile.canonicalPath, {
-    name: profile.school.name,
-    href: profile.canonicalPath,
-    lat: Number(profile.mapData.lat),
-    lng: Number(profile.mapData.lng),
-    note: `${profile.location.name} · ${profile.mapData.note}`
-  });
-}
-
-const mapSchools = Array.from(mapSchoolByHref.values()).sort((a, b) => a.name.localeCompare(b.name));
+const locations = await getHomepageLocations();
+const mapSchools = (await getHomepageMapSchools()).map((school) => ({
+  name: school.name,
+  href: school.href,
+  lat: school.lat,
+  lng: school.lng,
+  note: school.note
+}));
 const homepageMapScript = `window.homepageMapData = ${JSON.stringify(mapSchools)};`;
 ---
 <BaseLayout
