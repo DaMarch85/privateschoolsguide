@@ -31,6 +31,7 @@
   if (feeSwitch) {
     const buttons = Array.from(feeSwitch.querySelectorAll('[data-fees-view]'));
     const tables = Array.from(document.querySelectorAll('[data-fees-table]'));
+
     buttons.forEach((button) => {
       button.addEventListener('click', () => {
         const view = button.getAttribute('data-fees-view');
@@ -40,5 +41,145 @@
         });
       });
     });
+
+    const tableElements = tables
+      .map((wrap) => wrap.querySelector('.fees-matrix'))
+      .filter(Boolean);
+
+    if (tableElements.length) {
+      const schoolKeys = [];
+      const columnCellsByKey = new Map();
+      const hiddenKeys = new Set();
+
+      function normaliseSchoolKey(text) {
+        return String(text || '')
+          .replace(/\s+/g, ' ')
+          .replace(/\bGDST\b/gi, 'GDST')
+          .trim();
+      }
+
+      function collectColumns(table) {
+        const rows = Array.from(table.querySelectorAll('tr'));
+        const headerCells = Array.from(table.querySelectorAll('thead th'));
+
+        headerCells.forEach((cell, index) => {
+          if (index === 0) return;
+          const schoolName = normaliseSchoolKey(cell.textContent);
+          cell.dataset.schoolKey = schoolName;
+
+          if (!schoolKeys.includes(schoolName)) {
+            schoolKeys.push(schoolName);
+            columnCellsByKey.set(schoolName, []);
+          }
+
+          const cells = rows
+            .map((row) => row.children[index])
+            .filter(Boolean);
+
+          cells.forEach((entry) => {
+            entry.dataset.schoolKey = schoolName;
+            columnCellsByKey.get(schoolName).push(entry);
+          });
+        });
+      }
+
+      tableElements.forEach(collectColumns);
+
+      const visibilityBar = document.createElement('div');
+      visibilityBar.className = 'fees-visibility-bar';
+      visibilityBar.innerHTML = `
+        <div class="fees-visibility-head">
+          <p class="fees-visibility-label">School columns</p>
+          <button type="button" class="fees-show-all">Show all schools</button>
+        </div>
+        <div class="fees-visibility-pills" aria-live="polite"></div>
+      `;
+      const firstWrap = tables[0];
+      firstWrap.parentElement.insertBefore(visibilityBar, firstWrap);
+
+      const pillsHost = visibilityBar.querySelector('.fees-visibility-pills');
+      const showAllButton = visibilityBar.querySelector('.fees-show-all');
+
+      function setHeaderToggleState() {
+        document.querySelectorAll('.fees-column-toggle').forEach((button) => {
+          const key = button.dataset.schoolKey;
+          const isHidden = hiddenKeys.has(key);
+          button.classList.toggle('is-hidden', isHidden);
+          button.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
+          button.textContent = isHidden ? 'Show' : 'Hide';
+        });
+      }
+
+      function renderPills() {
+        pillsHost.innerHTML = '';
+        schoolKeys.forEach((key) => {
+          const pill = document.createElement('button');
+          pill.type = 'button';
+          pill.className = 'fees-visibility-pill';
+          pill.dataset.schoolKey = key;
+          const isHidden = hiddenKeys.has(key);
+          pill.classList.toggle('is-hidden', isHidden);
+          pill.setAttribute('aria-pressed', isHidden ? 'false' : 'true');
+          pill.textContent = isHidden ? `Show ${key}` : key;
+          pill.addEventListener('click', () => {
+            if (isHidden) hiddenKeys.delete(key);
+            else hiddenKeys.add(key);
+            applyColumnVisibility();
+          });
+          pillsHost.appendChild(pill);
+        });
+
+        visibilityBar.classList.toggle('has-hidden-schools', hiddenKeys.size > 0);
+      }
+
+      function applyColumnVisibility() {
+        schoolKeys.forEach((key) => {
+          const shouldHide = hiddenKeys.has(key);
+          (columnCellsByKey.get(key) || []).forEach((cell) => {
+            cell.hidden = shouldHide;
+          });
+        });
+
+        setHeaderToggleState();
+        renderPills();
+      }
+
+      function attachHeaderButtons() {
+        tableElements.forEach((table) => {
+          const headerCells = Array.from(table.querySelectorAll('thead th'));
+          headerCells.forEach((cell, index) => {
+            if (index === 0 || cell.dataset.toggleReady === 'true') return;
+            cell.dataset.toggleReady = 'true';
+
+            const schoolKey = cell.dataset.schoolKey || normaliseSchoolKey(cell.textContent);
+            const headerNameHtml = cell.innerHTML;
+            cell.innerHTML = `
+              <span class="fees-school-name">${headerNameHtml}</span>
+              <button type="button" class="fees-column-toggle" data-school-key="${schoolKey}" aria-pressed="false">Hide</button>
+            `;
+
+            const button = cell.querySelector('.fees-column-toggle');
+            if (button) {
+              button.addEventListener('click', () => {
+                if (hiddenKeys.has(schoolKey)) hiddenKeys.delete(schoolKey);
+                else hiddenKeys.add(schoolKey);
+                applyColumnVisibility();
+              });
+            }
+          });
+        });
+      }
+
+      attachHeaderButtons();
+
+      if (showAllButton) {
+        showAllButton.addEventListener('click', () => {
+          hiddenKeys.clear();
+          applyColumnVisibility();
+        });
+      }
+
+      applyColumnVisibility();
+    }
   }
 })();

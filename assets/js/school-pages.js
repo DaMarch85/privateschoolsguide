@@ -516,13 +516,16 @@
   function addCompareSchoolName(tile, schoolName) {
     if (!tile || tile.classList.contains("school-feature-tile--placeholder")) return;
 
+    tile.classList.add("has-compare-school-name");
+    tile.dataset.compareSchoolName = schoolName || "School";
+
     let label = tile.querySelector(".school-compare-tile-school-name");
     if (!label) {
       label = document.createElement("p");
       label.className = "school-compare-tile-school-name";
-      const heading = tile.querySelector("h2");
-      if (heading) {
-        heading.insertAdjacentElement("afterend", label);
+      const firstHeading = tile.querySelector("h2");
+      if (firstHeading) {
+        tile.insertBefore(label, firstHeading);
       } else {
         tile.insertAdjacentElement("afterbegin", label);
       }
@@ -555,6 +558,17 @@
     });
 
     return wrapper;
+  }
+
+  function syncComparisonSchoolLabels(scope) {
+    if (!scope) return;
+    scope.querySelectorAll(".school-compare-row").forEach((row) => {
+      const tiles = Array.from(row.querySelectorAll(".school-feature-tile.has-compare-school-name"));
+      tiles.forEach((tile) => {
+        const schoolName = tile.dataset.compareSchoolName || "School";
+        addCompareSchoolName(tile, schoolName);
+      });
+    });
   }
 
   function syncComparisonFeeSpacers(scope) {
@@ -592,6 +606,7 @@
       compareMount.appendChild(headerRow);
       compareMount.appendChild(createPairedComparison(currentData, comparisonData));
       bindTileInteractions(compareMount);
+      syncComparisonSchoolLabels(compareMount);
       syncComparisonFeeSpacers(compareMount);
       baseGrid.style.display = "none";
       compareMount.style.display = "block";

@@ -1230,3 +1230,147 @@
   border-top:1px solid var(--psg-line);
   padding-top:8px;
 }
+
+
+/* --- 2026-03-15 compare visibility / sticky polish / location map sharpness --- */
+.school-profile-page .school-feature-tile.has-compare-school-name{
+  position:relative;
+}
+.school-profile-page .school-compare-tile-school-name{
+  display:none;
+  margin:0 0 10px;
+  color:var(--psg-accent);
+  font:600 .76rem/1.2 "Inter",sans-serif;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+@media (max-width: 1180px){
+  .school-profile-page.is-compare-mode .school-compare-paired .school-feature-tile.has-compare-school-name .school-compare-tile-school-name{
+    display:block !important;
+  }
+}
+
+.fees-visibility-bar{
+  display:grid;
+  gap:12px;
+  margin:18px 0 14px;
+}
+.fees-visibility-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.fees-visibility-label{
+  margin:0;
+  color:var(--psg-accent);
+  font:600 .78rem/1.2 "Inter",sans-serif;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.fees-show-all{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:8px 12px;
+  border:1px solid var(--psg-line);
+  background:var(--psg-paper);
+  color:var(--psg-ink);
+  font:600 .75rem/1.2 "Inter",sans-serif;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+.fees-show-all:hover{
+  color:var(--psg-accent);
+  border-color:rgba(179,91,46,.45);
+}
+.fees-visibility-pills{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.fees-visibility-pill{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:9px 12px;
+  border:1px solid var(--psg-line);
+  background:#fbf7f0;
+  color:var(--psg-ink);
+  font:600 .78rem/1.2 "Inter",sans-serif;
+  cursor:pointer;
+}
+.fees-visibility-pill.is-hidden{
+  color:var(--psg-muted);
+  background:transparent;
+}
+.fees-matrix thead th{
+  position:sticky;
+  top:0;
+  z-index:3;
+  background:#f5efe6;
+  background-clip:padding-box;
+}
+.fees-matrix thead th:first-child{
+  left:0;
+  z-index:6;
+  min-width:96px;
+  background:var(--psg-paper);
+  box-shadow:1px 0 0 var(--psg-line), 0 1px 0 var(--psg-line);
+}
+.fees-matrix tbody th{
+  left:0;
+  z-index:2;
+  background:var(--psg-paper);
+  background-clip:padding-box;
+  box-shadow:1px 0 0 var(--psg-line);
+}
+.fees-matrix thead th,
+.fees-matrix tbody th{
+  position:sticky;
+}
+.fees-matrix thead th:first-child::after,
+.fees-matrix tbody th::after{
+  content:"";
+  position:absolute;
+  top:0;
+  right:-1px;
+  width:1px;
+  height:100%;
+  background:var(--psg-line);
+}
+.fees-school-name{
+  display:block;
+  min-width:148px;
+}
+.fees-column-toggle{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-top:8px;
+  padding:6px 10px;
+  border:1px solid var(--psg-line);
+  background:var(--psg-paper);
+  color:var(--psg-ink);
+  font:600 .68rem/1.2 "Inter",sans-serif;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+.fees-column-toggle:hover{
+  color:var(--psg-accent);
+  border-color:rgba(179,91,46,.45);
+}
+.fees-column-toggle.is-hidden{
+  color:var(--psg-muted);
+}
+@media (max-width: 640px){
+  .fees-visibility-head{
+    align-items:stretch;
+  }
+  .fees-show-all{
+    width:100%;
+  }
+}

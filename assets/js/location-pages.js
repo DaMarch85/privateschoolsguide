@@ -84,16 +84,30 @@
 
     const map = window.L.map(mapTarget, {
       zoomControl: true,
-      scrollWheelZoom: false
+      scrollWheelZoom: false,
+      zoomAnimation: false,
+      fadeAnimation: false,
+      markerZoomAnimation: false
     });
 
     mapTarget.dataset.mapReady = 'true';
     mapTarget._leaflet_map_instance = map;
 
-    window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const tileLayer = window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
-      attribution: '© OpenStreetMap contributors'
+      attribution: '© OpenStreetMap contributors',
+      detectRetina: window.devicePixelRatio > 1
     }).addTo(map);
+
+    function sharpenMap() {
+      if (!mapTarget || !map) return;
+      requestAnimationFrame(function () {
+        map.invalidateSize({ pan: false, animate: false });
+        if (typeof tileLayer.redraw === 'function') {
+          tileLayer.redraw();
+        }
+      });
+    }
 
     const points = getMapPoints();
 
@@ -101,9 +115,10 @@
       const fallbackView = getLocationFallbackView();
       map.setView(fallbackView.center, fallbackView.zoom);
       if (emptyState) emptyState.hidden = false;
-      setTimeout(function () {
-        map.invalidateSize();
-      }, 80);
+      sharpenMap();
+      setTimeout(sharpenMap, 80);
+      setTimeout(sharpenMap, 260);
+      setTimeout(sharpenMap, 600);
       return true;
     }
 
@@ -123,16 +138,16 @@
       map.setView([points[0].lat, points[0].lng], 13);
     } else {
       const group = window.L.featureGroup(markers);
-      map.fitBounds(group.getBounds(), { padding: [28, 28], maxZoom: 11 });
+      map.fitBounds(group.getBounds(), { padding: [28, 28], maxZoom: 11, animate: false });
     }
 
-    setTimeout(function () {
-      map.invalidateSize();
-    }, 80);
+    sharpenMap();
+    setTimeout(sharpenMap, 80);
+    setTimeout(sharpenMap, 260);
+    setTimeout(sharpenMap, 600);
 
-    setTimeout(function () {
-      map.invalidateSize();
-    }, 300);
+    window.addEventListener('resize', sharpenMap, { passive: true });
+    window.addEventListener('orientationchange', function () { setTimeout(sharpenMap, 120); }, { passive: true });
 
     return true;
   }
