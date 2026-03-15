@@ -1,17 +1,5 @@
 import { supabase } from './supabase';
 
-const BATH_COORDINATE_FALLBACKS: Record<string, { lat: number; lng: number; zoom?: number }> = {
-  'king-edwards-school': { lat: 51.386488, lng: -2.343663, zoom: 13 },
-  'kingswood-school': { lat: 51.398883, lng: -2.370005, zoom: 13 },
-  'kingswood-preparatory-school': { lat: 51.397143, lng: -2.373238, zoom: 13 },
-  'prior-park-college': { lat: 51.364523, lng: -2.343082, zoom: 13 },
-  'paragon-school': { lat: 51.370494, lng: -2.355122, zoom: 13 },
-  'monkton-combe-school': { lat: 51.357305, lng: -2.326354, zoom: 13 },
-  'royal-high-school-bath-gdst': { lat: 51.397185, lng: -2.365419, zoom: 13 },
-  'bath-academy': { lat: 51.383903, lng: -2.363978, zoom: 13 },
-  'downside-school': { lat: 51.253899, lng: -2.495195, zoom: 13 }
-};
-
 export type LocationRecord = {
   id: string;
   name: string;
@@ -240,34 +228,21 @@ export function buildAddress(school: Pick<SchoolSummaryRecord, 'address_line1' |
 }
 
 
-function getSchoolCoordinateFallback(locationSlug: string, schoolSlug: string) {
-  if (locationSlug !== 'bath') return null;
-  return BATH_COORDINATE_FALLBACKS[schoolSlug] || null;
-}
-
 function getSchoolCoordinates(
-  locationSlug: string,
-  school: Pick<SchoolSummaryRecord, 'slug' | 'latitude' | 'longitude'>
+  school: Pick<SchoolSummaryRecord, 'latitude' | 'longitude'>
 ) {
   const lat = toNumber(school.latitude);
   const lng = toNumber(school.longitude);
 
-  if (lat !== null && lng !== null) {
-    return { lat, lng, zoom: 13 };
+  if (lat === null || lng === null) {
+    return null;
   }
 
-  const fallback = getSchoolCoordinateFallback(locationSlug, school.slug);
-  if (!fallback) return null;
-
-  return {
-    lat: fallback.lat,
-    lng: fallback.lng,
-    zoom: fallback.zoom || 13
-  };
+  return { lat, lng, zoom: 13 };
 }
 
 function buildLocationMapSchool(location: LocationRecord, school: SchoolSummaryRecord): MapSchool | null {
-  const coordinates = getSchoolCoordinates(location.slug, school);
+  const coordinates = getSchoolCoordinates(school);
   if (!coordinates) return null;
 
   const href = `/${location.slug}/schools/${school.slug}/`;
@@ -778,7 +753,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const address = buildAddress(school);
   const subhead = school.description || `${phaseLabel} in ${school.town || location.name}.`;
   const canonicalPath = `/${location.slug}/schools/${school.slug}/`;
-  const coordinates = getSchoolCoordinates(location.slug, school);
+  const coordinates = getSchoolCoordinates(school);
 
   const mapData = coordinates
     ? {

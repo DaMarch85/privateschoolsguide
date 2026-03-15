@@ -18,18 +18,6 @@ export async function getStaticPaths() {
   return await getLocationPaths();
 }
 
-const BATH_COORDINATE_FALLBACKS: Record<string, { lat: number; lng: number }> = {
-  'king-edwards-school': { lat: 51.386488, lng: -2.343663 },
-  'kingswood-school': { lat: 51.398883, lng: -2.370005 },
-  'kingswood-preparatory-school': { lat: 51.397143, lng: -2.373238 },
-  'prior-park-college': { lat: 51.364523, lng: -2.343082 },
-  'paragon-school': { lat: 51.370494, lng: -2.355122 },
-  'monkton-combe-school': { lat: 51.357305, lng: -2.326354 },
-  'royal-high-school-bath-gdst': { lat: 51.397185, lng: -2.365419 },
-  'bath-academy': { lat: 51.383903, lng: -2.363978 },
-  'downside-school': { lat: 51.253899, lng: -2.495195 }
-};
-
 const { location: locationSlug } = Astro.params;
 if (!locationSlug) throw new Error('Missing location slug');
 
@@ -40,9 +28,8 @@ const heroImage = '/assets/img/bath/bath-location-hero.jpg';
 
 const mapSchools = schools
   .map((school) => {
-    const bathFallback = location.slug === 'bath' ? BATH_COORDINATE_FALLBACKS[school.slug] : null;
-    const lat = school.latitude !== null ? Number(school.latitude) : bathFallback?.lat ?? null;
-    const lng = school.longitude !== null ? Number(school.longitude) : bathFallback?.lng ?? null;
+    const lat = school.latitude !== null ? Number(school.latitude) : null;
+    const lng = school.longitude !== null ? Number(school.longitude) : null;
 
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
       return null;
@@ -115,5 +102,5 @@ const locationMapScript = `window.locationPageMapData = ${JSON.stringify(mapScho
 
   <script is:inline set:html={locationMapScript}></script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script defer src="/assets/js/location-pages.js?v=20260314-locationfix2"></script>
+  <script defer src="/assets/js/location-pages.js?v=20260315-supabaseonly"></script>
 </BaseLayout>
