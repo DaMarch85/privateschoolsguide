@@ -513,6 +513,24 @@
     return column;
   }
 
+  function addCompareSchoolName(tile, schoolName) {
+    if (!tile || tile.classList.contains("school-feature-tile--placeholder")) return;
+
+    let label = tile.querySelector(".school-compare-tile-school-name");
+    if (!label) {
+      label = document.createElement("p");
+      label.className = "school-compare-tile-school-name";
+      const heading = tile.querySelector("h2");
+      if (heading) {
+        heading.insertAdjacentElement("afterend", label);
+      } else {
+        tile.insertAdjacentElement("afterbegin", label);
+      }
+    }
+
+    label.textContent = schoolName || "School";
+  }
+
   function createPairedComparison(primaryData, secondaryData) {
     const wrapper = document.createElement("div");
     wrapper.className = "school-compare-paired";
@@ -529,6 +547,8 @@
       const secondaryTile = secondaryMap.has(title)
         ? tileElementFromHtml(secondaryMap.get(title))
         : createPlaceholderTile(title);
+      addCompareSchoolName(primaryTile, primaryData.name);
+      addCompareSchoolName(secondaryTile, secondaryData.name);
       if (primaryTile) row.appendChild(primaryTile);
       if (secondaryTile) row.appendChild(secondaryTile);
       wrapper.appendChild(row);

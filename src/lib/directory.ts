@@ -54,6 +54,7 @@ export type SchoolContentRecord = {
   what_parents_say: string | null;
   what_school_says: string | null;
   editor_notes: string | null;
+  [key: string]: unknown;
 };
 
 export type ExamResultRecord = {
@@ -280,6 +281,91 @@ export function splitParagraphs(text: string | null | undefined): string[] {
     .split(/\n\s*\n|\r\n\s*\r\n/)
     .map((item) => item.replace(/\s+/g, ' ').trim())
     .filter(Boolean);
+}
+
+
+type RawSchoolContentRecord = Partial<SchoolContentRecord> & Record<string, unknown>;
+
+function contentValueToString(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string') {
+    const cleaned = value.replace(/\s+/g, ' ').trim();
+    return cleaned || null;
+  }
+  if (Array.isArray(value)) {
+    const cleanedItems = value
+      .map((item) => (typeof item === 'string' ? item.replace(/\s+/g, ' ').trim() : ''))
+      .filter(Boolean);
+    return cleanedItems.length ? cleanedItems.join(' | ') : null;
+  }
+  return null;
+}
+
+function pickFirstContentValue(content: RawSchoolContentRecord | null, keys: string[]): string | null {
+  if (!content) return null;
+
+  for (const key of keys) {
+    const value = contentValueToString(content[key]);
+    if (value) return value;
+  }
+
+  return null;
+}
+
+function normalizeSchoolContent(content: RawSchoolContentRecord | null): SchoolContentRecord | null {
+  if (!content) return null;
+
+  return {
+    ...content,
+    admissions_summary: pickFirstContentValue(content, [
+      'admissions_summary',
+      'admissions',
+      'admissions_notes'
+    ]),
+    academic_snapshot: pickFirstContentValue(content, [
+      'academic_snapshot',
+      'academic_overview'
+    ]),
+    inspection_snapshot: pickFirstContentValue(content, [
+      'inspection_snapshot',
+      'inspection_overview'
+    ]),
+    assessment_approach: pickFirstContentValue(content, [
+      'assessment_approach',
+      'assessment',
+      'assessment_summary'
+    ]),
+    scholarships: pickFirstContentValue(content, [
+      'scholarships',
+      'scholarship_summary',
+      'scholarships_summary'
+    ]),
+    destinations: pickFirstContentValue(content, [
+      'destinations',
+      'leavers_destinations',
+      'leaver_destinations',
+      'destination_summary'
+    ]),
+    what_parents_say: pickFirstContentValue(content, [
+      'what_parents_say',
+      'parents_like',
+      'what_parents_like',
+      'parent_likes',
+      'parents_say'
+    ]),
+    what_school_says: pickFirstContentValue(content, [
+      'what_school_says',
+      'how_the_school_describes_itself',
+      'how_school_describes_itself',
+      'school_describes_itself',
+      'school_voice'
+    ]),
+    editor_notes: pickFirstContentValue(content, [
+      'editor_notes',
+      'editor_note',
+      'notes'
+    ])
+  };
 }
 
 function yearGroupOrder(label: string): number {
@@ -659,7 +745,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const [contentRes, heroImageRes, examRes, feeRes, bursaryRes, compareSchoolsRes] = await Promise.all([
     supabase
       .from('school_content')
-      .select('admissions_summary, academic_snapshot, inspection_snapshot, assessment_approach, scholarships, destinations, what_parents_say, what_school_says, editor_notes')
+      .select('*')
       .eq('school_id', school.id)
       .maybeSingle(),
     supabase
@@ -700,7 +786,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   if (bursaryRes.error) fail(`Could not load bursary data for ${schoolSlug}`, bursaryRes.error);
   if (compareSchoolsRes.error) fail(`Could not load compare links for ${schoolSlug}`, compareSchoolsRes.error);
 
-  const content = (contentRes.data || null) as SchoolContentRecord | null;
+  const content = normalizeSchoolContent((contentRes.data || null) as RawSchoolContentRecord | null);
   const heroImageUrl = heroImageRes.data?.image_url || '/assets/img/bath/default-school.jpg';
   const heroImageAlt = heroImageRes.data?.alt_text || '';
   const alevelResult = (examRes.data || null) as ExamResultRecord | null;

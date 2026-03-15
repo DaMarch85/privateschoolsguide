@@ -886,6 +886,14 @@
 .school-profile-page .school-feature-tile .fee-year-row{
   gap:16px;
 }
+.school-profile-page .school-compare-tile-school-name{
+  display:none;
+  margin:8px 0 12px;
+  color:var(--psg-accent);
+  font:600 .76rem/1.2 "Inter",sans-serif;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
 .school-profile-page .school-map-panel{
   min-width:0;
 }
@@ -899,6 +907,9 @@
   .school-profile-page .school-compare-headers,
   .school-profile-page .school-compare-row{
     grid-template-columns:1fr;
+  }
+  .school-profile-page.is-compare-mode .school-compare-row .school-compare-tile-school-name{
+    display:block;
   }
 }
 @media (max-width: 900px){
