@@ -1,3 +1,4 @@
+import { getLocationPresentation } from './location-config';
 import { supabase } from './supabase';
 
 export type LocationRecord = {
@@ -417,6 +418,7 @@ function normalizeSchoolContent(content: RawSchoolContentRecord | null): SchoolC
 
 function yearGroupOrder(label: string): number {
   const trimmed = label.trim();
+  if (/^(pre[\s-]?reception|preschool|pre-school|pre school)/i.test(trimmed)) return -2;
   if (/^nursery/i.test(trimmed)) return -1;
   if (/^reception/i.test(trimmed)) return 0;
   const match = trimmed.match(/^year\s*(\d{1,2})/i);
@@ -714,6 +716,8 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
     if (!latestExamBySchool.has(key)) latestExamBySchool.set(key, row);
   });
 
+  const presentation = getLocationPresentation(location.slug, location.name);
+
   const compareSchools: CompareSchoolRecord[] = orderedSchools.map((school) => {
     const key = String(school.id);
     const schoolFeeRows = feeRows.filter((row) => String(row.school_id) === key);
@@ -746,7 +750,7 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
       bursaries: formatBursaryStatus(bursaryBySchool.get(key) || null),
       location: formatLocationLabel(school, location.name),
       subhead: school.description || `${phaseLabel} in ${school.town || location.name}.`,
-      heroImage: '/assets/img/bath/default-school.jpg',
+      heroImage: presentation.defaultSchoolHeroImage,
       map: buildLocationMapSchool(location, school),
       alevel: aggregateAlevelMetrics(latestExam, latestSubjects)
     };
@@ -1030,7 +1034,8 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   if (compareSchoolsRes.error) fail(`Could not load compare links for ${schoolSlug}`, compareSchoolsRes.error);
 
   const content = normalizeSchoolContent((contentRes.data || null) as RawSchoolContentRecord | null);
-  const heroImageUrl = heroImageRes.data?.image_url || '/assets/img/bath/default-school.jpg';
+  const locationPresentation = getLocationPresentation(location.slug, location.name);
+  const heroImageUrl = heroImageRes.data?.image_url || locationPresentation.defaultSchoolHeroImage;
   const heroImageAlt = heroImageRes.data?.alt_text || '';
   const alevelResult = (examRes.data || null) as ExamResultRecord | null;
   const feeRowsAll = (feeRes.data || []) as FeeRecord[];

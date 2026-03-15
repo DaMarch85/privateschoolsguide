@@ -4,6 +4,7 @@ import SiteHeader from '../../components/SiteHeader.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import LocationSideNav from '../../components/LocationSideNav.astro';
 import SchoolSquareCard from '../../components/SchoolSquareCard.astro';
+import { getLocationPresentation } from '../../lib/location-config';
 import {
   getAgeLabel,
   getFormatLabel,
@@ -24,7 +25,7 @@ if (!locationSlug) throw new Error('Missing location slug');
 const { location, schools, schoolCards } = await getLocationDirectoryData(locationSlug);
 const fallbackMetaTitle = `${location.name} private schools | The Private School Guide`;
 const fallbackMetaDescription = `Independent guide to ${location.name} private schools. Compare schools, review fees and bursaries, explore open days, and use the map to narrow your shortlist.`;
-const heroImage = '/assets/img/bath/bath-location-hero.jpg';
+const { heroImage, heroImageAlt } = getLocationPresentation(location.slug, location.name);
 
 const mapSchools = schools
   .map((school) => {
@@ -65,7 +66,7 @@ const locationMapScript = `window.locationPageMapData = ${JSON.stringify(mapScho
   <SiteHeader minimal={true} />
 
   <section class="location-hero" aria-labelledby="location-hero-title">
-    <img src={heroImage} alt={`${location.name} skyline`} />
+    <img src={heroImage} alt={heroImageAlt} />
     <div class="location-hero-copy">
       <h1 id="location-hero-title" class="location-hero-title location-hero-title-single">
         <span>{location.hero_title || location.name}</span>

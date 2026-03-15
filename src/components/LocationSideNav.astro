@@ -1,4 +1,6 @@
 ---
+import { getLocationNavigationConfig } from '../lib/location-config';
+
 interface Props {
   locationSlug: string;
   locationName: string;
@@ -6,24 +8,38 @@ interface Props {
 }
 
 const { locationSlug, locationName, currentSection = 'overview' } = Astro.props;
+const nav = getLocationNavigationConfig(locationSlug);
+
+const hasCompareLinks = nav.compareOverview || nav.compareAlevels;
+const hasDataLinks = nav.fees || nav.bursaries || nav.openDays;
 ---
 <nav class="location-side-nav" aria-label={`${locationName} page navigation`}>
   <p class="nav-kicker">Navigate {locationName}</p>
 
-  <div class="location-side-nav-group">
-    <span class="location-side-nav-title">Compare schools</span>
-    <a class:list={["sub-link", currentSection === 'compare-overview' && 'is-current']} href={`/${locationSlug}/compare/`}>School overview</a>
-    <a class:list={["sub-link", currentSection === 'compare-alevel' && 'is-current']} href={`/${locationSlug}/compare/a-levels/`}>A-levels</a>
-  </div>
+  {hasCompareLinks && (
+    <div class="location-side-nav-group">
+      <span class="location-side-nav-title">Compare schools</span>
+      {nav.compareOverview && (
+        <a class:list={["sub-link", currentSection === 'compare-overview' && 'is-current']} href={`/${locationSlug}/compare/`}>School overview</a>
+      )}
+      {nav.compareAlevels && (
+        <a class:list={["sub-link", currentSection === 'compare-alevel' && 'is-current']} href={`/${locationSlug}/compare/a-levels/`}>A-levels</a>
+      )}
+    </div>
+  )}
 
-  <div class="location-side-nav-group">
-    <a class:list={["location-side-nav-title", currentSection === 'fees' && 'is-current']} href={`/${locationSlug}/fees/`}>Fees</a>
-    <a class:list={["location-side-nav-title", currentSection === 'bursaries' && 'is-current']} href={`/${locationSlug}/bursaries/`}>Bursaries</a>
-    <a class:list={["location-side-nav-title", currentSection === 'open-days' && 'is-current']} href={`/${locationSlug}/open-days/`}>Open days</a>
-  </div>
+  {hasDataLinks && (
+    <div class="location-side-nav-group">
+      {nav.fees && <a class:list={["location-side-nav-title", currentSection === 'fees' && 'is-current']} href={`/${locationSlug}/fees/`}>Fees</a>}
+      {nav.bursaries && <a class:list={["location-side-nav-title", currentSection === 'bursaries' && 'is-current']} href={`/${locationSlug}/bursaries/`}>Bursaries</a>}
+      {nav.openDays && <a class:list={["location-side-nav-title", currentSection === 'open-days' && 'is-current']} href={`/${locationSlug}/open-days/`}>Open days</a>}
+    </div>
+  )}
 
-  <div class="location-side-nav-group">
-    <span class="location-side-nav-title">Moving to {locationName}</span>
-    <span class="sub-label">Coming soon</span>
-  </div>
+  {nav.movingToSection && (
+    <div class="location-side-nav-group">
+      <span class="location-side-nav-title">Moving to {locationName}</span>
+      <span class="sub-label">Coming soon</span>
+    </div>
+  )}
 </nav>

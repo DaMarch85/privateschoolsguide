@@ -4,6 +4,7 @@ import SiteHeader from '../../../components/SiteHeader.astro';
 import SiteFooter from '../../../components/SiteFooter.astro';
 import LocationSideNav from '../../../components/LocationSideNav.astro';
 import { formatCurrency, getLocationFeesData, getLocationPaths } from '../../../lib/directory';
+import { getLocationPresentation } from '../../../lib/location-config';
 
 export async function getStaticPaths() {
   return await getLocationPaths();
@@ -13,7 +14,7 @@ const { location: locationSlug } = Astro.params;
 if (!locationSlug) throw new Error('Missing location slug');
 
 const { location, schoolHeaders, currentAcademicYear, allFeesIncludeVat, views } = await getLocationFeesData(locationSlug);
-const heroImage = '/assets/img/bath/bath-location-hero.jpg';
+const { heroImage, heroImageAlt } = getLocationPresentation(location.slug, location.name);
 const title = `${location.name} private school fees | The Private School Guide`;
 const description = `Annual ${location.name} private school fees including VAT, with day and boarding views by year group.`;
 ---
@@ -33,7 +34,7 @@ const description = `Annual ${location.name} private school fees including VAT, 
   <SiteHeader minimal={true} />
 
   <section class="location-hero" aria-labelledby="location-hero-title">
-    <img src={heroImage} alt={`${location.name} skyline`} />
+    <img src={heroImage} alt={heroImageAlt} />
     <div class="location-hero-copy">
       <h1 id="location-hero-title" class="location-hero-title location-hero-title-single"><span>{location.name}</span></h1>
     </div>
