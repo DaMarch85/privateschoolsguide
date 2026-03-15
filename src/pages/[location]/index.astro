@@ -72,10 +72,11 @@ const locationMapScript = `window.locationPageMapData = ${JSON.stringify(mapScho
       </h1>
     </div>
   </section>
+  <div class="page-back-strip"><div class="shell"><a class="page-back-link" href="/">← Back to home</a></div></div>
 
   <main id="main" class="page-shell">
     <div class="shell location-layout">
-      <LocationSideNav locationSlug={location.slug} locationName={location.name} showBathExtras={location.slug === 'bath'} />
+      <LocationSideNav locationSlug={location.slug} locationName={location.name} currentSection="overview" />
 
       <section class="location-main-column" aria-labelledby="location-grid-title">
         <h2 id="location-grid-title" class="location-grid-title">{location.name} school overview</h2>
@@ -102,5 +103,5 @@ const locationMapScript = `window.locationPageMapData = ${JSON.stringify(mapScho
 
   <script is:inline set:html={locationMapScript}></script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script defer src="/assets/js/location-pages.js?v=20260315-supabaseonly"></script>
+  <script defer src="/assets/js/location-pages.js?v=20260315-locationsharp2"></script>
 </BaseLayout>

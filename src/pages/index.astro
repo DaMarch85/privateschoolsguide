@@ -12,7 +12,8 @@ const mapSchools = (await getHomepageMapSchools()).map((school) => ({
   href: school.href,
   lat: school.lat,
   lng: school.lng,
-  note: school.note
+  note: school.note,
+  type: school.type
 }));
 const homepageMapScript = `window.homepageMapData = ${JSON.stringify(mapSchools)};`;
 ---

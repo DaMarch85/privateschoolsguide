@@ -227,12 +227,16 @@ body.home-minimal a{
   box-shadow:0 0 0 1px rgba(0,0,0,.18);
 }
 
-.homepage-map .school-map-marker.boarding{
+.homepage-map .school-map-marker.allthrough{
   background:var(--home-accent);
 }
 
-.homepage-map .school-map-marker.area{
-  background:#756658;
+.homepage-map .school-map-marker.junior{
+  background:#9d7a44;
+}
+
+.homepage-map .school-map-marker.senior{
+  background:#2a2520;
 }
 
 .map-popup{

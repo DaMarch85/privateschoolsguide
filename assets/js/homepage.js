@@ -66,7 +66,8 @@
           href: item.href || '',
           lat: lat,
           lng: lng,
-          note: item.note || ''
+          note: item.note || '',
+          type: item.type || 'senior'
         };
       })
       .filter(Boolean);
@@ -115,8 +116,18 @@
 
     if (emptyState) emptyState.hidden = true;
 
+    function icon(type) {
+      return window.L.divIcon({
+        className: 'school-map-icon',
+        html: '<span class="school-map-marker ' + escapeHtml(type) + '"></span>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+        popupAnchor: [0, -8]
+      });
+    }
+
     const markers = points.map(function (point) {
-      const marker = window.L.marker([point.lat, point.lng]).addTo(map);
+      const marker = window.L.marker([point.lat, point.lng], { icon: icon(point.type) }).addTo(map);
       marker.bindPopup(popupHtml(point));
       return marker;
     });

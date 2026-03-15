@@ -21,9 +21,6 @@ const copyTargets = [
   { from: 'methodology', to: 'methodology' },
   { from: 'privacy', to: 'privacy' },
   { from: 'terms', to: 'terms' },
-  { from: 'bath/fees', to: 'bath/fees' },
-  { from: 'bath/bursaries', to: 'bath/bursaries' },
-  { from: 'bath/open-days', to: 'bath/open-days' },
   { from: 'bath/admissions', to: 'bath/admissions' },
   { from: 'bath/boarding-schools', to: 'bath/boarding-schools' },
   { from: 'bath/day-schools', to: 'bath/day-schools' }

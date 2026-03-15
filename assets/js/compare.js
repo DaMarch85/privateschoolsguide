@@ -75,6 +75,10 @@
     const params = new URLSearchParams(window.location.search);
     const queryView = params.get('view');
     if (queryView === 'alevel' || queryView === 'overview') return queryView;
+
+    const defaultView = root?.dataset.defaultView;
+    if (defaultView === 'alevel' || defaultView === 'overview') return defaultView;
+
     const stored = localStorage.getItem(VIEW_STORAGE_KEY);
     return stored === 'alevel' ? 'alevel' : 'overview';
   }

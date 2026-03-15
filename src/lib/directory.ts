@@ -65,15 +65,51 @@ export type SchoolSummaryRecord = {
 
 export type SchoolContentRecord = {
   admissions_summary: string | null;
-  academic_snapshot: string | null;
   inspection_snapshot: string | null;
   assessment_approach: string | null;
   scholarships: string | null;
   destinations: string | null;
   what_parents_say: string | null;
   what_school_says: string | null;
-  editor_notes: string | null;
   [key: string]: unknown;
+};
+
+export type LocationFeeCell = {
+  schoolId: string;
+  schoolName: string;
+  schoolSlug: string;
+  amount: number | null;
+};
+
+export type LocationFeeRow = {
+  label: string;
+  cells: LocationFeeCell[];
+};
+
+export type LocationFeeView = {
+  feeType: string;
+  label: string;
+  rows: LocationFeeRow[];
+};
+
+export type LocationBursaryCard = {
+  schoolId: string;
+  schoolSlug: string;
+  schoolName: string;
+  summary: string;
+};
+
+export type LocationOpenDayItem = {
+  schoolId: string;
+  schoolSlug: string;
+  schoolName: string;
+  title: string;
+  startAt: string | null;
+  endAt: string | null;
+  bookingUrl: string | null;
+  notes: string | null;
+  isVerified: boolean;
+  lastVerifiedAt: string | null;
 };
 
 export type ExamResultRecord = {
@@ -341,10 +377,6 @@ function normalizeSchoolContent(content: RawSchoolContentRecord | null): SchoolC
       'admissions',
       'admissions_notes'
     ]),
-    academic_snapshot: pickFirstContentValue(content, [
-      'academic_snapshot',
-      'academic_overview'
-    ]),
     inspection_snapshot: pickFirstContentValue(content, [
       'inspection_snapshot',
       'inspection_overview'
@@ -378,11 +410,6 @@ function normalizeSchoolContent(content: RawSchoolContentRecord | null): SchoolC
       'how_school_describes_itself',
       'school_describes_itself',
       'school_voice'
-    ]),
-    editor_notes: pickFirstContentValue(content, [
-      'editor_notes',
-      'editor_note',
-      'notes'
     ])
   };
 }
@@ -516,6 +543,7 @@ export async function getLiveLocations(): Promise<LocationRecord[]> {
   if (error) fail('Could not load live locations', error);
   return (data || []) as LocationRecord[];
 }
+
 
 export async function getHomepageLocations(): Promise<HomepageLocationItem[]> {
   const { data, error } = await supabase
@@ -725,6 +753,182 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
   return { location, compareSchools };
 }
 
+
+async function getOrderedLocationSchools(locationSlug: string) {
+  const location = await getLocationBySlug(locationSlug);
+  const locationLinks = await getLocationSchoolLinks(location.id);
+  const schoolIds = locationLinks.map((row) => row.school_id);
+  const schoolsRaw = await getSchoolsByIds(schoolIds);
+  const schoolMap = new Map(schoolsRaw.map((school) => [String(school.id), school]));
+
+  const schools = locationLinks
+    .map((link) => schoolMap.get(String(link.school_id)))
+    .filter(Boolean) as SchoolSummaryRecord[];
+
+  return { location, locationLinks, schoolIds, schools, schoolMap };
+}
+
+export async function getLocationFeesData(locationSlug: string) {
+  const { location, schools, schoolIds } = await getOrderedLocationSchools(locationSlug);
+
+  const { data, error } = schoolIds.length
+    ? await supabase
+        .from('school_fee_profiles')
+        .select('school_id, academic_year, fee_type, year_group_label, amount_gbp, includes_vat')
+        .in('school_id', schoolIds)
+    : { data: [], error: null };
+
+  if (error) fail(`Could not load fees for ${locationSlug}`, error);
+
+  const feeRows = (data || []) as Array<FeeRecord & { school_id: string | number }>;
+  const currentAcademicYear = Array.from(new Set(feeRows.map((row) => row.academic_year))).sort().at(-1) || null;
+  const filtered = feeRows
+    .filter((row) => !currentAcademicYear || row.academic_year === currentAcademicYear)
+    .sort((a, b) => {
+      const feeTypeDelta = feeTypeOrder(a.fee_type) - feeTypeOrder(b.fee_type);
+      if (feeTypeDelta !== 0) return feeTypeDelta;
+      return yearGroupOrder(a.year_group_label) - yearGroupOrder(b.year_group_label);
+    });
+
+  const schoolHeaders = schools.map((school) => ({
+    schoolId: String(school.id),
+    schoolSlug: school.slug,
+    schoolName: school.name
+  }));
+
+  const feeTypes = Array.from(new Set(filtered.map((row) => row.fee_type))).sort(
+    (a, b) => feeTypeOrder(a) - feeTypeOrder(b)
+  );
+
+  const views: LocationFeeView[] = feeTypes.map((feeType) => {
+    const rowsForType = filtered.filter((row) => row.fee_type === feeType);
+    const labels = Array.from(new Set(rowsForType.map((row) => row.year_group_label))).sort(
+      (a, b) => yearGroupOrder(a) - yearGroupOrder(b)
+    );
+
+    const rows: LocationFeeRow[] = labels.map((label) => ({
+      label,
+      cells: schools.map((school) => {
+        const match = rowsForType.find(
+          (row) => String(row.school_id) === String(school.id) && row.year_group_label === label
+        );
+        return {
+          schoolId: String(school.id),
+          schoolName: school.name,
+          schoolSlug: school.slug,
+          amount: match ? toNumber(match.amount_gbp) : null
+        };
+      })
+    }));
+
+    return {
+      feeType,
+      label: feeTypeLabel(feeType),
+      rows
+    };
+  });
+
+  const allFeesIncludeVat = filtered.length ? filtered.every((row) => row.includes_vat) : false;
+
+  return {
+    location,
+    schoolHeaders,
+    currentAcademicYear,
+    allFeesIncludeVat,
+    views
+  };
+}
+
+export async function getLocationBursariesData(locationSlug: string) {
+  const { location, schools, schoolIds } = await getOrderedLocationSchools(locationSlug);
+
+  const { data, error } = schoolIds.length
+    ? await supabase
+        .from('school_bursaries')
+        .select('school_id, has_bursaries, status_label, summary, entry_points, published_support_level, application_and_review')
+        .in('school_id', schoolIds)
+    : { data: [], error: null };
+
+  if (error) fail(`Could not load bursaries for ${locationSlug}`, error);
+
+  const bursaryBySchool = new Map(
+    ((data || []) as Array<BursaryRecord & { school_id: string | number }>).map((row) => [String(row.school_id), row])
+  );
+
+  const cards: LocationBursaryCard[] = schools.map((school) => {
+    const bursary = bursaryBySchool.get(String(school.id)) || null;
+    const summary = String(
+      bursary?.summary ||
+      bursary?.status_label ||
+      (bursary?.has_bursaries === true ? 'Bursary information is being updated.' : 'Coming soon')
+    ).trim();
+
+    return {
+      schoolId: String(school.id),
+      schoolSlug: school.slug,
+      schoolName: school.name,
+      summary: summary || 'Coming soon'
+    };
+  });
+
+  return { location, cards };
+}
+
+export async function getLocationOpenDaysData(locationSlug: string) {
+  const { location, schools, schoolIds } = await getOrderedLocationSchools(locationSlug);
+
+  const { data, error } = schoolIds.length
+    ? await supabase
+        .from('school_open_days')
+        .select('school_id, title, start_at, end_at, booking_url, notes, is_verified, last_verified_at')
+        .in('school_id', schoolIds)
+        .order('start_at', { ascending: true })
+    : { data: [], error: null };
+
+  if (error) fail(`Could not load open days for ${locationSlug}`, error);
+
+  const schoolMap = new Map(schools.map((school) => [String(school.id), school]));
+  const openDays: LocationOpenDayItem[] = ((data || []) as Array<{
+    school_id: string | number;
+    title: string;
+    start_at: string | null;
+    end_at: string | null;
+    booking_url: string | null;
+    notes: string | null;
+    is_verified: boolean;
+    last_verified_at: string | null;
+  }>)
+    .map((row) => {
+      const school = schoolMap.get(String(row.school_id));
+      if (!school) return null;
+      return {
+        schoolId: String(row.school_id),
+        schoolSlug: school.slug,
+        schoolName: school.name,
+        title: row.title,
+        startAt: row.start_at,
+        endAt: row.end_at,
+        bookingUrl: row.booking_url,
+        notes: row.notes,
+        isVerified: Boolean(row.is_verified),
+        lastVerifiedAt: row.last_verified_at
+      };
+    })
+    .filter(Boolean) as LocationOpenDayItem[];
+
+  const lastVerifiedAt = openDays
+    .map((row) => row.lastVerifiedAt)
+    .filter(Boolean)
+    .sort()
+    .at(-1) || null;
+
+  return {
+    location,
+    openDays,
+    lastVerifiedAt
+  };
+}
+
 export async function getAllLocationSchoolPaths() {
   const locations = await getLiveLocations();
   if (!locations.length) return [];
@@ -830,12 +1034,13 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const feeRowsAll = (feeRes.data || []) as FeeRecord[];
   const bursary = (bursaryRes.data || null) as BursaryRecord | null;
 
-  const compareSchoolMap = new Map((compareSchoolsRes.data || []).map((row) => [String(row.id), row]));
+  const compareRows = ((compareSchoolsRes.data || []) as Array<{ id: string | number; slug: string; name: string }>);
+  const compareSchoolMap = new Map(compareRows.map((row) => [String(row.id), row]));
   const compareLinks = locationLinks
     .map((row) => compareSchoolMap.get(String(row.school_id)))
-    .filter(Boolean)
-    .filter((row) => row?.slug !== school.slug)
-    .map((row) => ({ slug: row!.slug, name: row!.name }));
+    .filter((row): row is { id: string | number; slug: string; name: string } => Boolean(row))
+    .filter((row) => row.slug !== school.slug)
+    .map((row) => ({ slug: row.slug, name: row.name }));
 
   const { data: subjectRowsRaw, error: subjectRowsError } = alevelResult
     ? await supabase

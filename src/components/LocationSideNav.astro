@@ -2,32 +2,25 @@
 interface Props {
   locationSlug: string;
   locationName: string;
-  showBathExtras?: boolean;
+  currentSection?: 'overview' | 'compare-overview' | 'compare-alevel' | 'fees' | 'bursaries' | 'open-days' | 'full-directory';
 }
 
-const { locationSlug, locationName, showBathExtras = false } = Astro.props;
+const { locationSlug, locationName, currentSection = 'overview' } = Astro.props;
 ---
 <nav class="location-side-nav" aria-label={`${locationName} page navigation`}>
   <p class="nav-kicker">Navigate {locationName}</p>
 
   <div class="location-side-nav-group">
-    <a class="location-side-nav-title" href={`/${locationSlug}/`}>School overview</a>
-    <a class="sub-link" href={`/${locationSlug}/schools/`}>Full directory</a>
+    <span class="location-side-nav-title">Compare schools</span>
+    <a class:list={["sub-link", currentSection === 'compare-overview' && 'is-current']} href={`/${locationSlug}/compare/`}>School overview</a>
+    <a class:list={["sub-link", currentSection === 'compare-alevel' && 'is-current']} href={`/${locationSlug}/compare/a-levels/`}>A-levels</a>
   </div>
 
   <div class="location-side-nav-group">
-    <span class="location-side-nav-title">Compare schools</span>
-    <a class="sub-link" href={`/${locationSlug}/compare/?view=overview`}>School overview</a>
-    <a class="sub-link" href={`/${locationSlug}/compare/?view=alevel`}>A-levels</a>
-    {showBathExtras && <a class="sub-link" href={`/${locationSlug}/fees/`}>Fees</a>}
-    {showBathExtras && <a class="sub-link" href={`/${locationSlug}/bursaries/`}>Bursaries</a>}
+    <a class:list={["location-side-nav-title", currentSection === 'fees' && 'is-current']} href={`/${locationSlug}/fees/`}>Fees</a>
+    <a class:list={["location-side-nav-title", currentSection === 'bursaries' && 'is-current']} href={`/${locationSlug}/bursaries/`}>Bursaries</a>
+    <a class:list={["location-side-nav-title", currentSection === 'open-days' && 'is-current']} href={`/${locationSlug}/open-days/`}>Open days</a>
   </div>
-
-  {showBathExtras && (
-    <div class="location-side-nav-group">
-      <a class="location-side-nav-title" href={`/${locationSlug}/open-days/`}>Open days</a>
-    </div>
-  )}
 
   <div class="location-side-nav-group">
     <span class="location-side-nav-title">Moving to {locationName}</span>

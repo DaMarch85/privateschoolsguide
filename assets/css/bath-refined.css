@@ -1374,3 +1374,41 @@
     width:100%;
   }
 }
+
+/* --- 2026-03-15 generic back strips, open-days table, compare stacked labels --- */
+.page-back-strip{
+  border-top:1px solid var(--psg-line);
+  border-bottom:1px solid var(--psg-line);
+  background:var(--psg-paper);
+}
+.page-back-link{
+  display:inline-flex;
+  align-items:center;
+  min-height:52px;
+  color:var(--psg-accent);
+  font:600 .82rem/1.2 "Inter",sans-serif;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.page-back-link:hover{
+  color:var(--psg-dark);
+}
+
+.open-days-matrix th,
+.open-days-matrix td{
+  text-align:left;
+  white-space:normal;
+}
+.open-days-matrix tbody th{
+  min-width:140px;
+}
+.open-days-matrix td a{
+  color:var(--psg-accent);
+  font-weight:600;
+}
+
+@media (max-width: 1180px){
+  .school-profile-page.is-compare-mode .school-compare-tile-school-name{
+    display:block !important;
+  }
+}

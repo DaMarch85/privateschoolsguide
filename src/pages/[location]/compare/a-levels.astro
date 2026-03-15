@@ -12,13 +12,13 @@ const { location: locationSlug } = Astro.params;
 if (!locationSlug) throw new Error('Missing location slug');
 
 const { location, compareSchools } = await getLocationCompareData(locationSlug);
-const title = `Compare ${location.name} private schools | The Private School Guide`;
-const description = `Compare ${location.name} private schools side by side, switch between the core overview metrics and a dedicated A-level view covering grades, subject breadth and subject mix. Build a shortlist of up to four schools.`;
+const title = `Compare ${location.name} A-levels | The Private School Guide`;
+const description = `Compare ${location.name} private school A-level grades, subject breadth and subject mix side by side.`;
 ---
 <BaseLayout
   title={title}
   description={description}
-  canonicalPath={`/${location.slug}/compare/`}
+  canonicalPath={`/${location.slug}/compare/a-levels/`}
   bodyClass="compare-page-body"
   dataLocationSlug={location.slug}
 >
@@ -32,7 +32,7 @@ const description = `Compare ${location.name} private schools side by side, swit
   <div class="page-back-strip"><div class="shell"><a class="page-back-link" href={`/${location.slug}/`}>← Back to {location.name}</a></div></div>
 
   <main id="main">
-    <div class="shell compare-page" id="compare-root" data-location-slug={location.slug} data-location-name={location.name} data-default-view="overview">
+    <div class="shell compare-page" id="compare-root" data-location-slug={location.slug} data-location-name={location.name} data-default-view="alevel">
       <section class="compare-hero">
         <span class="eyebrow">{location.name} compare tool</span>
         <h1>Compare {location.name} private schools</h1>
@@ -68,11 +68,11 @@ const description = `Compare ${location.name} private schools side by side, swit
                 <p class="compare-panel-lead">Switch between the overview metrics and the A-level metrics view.</p>
               </div>
               <div class="compare-metric-toggle" role="tablist" aria-label="Comparison table view">
-                <button type="button" class="compare-metric-button is-active" data-compare-view="overview" aria-pressed="true">Overview</button>
-                <button type="button" class="compare-metric-button" data-compare-view="alevel" aria-pressed="false">A-level metrics</button>
+                <button type="button" class="compare-metric-button" data-compare-view="overview" aria-pressed="false">Overview</button>
+                <button type="button" class="compare-metric-button is-active" data-compare-view="alevel" aria-pressed="true">A-level metrics</button>
               </div>
             </div>
-            <p id="compare-table-note" class="compare-table-note">Overview view covers ages, gender, day or boarding format, annual fees, bursaries and location.</p>
+            <p id="compare-table-note" class="compare-table-note">A-level view covers total exams, grades, unique subjects and subject mix.</p>
             <div class="compare-table-wrap">
               <table id="compare-table" class="compare-table">
                 <thead id="compare-thead"></thead>
