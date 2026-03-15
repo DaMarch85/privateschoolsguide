@@ -15,24 +15,6 @@ const { location, compareSchools } = await getLocationCompareData(locationSlug);
 const title = `Compare ${location.name} A-levels | The Private School Guide`;
 const description = `Compare ${location.name} private school A-level grades, subject breadth and subject mix side by side.`;
 
-const alevelColumns = [
-  { key: 'name', label: 'School' },
-  { key: 'totalExams', label: 'Total exams' },
-  { key: 'pctAStarA', label: '%A*/A' },
-  { key: 'pctAStarB', label: '%A*-B' },
-  { key: 'uniqueSubjects', label: 'Unique subjects' },
-  { key: 'coreScience', label: 'Core science' },
-  { key: 'mathematics', label: 'Mathematics' },
-  { key: 'art', label: 'Art' },
-  { key: 'languages', label: 'Languages' },
-  { key: 'economics', label: 'Economics' },
-  { key: 'english', label: 'English' },
-  { key: 'history', label: 'History' },
-  { key: 'geography', label: 'Geography' },
-  { key: 'psychology', label: 'Psychology' },
-  { key: 'other', label: 'Other' }
-] as const;
-
 function formatPercent(value: unknown) {
   if (typeof value !== 'number' || !Number.isFinite(value)) return '—';
   return `${Math.round(value * 100)}%`;
@@ -43,6 +25,23 @@ function formatCount(value: unknown) {
   const num = Number(value);
   return Number.isFinite(num) ? num.toLocaleString('en-GB') : '—';
 }
+
+const alevelRows = [
+  { label: 'Total exams', values: compareSchools.map((school) => formatCount(school.alevel?.totalExams)) },
+  { label: '%A*/A', values: compareSchools.map((school) => formatPercent(school.alevel?.pctAStarA)) },
+  { label: '%A*-B', values: compareSchools.map((school) => formatPercent(school.alevel?.pctAStarB)) },
+  { label: 'Unique subjects', values: compareSchools.map((school) => formatCount(school.alevel?.uniqueSubjects)) },
+  { label: 'Core science', values: compareSchools.map((school) => formatPercent(school.alevel?.coreScience)) },
+  { label: 'Mathematics', values: compareSchools.map((school) => formatPercent(school.alevel?.mathematics)) },
+  { label: 'Art', values: compareSchools.map((school) => formatPercent(school.alevel?.art)) },
+  { label: 'Languages', values: compareSchools.map((school) => formatPercent(school.alevel?.languages)) },
+  { label: 'Economics', values: compareSchools.map((school) => formatPercent(school.alevel?.economics)) },
+  { label: 'English', values: compareSchools.map((school) => formatPercent(school.alevel?.english)) },
+  { label: 'History', values: compareSchools.map((school) => formatPercent(school.alevel?.history)) },
+  { label: 'Geography', values: compareSchools.map((school) => formatPercent(school.alevel?.geography)) },
+  { label: 'Psychology', values: compareSchools.map((school) => formatPercent(school.alevel?.psychology)) },
+  { label: 'Other', values: compareSchools.map((school) => formatPercent(school.alevel?.other)) }
+];
 ---
 <BaseLayout
   title={title}
@@ -61,125 +60,72 @@ function formatCount(value: unknown) {
   <div class="page-back-strip"><div class="shell"><a class="page-back-link" href={`/${location.slug}/`}>← Back to {location.name}</a></div></div>
 
   <main id="main">
-    <div class="shell compare-page" id="compare-root" data-location-slug={location.slug} data-location-name={location.name} data-default-view="alevel">
+    <div class="shell compare-page" id="compare-root" data-location-slug={location.slug} data-location-name={location.name} data-compare-view="alevel">
       <section class="compare-hero">
         <span class="eyebrow">{location.name} compare tool</span>
         <h1>Compare {location.name} private schools</h1>
-        <p>Build a shortlist of up to four schools, then switch between the core overview metrics and a dedicated A-level view covering grades, subject breadth and subject mix. Your shortlist is saved on this browser for this location.</p>
+        <p>Use the hide buttons to focus the table on the schools you want to keep in view. The metric column and school headers stay visible as you scroll.</p>
         <div class="compare-actions">
           <a href={`/${location.slug}/`} class="compare-link-button">Back to {location.name} guide</a>
-          <button id="compare-clear-top" class="compare-inline-button" type="button">Clear selection</button>
         </div>
       </section>
 
-      <section class="compare-layout">
+      <section class="compare-layout compare-layout--single">
         <section class="compare-main">
-          <section class="compare-panel">
-            <h2>Build your shortlist</h2>
-            <p>Select up to four schools to focus the comparison table. If nothing is selected, the full {location.name} comparison is shown.</p>
-
-            <div id="compare-chooser" class="compare-chooser" aria-label={`Choose ${location.name} schools to compare`}>
-              {compareSchools.map((school) => (
-                <label class="compare-option">
-                  <input type="checkbox" value={school.schoolSlug} />
-                  <span class="compare-option-title">{school.name}</span>
-                  <span class="compare-option-meta">{school.location || location.name}</span>
-                </label>
-              ))}
-            </div>
-
-            <div class="compare-toolbar">
-              <p id="compare-status" class="compare-status" aria-live="polite">Showing all {location.name} schools.</p>
-              <div class="compare-toolbar-actions">
-                <button id="compare-clear" class="compare-inline-button" type="button">Clear selection</button>
-              </div>
-            </div>
-
-            <div id="compare-pill-row" class="compare-pill-row" aria-live="polite"></div>
-          </section>
-
           <section class="compare-panel">
             <div class="compare-panel-heading">
               <div>
                 <h2>Comparison table</h2>
                 <p class="compare-panel-lead">Switch between the overview metrics and the A-level metrics view.</p>
               </div>
-              <div class="compare-metric-toggle" role="tablist" aria-label="Comparison table view">
-                <button type="button" class="compare-metric-button" data-compare-view="overview" aria-pressed="false">Overview</button>
-                <button type="button" class="compare-metric-button is-active" data-compare-view="alevel" aria-pressed="true">A-level metrics</button>
+              <nav class="compare-metric-toggle" aria-label="Comparison table view">
+                <a href={`/${location.slug}/compare/`} class="compare-metric-button">Overview</a>
+                <a href={`/${location.slug}/compare/a-levels/`} class="compare-metric-button is-active" aria-current="page">A-level metrics</a>
+              </nav>
+            </div>
+            <p class="compare-table-note">A-level view covers total exams, grades, unique subjects and subject mix.</p>
+
+            <div class="fees-visibility-bar" data-compare-visibility>
+              <div class="fees-visibility-head">
+                <p class="fees-visibility-label">School columns</p>
+                <button type="button" class="fees-show-all">Show all schools</button>
               </div>
+              <div class="fees-visibility-pills" aria-live="polite"></div>
             </div>
-            <p id="compare-table-note" class="compare-table-note">A-level view covers total exams, grades, unique subjects and subject mix.</p>
-            <div class="compare-table-wrap">
-              <table id="compare-table" class="compare-table">
-                <thead id="compare-thead">
-                  <tr>
-                    {alevelColumns.map((col) => <th scope="col">{col.label}</th>)}
-                  </tr>
-                </thead>
-                <tbody id="compare-tbody">
-                  {compareSchools.length ? compareSchools.map((school) => {
-                    const alevel = school.alevel || null;
-                    return (
-                      <tr>
-                        <th scope="row"><a href={school.slug}>{school.name}</a></th>
-                        <td>{formatCount(alevel?.totalExams)}</td>
-                        <td>{formatPercent(alevel?.pctAStarA)}</td>
-                        <td>{formatPercent(alevel?.pctAStarB)}</td>
-                        <td>{formatCount(alevel?.uniqueSubjects)}</td>
-                        <td>{formatPercent(alevel?.coreScience)}</td>
-                        <td>{formatPercent(alevel?.mathematics)}</td>
-                        <td>{formatPercent(alevel?.art)}</td>
-                        <td>{formatPercent(alevel?.languages)}</td>
-                        <td>{formatPercent(alevel?.economics)}</td>
-                        <td>{formatPercent(alevel?.english)}</td>
-                        <td>{formatPercent(alevel?.history)}</td>
-                        <td>{formatPercent(alevel?.geography)}</td>
-                        <td>{formatPercent(alevel?.psychology)}</td>
-                        <td>{formatPercent(alevel?.other)}</td>
-                      </tr>
-                    );
-                  }) : (
+
+            {compareSchools.length ? (
+              <div class="data-table-wrap compare-table-wrap">
+                <table class="fees-matrix compare-matrix">
+                  <thead>
                     <tr>
-                      <td colspan={alevelColumns.length}>Comparison data is coming soon for {location.name}.</td>
+                      <th>Metric</th>
+                      {compareSchools.map((school) => (
+                        <th data-school-key={school.schoolSlug} data-school-label={school.name}>
+                          <span class="fees-school-name">{school.name}</span>
+                          <button type="button" class="fees-column-toggle" data-school-key={school.schoolSlug} aria-pressed="false">Hide</button>
+                        </th>
+                      ))}
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {alevelRows.map((row) => (
+                      <tr>
+                        <th scope="row">{row.label}</th>
+                        {row.values.map((value) => <td>{value || '—'}</td>)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p class="data-page-note">Comparison data is being updated for {location.name}.</p>
+            )}
           </section>
         </section>
-
-        <aside class="compare-sidebar">
-          <section class="compare-side-card">
-            <h3>How to use this page</h3>
-            <p>Start with two or three likely options, compare the practical basics, then move into school profiles and open-day planning.</p>
-            <ol class="compare-mini-list">
-              <li>Select schools above.</li>
-              <li>Use the toggle to switch between overview and A-level metrics.</li>
-              <li>Open the profile pages for details and open days.</li>
-            </ol>
-          </section>
-
-          <section class="compare-side-card">
-            <h3>What this page is best for</h3>
-            <p>This compare tool is designed for first-pass narrowing, not final judgement. It is strongest on factual differences such as age range, boarding format, annual fees, bursaries and — for senior schools — A-level performance and subject mix.</p>
-            <p class="compare-help-note">For fuller context, use the school profiles and open-days guide alongside this page.</p>
-          </section>
-        </aside>
       </section>
     </div>
   </main>
 
   <SiteFooter />
-
-  <script type="application/json" id="compare-data">{JSON.stringify(compareSchools)}</script>
-  <script is:inline>
-    window.comparePageData = {
-      defaultView: 'alevel',
-      locationSlug: {JSON.stringify(location.slug)},
-      schools: {JSON.stringify(compareSchools)}
-    };
-  </script>
-  <script defer src="/assets/js/compare.js?v=20260315-compare-ssr"></script>
+  <script defer src="/assets/js/compare.js?v=20260315-compare-matrix"></script>
 </BaseLayout>

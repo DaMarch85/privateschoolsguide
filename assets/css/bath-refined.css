@@ -1412,3 +1412,51 @@
     display:block !important;
   }
 }
+
+/* --- 2026-03-15 compare matrix layout --- */
+.compare-layout--single{
+  display:block;
+}
+.compare-layout--single .compare-main{
+  display:block;
+}
+.compare-metric-toggle a.compare-metric-button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  text-decoration:none;
+}
+.compare-metric-toggle a.compare-metric-button:hover{
+  color:var(--psg-accent);
+}
+.compare-metric-toggle a.compare-metric-button.is-active,
+.compare-metric-toggle a.compare-metric-button[aria-current="page"]{
+  background:var(--psg-accent);
+  color:var(--psg-white);
+}
+.compare-table-wrap{
+  margin-top:18px;
+}
+.compare-matrix{
+  min-width:980px;
+}
+.compare-matrix td{
+  text-align:left;
+  white-space:normal;
+  min-width:170px;
+  background:rgba(255,255,255,.52);
+}
+.compare-matrix tbody th{
+  min-width:138px;
+}
+.compare-matrix .fees-school-name{
+  min-width:160px;
+}
+.compare-page .fees-visibility-bar{
+  margin-top:18px;
+}
+@media (max-width:640px){
+  .compare-matrix{
+    min-width:760px;
+  }
+}
