@@ -191,6 +191,7 @@ export type CompareAlevelMetrics = {
 
 export type CompareSchoolRecord = {
   id: string;
+  schoolId: string;
   schoolSlug: string;
   name: string;
   slug: string;
@@ -733,6 +734,7 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
 
     return {
       id: school.slug,
+      schoolId: String(school.id),
       schoolSlug: school.slug,
       name: school.name,
       slug: `/${location.slug}/schools/${school.slug}/`,

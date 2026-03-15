@@ -14,6 +14,28 @@ if (!locationSlug) throw new Error('Missing location slug');
 const { location, compareSchools } = await getLocationCompareData(locationSlug);
 const title = `Compare ${location.name} private schools | The Private School Guide`;
 const description = `Compare ${location.name} private schools side by side, switch between the core overview metrics and a dedicated A-level view covering grades, subject breadth and subject mix. Build a shortlist of up to four schools.`;
+
+const overviewColumns = [
+  { key: 'name', label: 'School' },
+  { key: 'ages', label: 'Ages' },
+  { key: 'gender', label: 'Gender' },
+  { key: 'format', label: 'Day / boarding' },
+  { key: 'dayFee', label: 'Day fees' },
+  { key: 'boardingFee', label: 'Boarding fees' },
+  { key: 'bursaries', label: 'Bursaries' },
+  { key: 'location', label: 'Location' }
+] as const;
+
+function formatPercent(value: unknown) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '—';
+  return `${Math.round(value * 100)}%`;
+}
+
+function formatCount(value: unknown) {
+  if (value === null || value === undefined || value === '') return '—';
+  const num = Number(value);
+  return Number.isFinite(num) ? num.toLocaleString('en-GB') : '—';
+}
 ---
 <BaseLayout
   title={title}
@@ -49,7 +71,15 @@ const description = `Compare ${location.name} private schools side by side, swit
             <h2>Build your shortlist</h2>
             <p>Select up to four schools to focus the comparison table. If nothing is selected, the full {location.name} comparison is shown.</p>
 
-            <div id="compare-chooser" class="compare-chooser" aria-label={`Choose ${location.name} schools to compare`}></div>
+            <div id="compare-chooser" class="compare-chooser" aria-label={`Choose ${location.name} schools to compare`}>
+              {compareSchools.map((school) => (
+                <label class="compare-option">
+                  <input type="checkbox" value={school.schoolSlug} />
+                  <span class="compare-option-title">{school.name}</span>
+                  <span class="compare-option-meta">{school.location || location.name}</span>
+                </label>
+              ))}
+            </div>
 
             <div class="compare-toolbar">
               <p id="compare-status" class="compare-status" aria-live="polite">Showing all {location.name} schools.</p>
@@ -75,8 +105,29 @@ const description = `Compare ${location.name} private schools side by side, swit
             <p id="compare-table-note" class="compare-table-note">Overview view covers ages, gender, day or boarding format, annual fees, bursaries and location.</p>
             <div class="compare-table-wrap">
               <table id="compare-table" class="compare-table">
-                <thead id="compare-thead"></thead>
-                <tbody id="compare-tbody"></tbody>
+                <thead id="compare-thead">
+                  <tr>
+                    {overviewColumns.map((col) => <th scope="col">{col.label}</th>)}
+                  </tr>
+                </thead>
+                <tbody id="compare-tbody">
+                  {compareSchools.length ? compareSchools.map((school) => (
+                    <tr>
+                      <th scope="row"><a href={school.slug}>{school.name}</a></th>
+                      <td>{school.ages || '—'}</td>
+                      <td>{school.gender || '—'}</td>
+                      <td>{school.format || '—'}</td>
+                      <td>{school.dayFee || '—'}</td>
+                      <td>{school.boardingFee || '—'}</td>
+                      <td>{school.bursaries || '—'}</td>
+                      <td>{school.location || '—'}</td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colspan={overviewColumns.length}>Comparison data is coming soon for {location.name}.</td>
+                    </tr>
+                  )}
+                </tbody>
               </table>
             </div>
           </section>
@@ -106,5 +157,12 @@ const description = `Compare ${location.name} private schools side by side, swit
   <SiteFooter />
 
   <script type="application/json" id="compare-data">{JSON.stringify(compareSchools)}</script>
-  <script defer src="/assets/js/compare.js?v=20260315-compare-routes"></script>
+  <script is:inline>
+    window.comparePageData = {
+      defaultView: 'overview',
+      locationSlug: {JSON.stringify(location.slug)},
+      schools: {JSON.stringify(compareSchools)}
+    };
+  </script>
+  <script defer src="/assets/js/compare.js?v=20260315-compare-ssr"></script>
 </BaseLayout>

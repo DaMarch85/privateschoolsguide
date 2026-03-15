@@ -14,6 +14,35 @@ if (!locationSlug) throw new Error('Missing location slug');
 const { location, compareSchools } = await getLocationCompareData(locationSlug);
 const title = `Compare ${location.name} A-levels | The Private School Guide`;
 const description = `Compare ${location.name} private school A-level grades, subject breadth and subject mix side by side.`;
+
+const alevelColumns = [
+  { key: 'name', label: 'School' },
+  { key: 'totalExams', label: 'Total exams' },
+  { key: 'pctAStarA', label: '%A*/A' },
+  { key: 'pctAStarB', label: '%A*-B' },
+  { key: 'uniqueSubjects', label: 'Unique subjects' },
+  { key: 'coreScience', label: 'Core science' },
+  { key: 'mathematics', label: 'Mathematics' },
+  { key: 'art', label: 'Art' },
+  { key: 'languages', label: 'Languages' },
+  { key: 'economics', label: 'Economics' },
+  { key: 'english', label: 'English' },
+  { key: 'history', label: 'History' },
+  { key: 'geography', label: 'Geography' },
+  { key: 'psychology', label: 'Psychology' },
+  { key: 'other', label: 'Other' }
+] as const;
+
+function formatPercent(value: unknown) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '—';
+  return `${Math.round(value * 100)}%`;
+}
+
+function formatCount(value: unknown) {
+  if (value === null || value === undefined || value === '') return '—';
+  const num = Number(value);
+  return Number.isFinite(num) ? num.toLocaleString('en-GB') : '—';
+}
 ---
 <BaseLayout
   title={title}
@@ -49,7 +78,15 @@ const description = `Compare ${location.name} private school A-level grades, sub
             <h2>Build your shortlist</h2>
             <p>Select up to four schools to focus the comparison table. If nothing is selected, the full {location.name} comparison is shown.</p>
 
-            <div id="compare-chooser" class="compare-chooser" aria-label={`Choose ${location.name} schools to compare`}></div>
+            <div id="compare-chooser" class="compare-chooser" aria-label={`Choose ${location.name} schools to compare`}>
+              {compareSchools.map((school) => (
+                <label class="compare-option">
+                  <input type="checkbox" value={school.schoolSlug} />
+                  <span class="compare-option-title">{school.name}</span>
+                  <span class="compare-option-meta">{school.location || location.name}</span>
+                </label>
+              ))}
+            </div>
 
             <div class="compare-toolbar">
               <p id="compare-status" class="compare-status" aria-live="polite">Showing all {location.name} schools.</p>
@@ -75,8 +112,39 @@ const description = `Compare ${location.name} private school A-level grades, sub
             <p id="compare-table-note" class="compare-table-note">A-level view covers total exams, grades, unique subjects and subject mix.</p>
             <div class="compare-table-wrap">
               <table id="compare-table" class="compare-table">
-                <thead id="compare-thead"></thead>
-                <tbody id="compare-tbody"></tbody>
+                <thead id="compare-thead">
+                  <tr>
+                    {alevelColumns.map((col) => <th scope="col">{col.label}</th>)}
+                  </tr>
+                </thead>
+                <tbody id="compare-tbody">
+                  {compareSchools.length ? compareSchools.map((school) => {
+                    const alevel = school.alevel || null;
+                    return (
+                      <tr>
+                        <th scope="row"><a href={school.slug}>{school.name}</a></th>
+                        <td>{formatCount(alevel?.totalExams)}</td>
+                        <td>{formatPercent(alevel?.pctAStarA)}</td>
+                        <td>{formatPercent(alevel?.pctAStarB)}</td>
+                        <td>{formatCount(alevel?.uniqueSubjects)}</td>
+                        <td>{formatPercent(alevel?.coreScience)}</td>
+                        <td>{formatPercent(alevel?.mathematics)}</td>
+                        <td>{formatPercent(alevel?.art)}</td>
+                        <td>{formatPercent(alevel?.languages)}</td>
+                        <td>{formatPercent(alevel?.economics)}</td>
+                        <td>{formatPercent(alevel?.english)}</td>
+                        <td>{formatPercent(alevel?.history)}</td>
+                        <td>{formatPercent(alevel?.geography)}</td>
+                        <td>{formatPercent(alevel?.psychology)}</td>
+                        <td>{formatPercent(alevel?.other)}</td>
+                      </tr>
+                    );
+                  }) : (
+                    <tr>
+                      <td colspan={alevelColumns.length}>Comparison data is coming soon for {location.name}.</td>
+                    </tr>
+                  )}
+                </tbody>
               </table>
             </div>
           </section>
@@ -106,5 +174,12 @@ const description = `Compare ${location.name} private school A-level grades, sub
   <SiteFooter />
 
   <script type="application/json" id="compare-data">{JSON.stringify(compareSchools)}</script>
-  <script defer src="/assets/js/compare.js?v=20260315-compare-routes"></script>
+  <script is:inline>
+    window.comparePageData = {
+      defaultView: 'alevel',
+      locationSlug: {JSON.stringify(location.slug)},
+      schools: {JSON.stringify(compareSchools)}
+    };
+  </script>
+  <script defer src="/assets/js/compare.js?v=20260315-compare-ssr"></script>
 </BaseLayout>
