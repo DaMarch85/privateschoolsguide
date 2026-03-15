@@ -63,17 +63,43 @@
     });
   }
 
+  function normalizeMapData(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const lat = Number(raw.lat ?? raw.latitude);
+    const lng = Number(raw.lng ?? raw.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return {
+      ...raw,
+      lat,
+      lng,
+    };
+  }
+
   function extractMapData(doc) {
+    if (doc === document && window.schoolProfileMapData) {
+      const currentPageMap = normalizeMapData(window.schoolProfileMapData);
+      if (currentPageMap) return currentPageMap;
+    }
+
+    const jsonScript = doc.getElementById("school-map-data");
+    if (jsonScript) {
+      try {
+        const parsed = JSON.parse(jsonScript.textContent || "null");
+        const mapData = normalizeMapData(parsed);
+        if (mapData) return mapData;
+      } catch (err) {}
+    }
+
     const script = Array.from(doc.querySelectorAll("script")).find((node) =>
       node.textContent.includes("window.schoolProfileMapData")
     );
     if (!script) return null;
     const match = script.textContent.match(
-      /window\.schoolProfileMapData\s*=\s*(\{[\s\S]*?\});?/
+      /window\.schoolProfileMapData\s*=\s*(null|\{[\s\S]*?\});?/
     );
-    if (!match) return null;
+    if (!match || match[1] === "null") return null;
     try {
-      return JSON.parse(match[1]);
+      return normalizeMapData(JSON.parse(match[1]));
     } catch (err) {
       return null;
     }
@@ -425,8 +451,19 @@
     normalizePercentages(scope);
   }
 
+  function renderCurrentMap(attempt) {
+    if (window.L) {
+      renderMap(currentData, null);
+      return;
+    }
+    if (attempt >= 40) return;
+    window.setTimeout(function () {
+      renderCurrentMap(attempt + 1);
+    }, 100);
+  }
+
   bindTileInteractions(document);
-  renderMap(currentData, null);
+  renderCurrentMap(0);
 
   async function fetchSchool(slug) {
     if (cache.has(slug)) return cache.get(slug);

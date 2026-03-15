@@ -1182,3 +1182,40 @@
     min-width:760px;
   }
 }
+
+/* --- 2026-03-14 school editorial / subject / fees table fixes --- */
+.data-table-wrap{
+  overflow-x:auto;
+  overflow-y:visible;
+  position:relative;
+  -webkit-overflow-scrolling:touch;
+}
+.fees-matrix thead th,
+.fees-matrix tbody th{
+  position:sticky;
+}
+.fees-matrix thead th{
+  top:0;
+  z-index:3;
+}
+.fees-matrix thead th:first-child{
+  left:0;
+  z-index:5;
+}
+.fees-matrix tbody th{
+  left:0;
+  z-index:2;
+  background:var(--psg-paper);
+  box-shadow:1px 0 0 var(--psg-line);
+}
+.fees-matrix thead th:first-child{
+  box-shadow:1px 0 0 var(--psg-line), 0 1px 0 var(--psg-line);
+}
+.school-profile-page .subject-extra{
+  border-top:none;
+}
+.school-profile-page .subject-extra .metric-list .metric-row:first-child{
+  margin-top:0;
+  border-top:1px solid var(--psg-line);
+  padding-top:8px;
+}
