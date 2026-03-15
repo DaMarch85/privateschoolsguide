@@ -20,6 +20,11 @@ if (!locationSlug || !slug) throw new Error('Missing location or school slug');
 
 const profile = await getLocationSchoolProfile(locationSlug, slug);
 const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(profile.mapData)};`;
+const COMING_SOON_TEXT = 'Coming soon';
+const scholarshipParagraphs = splitParagraphs(profile.content?.scholarships);
+const destinationsParagraphs = splitParagraphs(profile.content?.destinations);
+const parentLikeParagraphs = splitParagraphs(profile.content?.what_parents_say);
+const schoolVoiceParagraphs = splitParagraphs(profile.content?.what_school_says);
 ---
 <BaseLayout
   title={`${profile.school.name} | ${profile.location.name} school profile`}
@@ -158,65 +163,73 @@ const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(profile.
             </article>
           ) : null}
 
-          {profile.content?.scholarships ? (
-            <article class="school-feature-tile">
-              <h2>Scholarships</h2>
-              <div class="school-feature-body">
-                <div class="school-card-copy">
-                  {profile.scholarshipBullets.length > 1 ? (
-                    <ul>
-                      {profile.scholarshipBullets.map((item) => <li>{item}</li>)}
-                    </ul>
-                  ) : (
-                    splitParagraphs(profile.content.scholarships).map((paragraph) => <p>{paragraph}</p>)
-                  )}
-                </div>
+          <article class="school-feature-tile">
+            <h2>Scholarships</h2>
+            <div class="school-feature-body">
+              <div class="school-card-copy">
+                {profile.scholarshipBullets.length > 0 ? (
+                  <ul>
+                    {profile.scholarshipBullets.map((item) => <li>{item}</li>)}
+                  </ul>
+                ) : scholarshipParagraphs.length > 0 ? (
+                  scholarshipParagraphs.map((paragraph) => <p>{paragraph}</p>)
+                ) : (
+                  <p>{COMING_SOON_TEXT}</p>
+                )}
               </div>
-            </article>
-          ) : null}
+            </div>
+          </article>
 
-          {profile.content?.destinations ? (
-            <article class="school-feature-tile">
-              <h2>Leavers destinations</h2>
-              <div class="school-feature-body">
-                <div class="school-card-copy">
-                  {profile.destinationsBullets.length > 1 ? (
-                    <ul>
-                      {profile.destinationsBullets.map((item) => <li>{item}</li>)}
-                    </ul>
-                  ) : (
-                    splitParagraphs(profile.content.destinations).map((paragraph) => <p>{paragraph}</p>)
-                  )}
-                </div>
+          <article class="school-feature-tile">
+            <h2>Leavers destinations</h2>
+            <div class="school-feature-body">
+              <div class="school-card-copy">
+                {profile.destinationsBullets.length > 0 ? (
+                  <ul>
+                    {profile.destinationsBullets.map((item) => <li>{item}</li>)}
+                  </ul>
+                ) : destinationsParagraphs.length > 0 ? (
+                  destinationsParagraphs.map((paragraph) => <p>{paragraph}</p>)
+                ) : (
+                  <p>{COMING_SOON_TEXT}</p>
+                )}
               </div>
-            </article>
-          ) : null}
+            </div>
+          </article>
 
-          {profile.parentLikes.length > 0 ? (
-            <article class="school-feature-tile">
-              <h2>Parents like</h2>
-              <div class="school-feature-body">
-                <div class="school-card-copy">
+          <article class="school-feature-tile">
+            <h2>Parents like</h2>
+            <div class="school-feature-body">
+              <div class="school-card-copy">
+                {profile.parentLikes.length > 0 ? (
                   <ul>
                     {profile.parentLikes.map((item) => <li>{item}</li>)}
                   </ul>
-                </div>
+                ) : parentLikeParagraphs.length > 0 ? (
+                  parentLikeParagraphs.map((paragraph) => <p>{paragraph}</p>)
+                ) : (
+                  <p>{COMING_SOON_TEXT}</p>
+                )}
               </div>
-            </article>
-          ) : null}
+            </div>
+          </article>
 
-          {profile.schoolVoice.length > 0 ? (
-            <article class="school-feature-tile">
-              <h2>How the school describes itself</h2>
-              <div class="school-feature-body">
-                <div class="school-card-copy">
+          <article class="school-feature-tile">
+            <h2>How the school describes itself</h2>
+            <div class="school-feature-body">
+              <div class="school-card-copy">
+                {profile.schoolVoice.length > 0 ? (
                   <ul>
                     {profile.schoolVoice.map((item) => <li>{item}</li>)}
                   </ul>
-                </div>
+                ) : schoolVoiceParagraphs.length > 0 ? (
+                  schoolVoiceParagraphs.map((paragraph) => <p>{paragraph}</p>)
+                ) : (
+                  <p>{COMING_SOON_TEXT}</p>
+                )}
               </div>
-            </article>
-          ) : null}
+            </div>
+          </article>
 
           {profile.feePanes.length > 0 && (
             <article class={`school-feature-tile ${profile.feePanes.length > 1 ? 'tile-expandable' : ''}`}>
