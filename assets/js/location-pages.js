@@ -11,7 +11,7 @@
     });
   }
 
-  function parseScriptJson(scriptId) {
+  function parseMapData(scriptId) {
     const script = document.getElementById(scriptId);
     if (!script) return [];
 
@@ -25,17 +25,17 @@
   }
 
   function getRawMapData(mapTarget) {
+    const dataScriptId = mapTarget && mapTarget.dataset ? mapTarget.dataset.mapDataId : '';
+    if (dataScriptId) {
+      const parsed = parseMapData(dataScriptId);
+      if (parsed.length) return parsed;
+    }
+
     if (Array.isArray(window.locationPageMapData) && window.locationPageMapData.length) {
       return window.locationPageMapData;
     }
 
-    const dataScriptId = mapTarget && mapTarget.dataset ? mapTarget.dataset.mapDataId : '';
-    if (dataScriptId) {
-      const parsed = parseScriptJson(dataScriptId);
-      if (parsed.length) return parsed;
-    }
-
-    return parseScriptJson('location-map-data');
+    return parseMapData('location-map-data');
   }
 
   function normalisePoint(item) {
@@ -75,46 +75,11 @@
     });
   }
 
-  function sharpenMap(map, mapTarget, tileLayer) {
+  function refreshMap(map) {
     if (!map) return;
-
-    const refresh = function () {
-      try {
-        map.invalidateSize({ pan: false, animate: false });
-        if (tileLayer && typeof tileLayer.redraw === 'function') tileLayer.redraw();
-      } catch (err) {}
-    };
-
-    requestAnimationFrame(function () {
-      refresh();
-      requestAnimationFrame(refresh);
-    });
-
-    [100, 250, 500, 900].forEach(function (delay) {
-      setTimeout(refresh, delay);
-    });
-
-    if (tileLayer && !tileLayer._psgSharpnessBound) {
-      tileLayer._psgSharpnessBound = true;
-      tileLayer.on('load', refresh);
-      tileLayer.on('tileload', refresh);
-    }
-
-    if (mapTarget && typeof ResizeObserver !== 'undefined' && !mapTarget._psgResizeObserver) {
-      const observer = new ResizeObserver(function () {
-        refresh();
-      });
-      observer.observe(mapTarget);
-      mapTarget._psgResizeObserver = observer;
-    }
-  }
-
-  function getFallbackView() {
-    const slug = document.body && document.body.dataset ? document.body.dataset.locationSlug : '';
-
-    if (slug === 'bath') return { center: [51.3813, -2.3590], zoom: 11 };
-    if (slug === 'bristol') return { center: [51.4545, -2.5879], zoom: 11 };
-    return { center: [51.45, -2.48], zoom: 9 };
+    try {
+      map.invalidateSize({ pan: false, animate: false });
+    } catch (err) {}
   }
 
   function initLocationMap() {
@@ -125,19 +90,21 @@
 
     if (mapTarget.dataset.mapReady === 'true') {
       if (mapTarget._leaflet_map_instance) {
-        sharpenMap(mapTarget._leaflet_map_instance, mapTarget, mapTarget._psgTileLayer);
+        refreshMap(mapTarget._leaflet_map_instance);
       }
       return true;
     }
 
     const points = getRawMapData(mapTarget).map(normalisePoint).filter(Boolean);
+    if (!points.length) {
+      if (emptyState) emptyState.hidden = false;
+      mapTarget.style.display = 'none';
+      return true;
+    }
 
     const map = window.L.map(mapTarget, {
       zoomControl: true,
-      scrollWheelZoom: false,
-      zoomAnimation: false,
-      fadeAnimation: false,
-      markerZoomAnimation: false
+      scrollWheelZoom: false
     });
 
     mapTarget.dataset.mapReady = 'true';
@@ -145,21 +112,8 @@
 
     const tileLayer = window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
-      attribution: '© OpenStreetMap contributors',
-      detectRetina: window.devicePixelRatio > 1
+      attribution: '© OpenStreetMap contributors'
     }).addTo(map);
-
-    mapTarget._psgTileLayer = tileLayer;
-
-    if (!points.length) {
-      const fallbackView = getFallbackView();
-      map.setView(fallbackView.center, fallbackView.zoom);
-      if (emptyState) emptyState.hidden = false;
-      sharpenMap(map, mapTarget, tileLayer);
-      return true;
-    }
-
-    if (emptyState) emptyState.hidden = true;
 
     const markers = points.map(function (point) {
       const marker = window.L.marker([point.lat, point.lng], {
@@ -174,10 +128,20 @@
       map.setView([points[0].lat, points[0].lng], 13);
     } else {
       const group = window.L.featureGroup(markers);
-      map.fitBounds(group.getBounds(), { padding: [28, 28], maxZoom: 11, animate: false });
+      map.fitBounds(group.getBounds(), { padding: [28, 28], maxZoom: 11 });
     }
 
-    sharpenMap(map, mapTarget, tileLayer);
+    tileLayer.on('load', function () {
+      refreshMap(map);
+    });
+
+    requestAnimationFrame(function () {
+      refreshMap(map);
+      requestAnimationFrame(function () { refreshMap(map); });
+    });
+    setTimeout(function () { refreshMap(map); }, 100);
+    setTimeout(function () { refreshMap(map); }, 300);
+
     return true;
   }
 
@@ -198,21 +162,12 @@
     }, 100);
   }
 
-  function initLocationPage() {
-    bootLocationMap(0);
-  }
-
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initLocationPage, { once: true });
+    document.addEventListener('DOMContentLoaded', function () { bootLocationMap(0); }, { once: true });
   } else {
-    initLocationPage();
+    bootLocationMap(0);
   }
 
-  window.addEventListener('load', function () {
-    bootLocationMap(0);
-  });
-
-  window.addEventListener('pageshow', function () {
-    bootLocationMap(0);
-  });
+  window.addEventListener('load', function () { bootLocationMap(0); });
+  window.addEventListener('pageshow', function () { bootLocationMap(0); });
 })();
