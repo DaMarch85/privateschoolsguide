@@ -1,5 +1,15 @@
 @import url("https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap");
 
+.location-hero-subtitle {
+  display: block;
+  margin-top: 0.5rem;
+  text-align: center;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.25em; /* 25% larger */
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.95);
+}
 .location-page{background:var(--psg-bg)}
 .location-hero{position:relative;min-height:65svh;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000}
 .location-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
