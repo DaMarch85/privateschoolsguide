@@ -4,16 +4,9 @@ import SiteHeader from '../../components/SiteHeader.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import LocationSideNav from '../../components/LocationSideNav.astro';
 import SchoolSquareCard from '../../components/SchoolSquareCard.astro';
+import { getLocationPaths, getLocationDirectoryData } from '../../lib/directory';
 import { getLocationPresentation } from '../../lib/location-config';
-import {
-  getAgeLabel,
-  getFormatLabel,
-  getGenderLabel,
-  getLocationDirectoryData,
-  getLocationPaths,
-  getMapType,
-  getPhaseLabel
-} from '../../lib/directory';
+import { supabase } from '../../lib/supabase';
 
 export async function getStaticPaths() {
   return await getLocationPaths();
@@ -22,32 +15,22 @@ export async function getStaticPaths() {
 const { location: locationSlug } = Astro.params;
 if (!locationSlug) throw new Error('Missing location slug');
 
-const { location, schools, schoolCards } = await getLocationDirectoryData(locationSlug);
+const { location, schoolCards, mapSchools } = await getLocationDirectoryData(locationSlug);
+const presentation = getLocationPresentation(location.slug, location.name);
+
+const { data: locationMeta, error: locationMetaError } = await supabase
+  .from('locations')
+  .select('hero_subtitle')
+  .eq('slug', location.slug)
+  .single();
+
+if (locationMetaError) {
+  throw new Error(`Could not load location subtitle for ${location.slug}: ${locationMetaError.message}`);
+}
+
+const heroSubtitle = String(locationMeta?.hero_subtitle || '').trim();
 const fallbackMetaTitle = `${location.name} private schools | The Private School Guide`;
 const fallbackMetaDescription = `Independent guide to ${location.name} private schools. Compare schools, review fees and bursaries, explore open days, and use the map to narrow your shortlist.`;
-const { heroImage, heroImageAlt } = getLocationPresentation(location.slug, location.name);
-
-const mapSchools = schools
-  .map((school) => {
-    const lat = school.latitude !== null ? Number(school.latitude) : null;
-    const lng = school.longitude !== null ? Number(school.longitude) : null;
-
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-      return null;
-    }
-
-    return {
-      name: school.name,
-      href: `/${location.slug}/schools/${school.slug}/`,
-      lat,
-      lng,
-      type: getMapType(school.phase, school.age_max),
-      note: `${getPhaseLabel(school.phase, school.age_max)} · ${getGenderLabel(school.gender)} · ${getFormatLabel(school.day_boarding)} · Ages ${getAgeLabel(school.age_min, school.age_max)}`
-    };
-  })
-  .filter(Boolean);
-
-const locationMapScript = `window.locationPageMapData = ${JSON.stringify(mapSchools)};`;
 ---
 <BaseLayout
   title={location.meta_title || fallbackMetaTitle}
@@ -60,27 +43,43 @@ const locationMapScript = `window.locationPageMapData = ${JSON.stringify(mapScho
   <Fragment slot="head">
     <link rel="stylesheet" href="/assets/css/styles.css" />
     <link rel="stylesheet" href="/assets/css/bath-refined.css" />
+    <style>
+      .location-hero-subtitle{
+        margin:14px 0 0;
+        color:rgba(255,255,255,.92);
+        font:500 clamp(1rem,1.8vw,1.2rem)/1.35 "Inter",sans-serif;
+        letter-spacing:.02em;
+        max-width:48rem;
+      }
+      @media (max-width:720px){
+        .location-hero-subtitle{
+          margin-top:10px;
+          font-size:1rem;
+          line-height:1.4;
+        }
+      }
+    </style>
   </Fragment>
 
   <a class="skip-link" href="#main">Skip to content</a>
   <SiteHeader minimal={true} />
 
   <section class="location-hero" aria-labelledby="location-hero-title">
-    <img src={heroImage} alt={heroImageAlt} />
+    <img src={presentation.heroImage} alt={presentation.heroImageAlt} />
     <div class="location-hero-copy">
       <h1 id="location-hero-title" class="location-hero-title location-hero-title-single">
         <span>{location.hero_title || location.name}</span>
       </h1>
+      {heroSubtitle && <p class="location-hero-subtitle">{heroSubtitle}</p>}
     </div>
   </section>
-  <div class="page-back-strip"><div class="shell"><a class="page-back-link" href="/">← Back to home</a></div></div>
 
   <main id="main" class="page-shell">
     <div class="shell location-layout">
-      <LocationSideNav locationSlug={location.slug} locationName={location.name} currentSection="overview" />
+      <LocationSideNav locationSlug={location.slug} locationName={location.name} currentSection="location" />
 
       <section class="location-main-column" aria-labelledby="location-grid-title">
-        <h2 id="location-grid-title" class="location-grid-title">{location.name} school overview</h2>
+        <h2 id="location-grid-title" class="location-grid-title">{location.name} private schools</h2>
         {location.intro_text ? <p class="location-intro">{location.intro_text}</p> : null}
         <div class="school-square-grid">
           {schoolCards.map((school) => (
@@ -95,14 +94,13 @@ const locationMapScript = `window.locationPageMapData = ${JSON.stringify(mapScho
           <h2>School locations</h2>
         </div>
         <div id="location-directory-map" class="bath-location-map" aria-label={`${location.name} school map`}></div>
-        <p id="location-map-empty" class="location-intro" hidden>School locations are being updated.</p>
       </aside>
     </div>
   </main>
 
   <SiteFooter />
 
-  <script is:inline set:html={locationMapScript}></script>
+  <script type="application/json" id="location-map-data">{JSON.stringify(mapSchools)}</script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script defer src="/assets/js/location-pages.js?v=20260315-locationsharp2"></script>
+  <script defer src="/assets/js/location-pages.js"></script>
 </BaseLayout>

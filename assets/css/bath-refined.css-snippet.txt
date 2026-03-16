@@ -1,0 +1,17 @@
+Add this to assets/css/bath-refined.css:
+
+.location-hero-subtitle{
+  margin:14px 0 0;
+  color:rgba(255,255,255,.92);
+  font:500 clamp(1rem,1.8vw,1.2rem)/1.35 "Inter",sans-serif;
+  letter-spacing:.02em;
+  max-width:48rem;
+}
+
+@media (max-width: 720px){
+  .location-hero-subtitle{
+    margin-top:10px;
+    font-size:1rem;
+    line-height:1.4;
+  }
+}

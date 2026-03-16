@@ -1,20 +1,63 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SiteFooter from '../components/SiteFooter.astro';
-import {
-  getHomepageLocations,
-  getHomepageMapSchools
-} from '../lib/directory';
+import { supabase } from '../lib/supabase';
+import { getLocationDirectoryData } from '../lib/directory';
 
-const locations = await getHomepageLocations();
-const mapSchools = (await getHomepageMapSchools()).map((school) => ({
-  name: school.name,
-  href: school.href,
-  lat: school.lat,
-  lng: school.lng,
-  note: school.note,
-  type: school.type
-}));
+type HomepageLocationRow = {
+  name: string;
+  slug: string;
+  hero_subtitle: string | null;
+  search_terms: string[] | null;
+  homepage_order: number | null;
+};
+
+const { data: homepageLocationsRaw, error: homepageLocationsError } = await supabase
+  .from('locations')
+  .select('name, slug, hero_subtitle, search_terms, homepage_order')
+  .eq('is_live', true)
+  .eq('show_on_homepage', true)
+  .order('homepage_order', { ascending: true, nullsFirst: false })
+  .order('name', { ascending: true });
+
+if (homepageLocationsError) {
+  throw new Error(`Could not load homepage locations: ${homepageLocationsError.message}`);
+}
+
+const homepageLocations = (homepageLocationsRaw || []) as HomepageLocationRow[];
+
+const locations = homepageLocations.map((location) => {
+  const subtitle = String(location.hero_subtitle || '').trim();
+  const searchTerms = Array.isArray(location.search_terms) ? location.search_terms : [];
+  return {
+    name: location.name,
+    href: `/${location.slug}/`,
+    subtitle,
+    searchText: [location.name, subtitle, ...searchTerms].filter(Boolean).join(' ')
+  };
+});
+
+const directoryEntries = await Promise.all(
+  homepageLocations.map((location) => getLocationDirectoryData(location.slug))
+);
+
+const seenSchoolHrefs = new Set<string>();
+const mapSchools = directoryEntries.flatMap(({ mapSchools }) =>
+  mapSchools.flatMap((school) => {
+    const href = school.slug;
+    if (seenSchoolHrefs.has(href)) return [];
+    seenSchoolHrefs.add(href);
+    return [{
+      name: school.name,
+      href: school.slug,
+      lat: school.lat,
+      lng: school.lng,
+      type: school.type,
+      note: school.note
+    }];
+  })
+);
+
 const homepageMapScript = `window.homepageMapData = ${JSON.stringify(mapSchools)};`;
 ---
 <BaseLayout
@@ -56,9 +99,9 @@ const homepageMapScript = `window.homepageMapData = ${JSON.stringify(mapSchools)
           <ul class="location-list" id="location-list">
             {locations.map((location) => (
               <li>
-                <a class:list={["location-link", location.isLive && "is-live"]} data-location-item data-name={location.name} href={location.href}>
+                <a class="location-link is-live" data-location-item data-name={location.name} data-search={location.searchText} href={location.href}>
                   <span class="location-name">{location.name}</span>
-                  <span class="location-state">{location.state}</span>
+                  <span class="location-state">{location.subtitle || 'Private school guide'}</span>
                 </a>
               </li>
             ))}
@@ -83,5 +126,5 @@ const homepageMapScript = `window.homepageMapData = ${JSON.stringify(mapSchools)
 
   <script is:inline set:html={homepageMapScript}></script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script defer src="/assets/js/homepage.js?v=20260314-schoolpattern"></script>
+  <script defer src="/assets/js/homepage.js?v=20260315-homepage-searchterms"></script>
 </BaseLayout>

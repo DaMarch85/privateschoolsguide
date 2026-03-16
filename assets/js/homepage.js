@@ -21,16 +21,17 @@
       const query = searchInput.value.trim().toLowerCase();
       let firstVisibleHref = '';
 
-      locationItems.forEach(function (link) {
-        const name = (link.dataset.name || '').toLowerCase();
-        const match = !query || name.includes(query);
+      locationItems.forEach(function (item) {
+        const searchText = (item.dataset.search || item.dataset.name || '').toLowerCase();
+        const match = !query || searchText.includes(query);
+        const href = item.getAttribute('href') || '';
 
-        if (link.parentElement) {
-          link.parentElement.hidden = !match;
+        if (item.parentElement) {
+          item.parentElement.hidden = !match;
         }
 
-        if (match && !firstVisibleHref) {
-          firstVisibleHref = link.getAttribute('href') || '';
+        if (match && href && !firstVisibleHref) {
+          firstVisibleHref = href;
         }
       });
 
@@ -56,25 +57,41 @@
 
     return window.homepageMapData
       .map(function (item) {
-        const lat = Number(item && item.lat);
-        const lng = Number(item && item.lng);
+        const lat = Number(item && (item.lat ?? item.latitude));
+        const lng = Number(item && (item.lng ?? item.longitude));
 
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
 
         return {
           name: item.name || 'School',
-          href: item.href || '',
-          lat: lat,
-          lng: lng,
-          note: item.note || '',
-          type: item.type || 'senior'
+          href: item.href || item.slug || '',
+          lat,
+          lng,
+          type: item.type || 'senior',
+          note: item.note || ''
         };
       })
       .filter(Boolean);
   }
 
+  function buildIcon(type) {
+    return window.L.divIcon({
+      className: 'school-map-icon',
+      html: '<span class="school-map-marker ' + escapeHtml(type) + '"></span>',
+      iconSize: [16, 16],
+      iconAnchor: [8, 8],
+      popupAnchor: [0, -8]
+    });
+  }
+
   function popupHtml(point) {
-    return '\n      <div class="map-popup">\n        <h3 class="map-popup-title">' + escapeHtml(point.name) + '</h3>\n        ' + (point.note ? '<p class="map-popup-meta">' + escapeHtml(point.note) + '</p>' : '') + '\n        ' + (point.href ? '<a class="map-popup-link" href="' + escapeHtml(point.href) + '">View school</a>' : '') + '\n      </div>\n    ';
+    return (
+      '<div class="map-popup">' +
+      '<h3 class="map-popup-title">' + escapeHtml(point.name) + '</h3>' +
+      (point.note ? '<p class="map-popup-meta">' + escapeHtml(point.note) + '</p>' : '') +
+      (point.href ? '<a class="map-popup-link" href="' + escapeHtml(point.href) + '">View school</a>' : '') +
+      '</div>'
+    );
   }
 
   function initHomepageMap() {
@@ -82,84 +99,65 @@
     const emptyState = document.getElementById('homepage-map-empty');
 
     if (!mapTarget || !window.L) return false;
-    if (mapTarget.dataset.mapReady === 'true') {
-      if (mapTarget._leaflet_map_instance) {
-        setTimeout(function () {
-          mapTarget._leaflet_map_instance.invalidateSize();
-        }, 50);
-      }
-      return true;
-    }
+    if (mapTarget.dataset.mapReady === 'true') return true;
 
     const points = getMapPoints();
     const map = window.L.map(mapTarget, {
       zoomControl: true,
-      scrollWheelZoom: false
+      scrollWheelZoom: false,
+      zoomAnimation: false,
+      fadeAnimation: false,
+      markerZoomAnimation: false
     });
 
     mapTarget.dataset.mapReady = 'true';
     mapTarget._leaflet_map_instance = map;
 
-    window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const tileLayer = window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
-      attribution: '© OpenStreetMap contributors'
+      attribution: '© OpenStreetMap contributors',
+      detectRetina: window.devicePixelRatio > 1
     }).addTo(map);
 
+    function sharpenMap() {
+      requestAnimationFrame(function () {
+        map.invalidateSize({ pan: false, animate: false });
+        if (typeof tileLayer.redraw === 'function') tileLayer.redraw();
+      });
+    }
+
     if (!points.length) {
-      map.setView([51.39, -2.36], 8);
+      map.setView([51.41, -2.47], 8);
       if (emptyState) emptyState.hidden = false;
-      setTimeout(function () {
-        map.invalidateSize();
-      }, 80);
+      sharpenMap();
+      setTimeout(sharpenMap, 80);
+      setTimeout(sharpenMap, 260);
       return true;
     }
 
     if (emptyState) emptyState.hidden = true;
 
-    function icon(type) {
-      return window.L.divIcon({
-        className: 'school-map-icon',
-        html: '<span class="school-map-marker ' + escapeHtml(type) + '"></span>',
-        iconSize: [16, 16],
-        iconAnchor: [8, 8],
-        popupAnchor: [0, -8]
-      });
-    }
-
     const markers = points.map(function (point) {
-      const marker = window.L.marker([point.lat, point.lng], { icon: icon(point.type) }).addTo(map);
+      const marker = window.L.marker([point.lat, point.lng], { icon: buildIcon(point.type) }).addTo(map);
       marker.bindPopup(popupHtml(point));
       return marker;
     });
 
     const group = window.L.featureGroup(markers);
-    map.fitBounds(group.getBounds(), { padding: [28, 28], maxZoom: 10 });
+    map.fitBounds(group.getBounds(), { padding: [28, 28], maxZoom: 11, animate: false });
 
-    setTimeout(function () {
-      map.invalidateSize();
-    }, 80);
-
-    setTimeout(function () {
-      map.invalidateSize();
-    }, 300);
+    sharpenMap();
+    setTimeout(sharpenMap, 80);
+    setTimeout(sharpenMap, 260);
+    setTimeout(sharpenMap, 600);
 
     return true;
   }
 
   function bootHomepageMap(attempt) {
     if (initHomepageMap()) return;
-    if (attempt >= 50) {
-      const emptyState = document.getElementById('homepage-map-empty');
-      if (emptyState) {
-        emptyState.hidden = false;
-        emptyState.textContent = 'The map could not be loaded. Please refresh the page.';
-      }
-      return;
-    }
-
-    setTimeout(function () {
-      bootHomepageMap(attempt + 1);
-    }, 100);
+    if (attempt >= 50) return;
+    setTimeout(function () { bootHomepageMap(attempt + 1); }, 100);
   }
 
   function initHomepage() {
@@ -173,11 +171,5 @@
     initHomepage();
   }
 
-  window.addEventListener('load', function () {
-    bootHomepageMap(0);
-  });
-
-  window.addEventListener('pageshow', function () {
-    bootHomepageMap(0);
-  });
+  window.addEventListener('load', function () { bootHomepageMap(0); });
 })();
