@@ -3,18 +3,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import { supabase } from '../lib/supabase';
 import { getLocationDirectoryData } from '../lib/directory';
+import { getLocationPresentation } from '../lib/location-config';
 
 type HomepageLocationRow = {
   name: string;
   slug: string;
-  hero_subtitle: string | null;
-  search_terms: string[] | null;
   homepage_order: number | null;
 };
 
 const { data: homepageLocationsRaw, error: homepageLocationsError } = await supabase
   .from('locations')
-  .select('name, slug, hero_subtitle, search_terms, homepage_order')
+  .select('name, slug, homepage_order')
   .eq('is_live', true)
   .eq('show_on_homepage', true)
   .order('homepage_order', { ascending: true, nullsFirst: false })
@@ -27,13 +26,14 @@ if (homepageLocationsError) {
 const homepageLocations = (homepageLocationsRaw || []) as HomepageLocationRow[];
 
 const locations = homepageLocations.map((location) => {
-  const subtitle = String(location.hero_subtitle || '').trim();
-  const searchTerms = Array.isArray(location.search_terms) ? location.search_terms : [];
+  const presentation = getLocationPresentation(location.slug, location.name);
+  const subtitle = presentation.heroSubtitle;
+
   return {
     name: location.name,
     href: `/${location.slug}/`,
     subtitle,
-    searchText: [location.name, subtitle, ...searchTerms].filter(Boolean).join(' ')
+    searchText: [location.name, subtitle].filter(Boolean).join(' ')
   };
 });
 
@@ -44,12 +44,12 @@ const directoryEntries = await Promise.all(
 const seenSchoolHrefs = new Set<string>();
 const mapSchools = directoryEntries.flatMap(({ mapSchools }) =>
   mapSchools.flatMap((school) => {
-    const href = school.slug;
+    const href = school.href;
     if (seenSchoolHrefs.has(href)) return [];
     seenSchoolHrefs.add(href);
     return [{
       name: school.name,
-      href: school.slug,
+      href: school.href,
       lat: school.lat,
       lng: school.lng,
       type: school.type,

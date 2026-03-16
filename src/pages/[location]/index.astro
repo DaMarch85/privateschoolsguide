@@ -6,7 +6,6 @@ import LocationSideNav from '../../components/LocationSideNav.astro';
 import SchoolSquareCard from '../../components/SchoolSquareCard.astro';
 import { getLocationPaths, getLocationDirectoryData } from '../../lib/directory';
 import { getLocationPresentation } from '../../lib/location-config';
-import { supabase } from '../../lib/supabase';
 
 export async function getStaticPaths() {
   return await getLocationPaths();
@@ -17,20 +16,15 @@ if (!locationSlug) throw new Error('Missing location slug');
 
 const { location, schoolCards, mapSchools } = await getLocationDirectoryData(locationSlug);
 const presentation = getLocationPresentation(location.slug, location.name);
-
-const { data: locationMeta, error: locationMetaError } = await supabase
-  .from('locations')
-  .select('hero_subtitle')
-  .eq('slug', location.slug)
-  .single();
-
-if (locationMetaError) {
-  throw new Error(`Could not load location subtitle for ${location.slug}: ${locationMetaError.message}`);
-}
-
-const heroSubtitle = String(locationMeta?.hero_subtitle || '').trim();
+const heroSubtitle = presentation.heroSubtitle;
 const fallbackMetaTitle = `${location.name} private schools | The Private School Guide`;
 const fallbackMetaDescription = `Independent guide to ${location.name} private schools. Compare schools, review fees and bursaries, explore open days, and use the map to narrow your shortlist.`;
+const locationMapScript = `window.locationPageMapData = ${JSON.stringify(mapSchools)};`;
+
+const fallbackLatValue = location.latitude !== null ? Number(location.latitude) : NaN;
+const fallbackLngValue = location.longitude !== null ? Number(location.longitude) : NaN;
+const fallbackLat = Number.isFinite(fallbackLatValue) ? fallbackLatValue : null;
+const fallbackLng = Number.isFinite(fallbackLngValue) ? fallbackLngValue : null;
 ---
 <BaseLayout
   title={location.meta_title || fallbackMetaTitle}
@@ -80,11 +74,11 @@ const fallbackMetaDescription = `Independent guide to ${location.name} private s
       {heroSubtitle && <p class="location-hero-subtitle">{heroSubtitle}</p>}
     </div>
   </section>
-  <div class="school-back-strip"><div class="shell"><a class="school-back-link" href="/">← Back to home</a></div></div>
+  <div class="page-back-strip"><div class="shell"><a class="page-back-link" href="/">Back to homepage</a></div></div>
 
   <main id="main" class="page-shell">
     <div class="shell location-layout">
-      <LocationSideNav locationSlug={location.slug} locationName={location.name} currentSection="location" />
+      <LocationSideNav locationSlug={location.slug} locationName={location.name} />
 
       <section class="location-main-column" aria-labelledby="location-grid-title">
         <h2 id="location-grid-title" class="location-grid-title">{location.name} private schools</h2>
@@ -107,7 +101,9 @@ const fallbackMetaDescription = `Independent guide to ${location.name} private s
           aria-label={`${location.name} school map`}
           data-directory-map
           data-map-data-id="location-map-data"
-          data-empty-state-id="location-map-empty"
+          data-fallback-lat={fallbackLat ?? undefined}
+          data-fallback-lng={fallbackLng ?? undefined}
+          data-fallback-zoom="11"
         ></div>
         <p id="location-map-empty" class="location-intro" hidden>School locations are being updated.</p>
       </aside>
@@ -116,7 +112,8 @@ const fallbackMetaDescription = `Independent guide to ${location.name} private s
 
   <SiteFooter />
 
+  <script is:inline set:html={locationMapScript}></script>
   <script type="application/json" id="location-map-data">{JSON.stringify(mapSchools)}</script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script defer src="/assets/js/location-pages.js?v=20260316-tile-restore"></script>
+  <script defer src="/assets/js/location-pages.js?v=20260316-location-map-fix"></script>
 </BaseLayout>

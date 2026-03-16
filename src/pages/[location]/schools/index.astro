@@ -28,13 +28,11 @@ const { location, schoolCards } = await getLocationDirectoryData(locationSlug);
 
   <a class="skip-link" href="#main">Skip to content</a>
   <SiteHeader minimal={true} />
+  <div class="page-back-strip"><div class="shell"><a class="page-back-link" href={`/${location.slug}/`}>Back to {location.name}</a></div></div>
 
   <main id="main" class="page-shell">
-    <div class="shell" style="padding-top: 3rem; padding-bottom: 4rem;">
-      <div style="display:flex; gap:1rem; align-items:baseline; flex-wrap:wrap; margin-bottom:1.5rem;">
-        <h1 style="margin:0;">{location.name} schools</h1>
-        <a class="school-back-link" href={`/${location.slug}/`}>← Back to {location.name}</a>
-      </div>
+    <div class="shell" style="padding-top: 2.25rem; padding-bottom: 4rem;">
+      <h1 style="margin:0 0 1.5rem;">{location.name} schools</h1>
       <div class="school-square-grid">
         {schoolCards.map((school) => (
           <SchoolSquareCard {...school} />

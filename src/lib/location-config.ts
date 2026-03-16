@@ -10,6 +10,7 @@ export type LocationNavigationConfig = {
 export type LocationPresentationConfig = {
   heroImage: string;
   heroImageAlt: string;
+  heroSubtitle: string;
   defaultSchoolHeroImage: string;
   nav: LocationNavigationConfig;
 };
@@ -23,17 +24,6 @@ const DISABLED_NAV: LocationNavigationConfig = {
   movingToSection: false
 };
 
-const DEFAULT_PRESENTATION: LocationPresentationConfig = {
-  heroImage: '/assets/img/bath/bath-location-hero.jpg',
-  heroImageAlt: 'Private school guide location hero image',
-  defaultSchoolHeroImage: '/assets/img/bath/default-school.jpg',
-  nav: DISABLED_NAV
-};
-
-type LocationPresentationOverride = Partial<Omit<LocationPresentationConfig, 'nav'>> & {
-  nav?: Partial<LocationNavigationConfig>;
-};
-
 const FULL_NAV: LocationNavigationConfig = {
   compareOverview: true,
   compareAlevels: true,
@@ -43,15 +33,29 @@ const FULL_NAV: LocationNavigationConfig = {
   movingToSection: true
 };
 
+const DEFAULT_PRESENTATION: LocationPresentationConfig = {
+  heroImage: '/assets/img/bath/bath-location-hero.jpg',
+  heroImageAlt: 'Private school guide location hero image',
+  heroSubtitle: '',
+  defaultSchoolHeroImage: '/assets/img/bath/default-school.jpg',
+  nav: DISABLED_NAV
+};
+
+type LocationPresentationOverride = Partial<Omit<LocationPresentationConfig, 'nav'>> & {
+  nav?: Partial<LocationNavigationConfig>;
+};
+
 const LOCATION_PRESENTATION_OVERRIDES: Record<string, LocationPresentationOverride> = {
   bath: {
     heroImage: '/assets/img/bath/bath-location-hero.jpg',
     heroImageAlt: 'Bath skyline',
+    heroSubtitle: 'Bath and North East Somerset',
     nav: FULL_NAV
   },
   bristol: {
     heroImage: '/assets/img/bath/bath-location-hero.jpg',
     heroImageAlt: 'Bristol skyline',
+    heroSubtitle: 'Bristol and surrounding areas',
     nav: FULL_NAV
   }
 };
@@ -67,6 +71,7 @@ export function getLocationPresentation(locationSlug: string, locationName?: str
   return {
     heroImage: override.heroImage || DEFAULT_PRESENTATION.heroImage,
     heroImageAlt: buildHeroAlt(locationName, override.heroImageAlt || DEFAULT_PRESENTATION.heroImageAlt),
+    heroSubtitle: String(override.heroSubtitle || '').trim(),
     defaultSchoolHeroImage: override.defaultSchoolHeroImage || DEFAULT_PRESENTATION.defaultSchoolHeroImage,
     nav: {
       ...DISABLED_NAV,
