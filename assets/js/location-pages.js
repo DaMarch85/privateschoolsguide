@@ -1,60 +1,58 @@
 (function () {
-  function escapeHtml(str) {
-    return String(str || '').replace(/[&<>"']/g, function (m) {
-      return ({
+  function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, function (match) {
+      return {
         '&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
         '"': '&quot;',
         "'": '&#39;'
-      })[m];
+      }[match];
     });
   }
 
-  function getMapPoints() {
-    if (!Array.isArray(window.locationPageMapData)) return [];
+  function parseScriptJson(scriptId) {
+    const script = document.getElementById(scriptId);
+    if (!script) return [];
 
-    return window.locationPageMapData
-      .map(function (item) {
-        const lat = Number(item && (item.lat ?? item.latitude));
-        const lng = Number(item && (item.lng ?? item.longitude));
-
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-
-        return {
-          name: item.name || 'School',
-          href: item.href || item.slug || '',
-          lat: lat,
-          lng: lng,
-          type: item.type || 'senior',
-          note: item.note || ''
-        };
-      })
-      .filter(Boolean);
+    try {
+      const parsed = JSON.parse(script.textContent || '[]');
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      console.error('Failed to parse location map data from #' + scriptId, error);
+      return [];
+    }
   }
 
-  function getLocationFallbackView() {
-    const slug = (document.body && document.body.dataset.locationSlug) || '';
-
-    if (slug === 'bath') {
-      return { center: [51.3813, -2.3590], zoom: 11 };
+  function getRawMapData(mapTarget) {
+    if (Array.isArray(window.locationPageMapData) && window.locationPageMapData.length) {
+      return window.locationPageMapData;
     }
 
-    if (slug === 'bristol') {
-      return { center: [51.4545, -2.5879], zoom: 11 };
+    const dataScriptId = mapTarget && mapTarget.dataset ? mapTarget.dataset.mapDataId : '';
+    if (dataScriptId) {
+      const parsed = parseScriptJson(dataScriptId);
+      if (parsed.length) return parsed;
     }
 
-    return { center: [51.45, -2.48], zoom: 9 };
+    return parseScriptJson('location-map-data');
   }
 
-  function icon(type) {
-    return window.L.divIcon({
-      className: 'school-map-icon',
-      html: '<span class="school-map-marker ' + escapeHtml(type) + '"></span>',
-      iconSize: [16, 16],
-      iconAnchor: [8, 8],
-      popupAnchor: [0, -8]
-    });
+  function normalisePoint(item) {
+    if (!item || typeof item !== 'object') return null;
+
+    const lat = Number(item.lat ?? item.latitude);
+    const lng = Number(item.lng ?? item.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
+    return {
+      name: item.name || 'School',
+      href: item.href || item.slug || '',
+      type: item.type || 'senior',
+      note: item.note || item.addressLine1 || item.address_line1 || '',
+      lat,
+      lng
+    };
   }
 
   function popupHtml(point) {
@@ -67,6 +65,58 @@
     );
   }
 
+  function markerIcon(type) {
+    return window.L.divIcon({
+      className: 'school-map-icon',
+      html: '<span class="school-map-marker ' + escapeHtml(type) + '"></span>',
+      iconSize: [16, 16],
+      iconAnchor: [8, 8],
+      popupAnchor: [0, -8]
+    });
+  }
+
+  function sharpenMap(map, mapTarget, tileLayer) {
+    if (!map) return;
+
+    const refresh = function () {
+      try {
+        map.invalidateSize({ pan: false, animate: false });
+        if (tileLayer && typeof tileLayer.redraw === 'function') tileLayer.redraw();
+      } catch (err) {}
+    };
+
+    requestAnimationFrame(function () {
+      refresh();
+      requestAnimationFrame(refresh);
+    });
+
+    [100, 250, 500, 900].forEach(function (delay) {
+      setTimeout(refresh, delay);
+    });
+
+    if (tileLayer && !tileLayer._psgSharpnessBound) {
+      tileLayer._psgSharpnessBound = true;
+      tileLayer.on('load', refresh);
+      tileLayer.on('tileload', refresh);
+    }
+
+    if (mapTarget && typeof ResizeObserver !== 'undefined' && !mapTarget._psgResizeObserver) {
+      const observer = new ResizeObserver(function () {
+        refresh();
+      });
+      observer.observe(mapTarget);
+      mapTarget._psgResizeObserver = observer;
+    }
+  }
+
+  function getFallbackView() {
+    const slug = document.body && document.body.dataset ? document.body.dataset.locationSlug : '';
+
+    if (slug === 'bath') return { center: [51.3813, -2.3590], zoom: 11 };
+    if (slug === 'bristol') return { center: [51.4545, -2.5879], zoom: 11 };
+    return { center: [51.45, -2.48], zoom: 9 };
+  }
+
   function initLocationMap() {
     const mapTarget = document.getElementById('location-directory-map');
     const emptyState = document.getElementById('location-map-empty');
@@ -75,12 +125,12 @@
 
     if (mapTarget.dataset.mapReady === 'true') {
       if (mapTarget._leaflet_map_instance) {
-        setTimeout(function () {
-          mapTarget._leaflet_map_instance.invalidateSize();
-        }, 60);
+        sharpenMap(mapTarget._leaflet_map_instance, mapTarget, mapTarget._psgTileLayer);
       }
       return true;
     }
+
+    const points = getRawMapData(mapTarget).map(normalisePoint).filter(Boolean);
 
     const map = window.L.map(mapTarget, {
       zoomControl: true,
@@ -99,26 +149,13 @@
       detectRetina: window.devicePixelRatio > 1
     }).addTo(map);
 
-    function sharpenMap() {
-      if (!mapTarget || !map) return;
-      requestAnimationFrame(function () {
-        map.invalidateSize({ pan: false, animate: false });
-        if (typeof tileLayer.redraw === 'function') {
-          tileLayer.redraw();
-        }
-      });
-    }
-
-    const points = getMapPoints();
+    mapTarget._psgTileLayer = tileLayer;
 
     if (!points.length) {
-      const fallbackView = getLocationFallbackView();
+      const fallbackView = getFallbackView();
       map.setView(fallbackView.center, fallbackView.zoom);
       if (emptyState) emptyState.hidden = false;
-      sharpenMap();
-      setTimeout(sharpenMap, 80);
-      setTimeout(sharpenMap, 260);
-      setTimeout(sharpenMap, 600);
+      sharpenMap(map, mapTarget, tileLayer);
       return true;
     }
 
@@ -126,9 +163,8 @@
 
     const markers = points.map(function (point) {
       const marker = window.L.marker([point.lat, point.lng], {
-        icon: icon(point.type)
+        icon: markerIcon(point.type)
       });
-
       marker.bindPopup(popupHtml(point));
       marker.addTo(map);
       return marker;
@@ -141,14 +177,7 @@
       map.fitBounds(group.getBounds(), { padding: [28, 28], maxZoom: 11, animate: false });
     }
 
-    sharpenMap();
-    setTimeout(sharpenMap, 80);
-    setTimeout(sharpenMap, 260);
-    setTimeout(sharpenMap, 600);
-
-    window.addEventListener('resize', sharpenMap, { passive: true });
-    window.addEventListener('orientationchange', function () { setTimeout(sharpenMap, 120); }, { passive: true });
-
+    sharpenMap(map, mapTarget, tileLayer);
     return true;
   }
 
