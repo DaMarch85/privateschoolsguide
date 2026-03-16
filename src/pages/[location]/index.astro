@@ -44,18 +44,25 @@ const fallbackMetaDescription = `Independent guide to ${location.name} private s
     <link rel="stylesheet" href="/assets/css/styles.css" />
     <link rel="stylesheet" href="/assets/css/bath-refined.css" />
     <style>
-      .location-hero-subtitle{
-        margin:14px 0 0;
-        color:rgba(255,255,255,.92);
-        font:500 clamp(1rem,1.8vw,1.2rem)/1.35 "Inter",sans-serif;
-        letter-spacing:.02em;
-        max-width:48rem;
+      .location-hero-subtitle {
+        display: block;
+        width: 100%;
+        margin: 14px auto 0;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.95);
+        font-style: italic;
+        font-weight: 400;
+        font-size: clamp(1.25rem, 2.2vw, 1.5rem);
+        line-height: 1.35;
+        letter-spacing: 0.02em;
+        max-width: none;
       }
-      @media (max-width:720px){
-        .location-hero-subtitle{
-          margin-top:10px;
-          font-size:1rem;
-          line-height:1.4;
+
+      @media (max-width: 720px) {
+        .location-hero-subtitle {
+          margin-top: 10px;
+          font-size: 1.25rem;
+          line-height: 1.35;
         }
       }
     </style>
