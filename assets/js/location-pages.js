@@ -30,14 +30,13 @@
   }
 
   function getRawMapData(mapTarget) {
-    if (Array.isArray(window.locationPageMapData) && window.locationPageMapData.length) {
+    if (Array.isArray(window.locationPageMapData)) {
       return window.locationPageMapData;
     }
 
     const dataScriptId = mapTarget && mapTarget.dataset ? mapTarget.dataset.mapDataId : '';
     if (dataScriptId) {
-      const parsed = parseMapData(dataScriptId);
-      if (parsed.length) return parsed;
+      return parseMapData(dataScriptId);
     }
 
     return parseMapData('location-map-data');
@@ -98,28 +97,39 @@
   function refreshMap(map, tileLayer) {
     if (!map) return;
 
-    try {
-      map.invalidateSize({ pan: false, animate: false });
-    } catch (error) {}
-
-    if (tileLayer && typeof tileLayer.redraw === 'function') {
+    requestAnimationFrame(function () {
       try {
-        tileLayer.redraw();
+        map.invalidateSize({ pan: false, animate: false });
       } catch (error) {}
-    }
+
+      if (tileLayer && typeof tileLayer.redraw === 'function') {
+        try {
+          tileLayer.redraw();
+        } catch (error) {}
+      }
+    });
   }
 
   function scheduleRefresh(map, tileLayer) {
-    requestAnimationFrame(function () {
-      refreshMap(map, tileLayer);
-      requestAnimationFrame(function () {
-        refreshMap(map, tileLayer);
-      });
-    });
-
-    setTimeout(function () { refreshMap(map, tileLayer); }, 90);
+    refreshMap(map, tileLayer);
+    setTimeout(function () { refreshMap(map, tileLayer); }, 80);
     setTimeout(function () { refreshMap(map, tileLayer); }, 260);
     setTimeout(function () { refreshMap(map, tileLayer); }, 600);
+  }
+
+  function bindMapReflow(mapTarget, map, tileLayer) {
+    if (!mapTarget || mapTarget.dataset.reflowBound === 'true') return;
+
+    mapTarget.dataset.reflowBound = 'true';
+
+    const reflow = function () {
+      refreshMap(map, tileLayer);
+    };
+
+    window.addEventListener('resize', reflow, { passive: true });
+    window.addEventListener('orientationchange', function () {
+      setTimeout(reflow, 120);
+    }, { passive: true });
   }
 
   function initLocationMap() {
@@ -129,7 +139,13 @@
     if (!mapTarget || !window.L) return false;
 
     if (mapTarget.dataset.mapReady === 'true') {
-      refreshMap(mapTarget._leaflet_map_instance, mapTarget._leaflet_tile_layer);
+      if (mapTarget._leaflet_map_instance) {
+        setTimeout(function () {
+          try {
+            mapTarget._leaflet_map_instance.invalidateSize({ pan: false, animate: false });
+          } catch (error) {}
+        }, 60);
+      }
       return true;
     }
 
@@ -162,10 +178,7 @@
     }).addTo(map);
 
     mapTarget._leaflet_tile_layer = tileLayer;
-
-    tileLayer.on('load', function () {
-      refreshMap(map, tileLayer);
-    });
+    bindMapReflow(mapTarget, map, tileLayer);
 
     if (!points.length && fallbackView) {
       map.setView(fallbackView.center, fallbackView.zoom);
@@ -214,19 +227,21 @@
     }, 100);
   }
 
-  function reflowLocationMap() {
-    const mapTarget = document.getElementById('location-directory-map');
-    if (!mapTarget || mapTarget.dataset.mapReady !== 'true') return;
-    refreshMap(mapTarget._leaflet_map_instance, mapTarget._leaflet_tile_layer);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { bootLocationMap(0); }, { once: true });
-  } else {
+  function initLocationPage() {
     bootLocationMap(0);
   }
 
-  window.addEventListener('load', function () { bootLocationMap(0); });
-  window.addEventListener('pageshow', function () { bootLocationMap(0); });
-  window.addEventListener('resize', reflowLocationMap);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLocationPage, { once: true });
+  } else {
+    initLocationPage();
+  }
+
+  window.addEventListener('load', function () {
+    bootLocationMap(0);
+  });
+
+  window.addEventListener('pageshow', function () {
+    bootLocationMap(0);
+  });
 })();
