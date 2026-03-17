@@ -62,9 +62,9 @@ const LOCATION_PRESENTATION_OVERRIDES: Record<string, LocationPresentationOverri
     nav: FULL_NAV
   },
   bristol: {
-    heroImage: '/assets/img/bath/bath-location-hero.jpg',
+    heroImage: '/assets/img/bristol-hero.jpg',
     heroImageAlt: 'Bristol',
-    heroSubtitle: 'Bristol unitary authority',
+    heroSubtitle: '',
     nav: FULL_NAV
   },
   wiltshire: {
