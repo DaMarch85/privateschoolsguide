@@ -76,6 +76,16 @@ const LOCATION_PRESENTATION_OVERRIDES: Record<string, LocationPresentationOverri
     heroImageAlt: 'Somerset',
     heroSubtitle: 'Taunton, Glastonbury, Bridgwater, Frome and county',
     nav: CORE_DATA_NAV
+  },
+  devon: {
+    heroImageAlt: 'Devon',
+    heroSubtitle: 'Plymouth, Exeter, Torquay and county',
+    nav: CORE_DATA_NAV
+  },
+  cornwall: {
+    heroImageAlt: 'Cornwall',
+    heroSubtitle: 'Falmouth, Penzance, St Austell and county',
+    nav: CORE_DATA_NAV
   }
 };
 
