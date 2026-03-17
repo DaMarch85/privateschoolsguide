@@ -68,10 +68,18 @@
           lat,
           lng,
           type: item.type || 'senior',
-          note: item.note || ''
+          note: item.note || '',
+          provisionCategory: item.provisionCategory === 'sen_specialist'
+            ? 'sen_specialist'
+            : 'mainstream'
         };
       })
       .filter(Boolean);
+  }
+
+  function pointMatchesFilter(point, filterValue) {
+    if (filterValue === 'both') return true;
+    return point.provisionCategory === filterValue;
   }
 
   function buildIcon(type) {
@@ -92,6 +100,33 @@
       (point.href ? '<a class="map-popup-link" href="' + escapeHtml(point.href) + '">View school</a>' : '') +
       '</div>'
     );
+  }
+
+  function bindMapProvisionFilter(render) {
+    const buttons = Array.from(document.querySelectorAll('[data-school-filter-option]'));
+
+    if (!buttons.length) {
+      render('mainstream');
+      return;
+    }
+
+    function setActive(filterValue) {
+      buttons.forEach(function (button) {
+        const active = (button.dataset.schoolFilterOption || '') === filterValue;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+
+      render(filterValue);
+    }
+
+    buttons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        setActive(button.dataset.schoolFilterOption || 'mainstream');
+      });
+    });
+
+    setActive('mainstream');
   }
 
   function initHomepageMap() {
@@ -119,6 +154,8 @@
       detectRetina: window.devicePixelRatio > 1
     }).addTo(map);
 
+    const markerLayer = window.L.layerGroup().addTo(map);
+
     function sharpenMap() {
       requestAnimationFrame(function () {
         map.invalidateSize({ pan: false, animate: false });
@@ -126,30 +163,55 @@
       });
     }
 
-    if (!points.length) {
-      map.setView([51.41, -2.47], 8);
-      if (emptyState) emptyState.hidden = false;
+    function showEmptyState(filterValue) {
+      if (!emptyState) return;
+
+      if (filterValue === 'sen_specialist') {
+        emptyState.textContent = 'No SEN specialist schools are currently mapped.';
+      } else if (filterValue === 'mainstream') {
+        emptyState.textContent = 'No non-SEN schools are currently mapped.';
+      } else {
+        emptyState.textContent = 'School locations are being updated.';
+      }
+
+      emptyState.hidden = false;
+    }
+
+    function renderPoints(filterValue) {
+      markerLayer.clearLayers();
+
+      const visiblePoints = points.filter(function (point) {
+        return pointMatchesFilter(point, filterValue);
+      });
+
+      if (!visiblePoints.length) {
+        map.setView([51.41, -2.47], 8);
+        showEmptyState(filterValue);
+        sharpenMap();
+        setTimeout(sharpenMap, 80);
+        setTimeout(sharpenMap, 260);
+        return;
+      }
+
+      if (emptyState) emptyState.hidden = true;
+
+      const markers = visiblePoints.map(function (point) {
+        const marker = window.L.marker([point.lat, point.lng], { icon: buildIcon(point.type) });
+        marker.bindPopup(popupHtml(point));
+        markerLayer.addLayer(marker);
+        return marker;
+      });
+
+      const group = window.L.featureGroup(markers);
+      map.fitBounds(group.getBounds(), { padding: [28, 28], maxZoom: 11, animate: false });
+
       sharpenMap();
       setTimeout(sharpenMap, 80);
       setTimeout(sharpenMap, 260);
-      return true;
+      setTimeout(sharpenMap, 600);
     }
 
-    if (emptyState) emptyState.hidden = true;
-
-    const markers = points.map(function (point) {
-      const marker = window.L.marker([point.lat, point.lng], { icon: buildIcon(point.type) }).addTo(map);
-      marker.bindPopup(popupHtml(point));
-      return marker;
-    });
-
-    const group = window.L.featureGroup(markers);
-    map.fitBounds(group.getBounds(), { padding: [28, 28], maxZoom: 11, animate: false });
-
-    sharpenMap();
-    setTimeout(sharpenMap, 80);
-    setTimeout(sharpenMap, 260);
-    setTimeout(sharpenMap, 600);
+    bindMapProvisionFilter(renderPoints);
 
     return true;
   }
