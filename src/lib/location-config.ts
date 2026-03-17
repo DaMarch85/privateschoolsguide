@@ -10,6 +10,7 @@ export type LocationNavigationConfig = {
 export type LocationPresentationConfig = {
   heroImage: string;
   heroImageAlt: string;
+  heroSubtitle: string | null;
   defaultSchoolHeroImage: string;
   nav: LocationNavigationConfig;
 };
@@ -26,6 +27,7 @@ const DISABLED_NAV: LocationNavigationConfig = {
 const DEFAULT_PRESENTATION: LocationPresentationConfig = {
   heroImage: '/assets/img/bath/bath-location-hero.jpg',
   heroImageAlt: 'Private school guide location hero image',
+  heroSubtitle: null,
   defaultSchoolHeroImage: '/assets/img/bath/default-school.jpg',
   nav: DISABLED_NAV
 };
@@ -56,15 +58,18 @@ const LOCATION_PRESENTATION_OVERRIDES: Record<string, LocationPresentationOverri
   bath: {
     heroImage: '/assets/img/bath/bath-location-hero.jpg',
     heroImageAlt: 'Bath skyline',
+    heroSubtitle: 'Bath and North East Somerset',
     nav: FULL_NAV
   },
   bristol: {
     heroImage: '/assets/img/bath/bath-location-hero.jpg',
     heroImageAlt: 'Bristol skyline',
+    heroSubtitle: 'Bristol unitary authority',
     nav: FULL_NAV
   },
   wiltshire: {
     heroImageAlt: 'Wiltshire countryside',
+    heroSubtitle: 'Salisbury, Warminster, Chippenham, Trowbridge and county',
     nav: CORE_DATA_NAV
   }
 };
@@ -80,6 +85,7 @@ export function getLocationPresentation(locationSlug: string, locationName?: str
   return {
     heroImage: override.heroImage || DEFAULT_PRESENTATION.heroImage,
     heroImageAlt: buildHeroAlt(locationName, override.heroImageAlt || DEFAULT_PRESENTATION.heroImageAlt),
+    heroSubtitle: override.heroSubtitle ?? DEFAULT_PRESENTATION.heroSubtitle,
     defaultSchoolHeroImage: override.defaultSchoolHeroImage || DEFAULT_PRESENTATION.defaultSchoolHeroImage,
     nav: {
       ...DISABLED_NAV,
