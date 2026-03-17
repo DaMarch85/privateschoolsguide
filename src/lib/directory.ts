@@ -46,6 +46,7 @@ export type SchoolSummaryRecord = {
   slug: string;
   name: string;
   school_type: string | null;
+  provision_category?: string | null;
   phase: string | null;
   gender: string | null;
   age_min: number | null;
@@ -162,6 +163,7 @@ export type MapSchool = {
   latitude: number;
   longitude: number;
   type: string;
+  provisionCategory: 'mainstream' | 'sen_specialist';
   note: string;
   addressLine1: string;
   address_line1: string;
@@ -255,6 +257,14 @@ export function getMapType(phase: string | null, ageMax: number | null): string 
   return 'senior';
 }
 
+export function getProvisionCategory(
+  school: Pick<SchoolSummaryRecord, 'provision_category' | 'school_type'>
+): 'mainstream' | 'sen_specialist' {
+  const raw = String(school.provision_category || '').trim().toLowerCase();
+  if (raw === 'sen_specialist') return 'sen_specialist';
+  return 'mainstream';
+}
+
 export function getGenderLabel(gender: string | null): string {
   const value = (gender || '').toLowerCase();
   if (value.includes('girl')) return 'Girls';
@@ -304,7 +314,14 @@ function buildLocationMapSchool(location: LocationRecord, school: SchoolSummaryR
   if (!coordinates) return null;
 
   const href = `/${location.slug}/schools/${school.slug}/`;
-  const note = `${getPhaseLabel(school.phase, school.age_max)} · ${getGenderLabel(school.gender)} · ${getFormatLabel(school.day_boarding)} · Ages ${getAgeLabel(school.age_min, school.age_max)}`;
+  const provisionCategory = getProvisionCategory(school);
+  const note = [
+    provisionCategory === 'sen_specialist' ? 'SEN specialist' : null,
+    getPhaseLabel(school.phase, school.age_max),
+    getGenderLabel(school.gender),
+    getFormatLabel(school.day_boarding),
+    `Ages ${getAgeLabel(school.age_min, school.age_max)}`
+  ].filter(Boolean).join(' · ');
   const addressLine1 = school.address_line1 || '';
 
   return {
@@ -317,6 +334,7 @@ function buildLocationMapSchool(location: LocationRecord, school: SchoolSummaryR
     latitude: coordinates.lat,
     longitude: coordinates.lng,
     type: getMapType(school.phase, school.age_max),
+    provisionCategory,
     note,
     addressLine1,
     address_line1: addressLine1
@@ -599,7 +617,7 @@ async function getSchoolsByIds(schoolIds: Array<string | number>): Promise<Schoo
 
   const { data, error } = await supabase
     .from('schools')
-    .select('id, slug, name, school_type, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, fees_from, description, inspection_rating')
+    .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, fees_from, description, inspection_rating')
     .in('id', schoolIds);
 
   if (error) fail('Could not load schools', error);
@@ -977,7 +995,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
 
   const { data: schoolData, error: schoolError } = await supabase
     .from('schools')
-    .select('id, slug, name, school_type, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, fees_from, description, inspection_rating')
+    .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, fees_from, description, inspection_rating')
     .eq('slug', schoolSlug)
     .single();
 
@@ -1090,6 +1108,8 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const canonicalPath = `/${location.slug}/schools/${school.slug}/`;
   const coordinates = getSchoolCoordinates(school);
 
+  const provisionCategory = getProvisionCategory(school);
+
   const mapData = coordinates
     ? {
         name: school.name,
@@ -1099,7 +1119,8 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
         lng: coordinates.lng,
         latitude: coordinates.lat,
         longitude: coordinates.lng,
-        note: `${phaseLabel} · ${genderLabel} · ${formatLabel} · Ages ${ageLabel}`,
+        provisionCategory,
+        note: `${provisionCategory === 'sen_specialist' ? 'SEN specialist · ' : ''}${phaseLabel} · ${genderLabel} · ${formatLabel} · Ages ${ageLabel}`,
         zoom: coordinates.zoom || 13
       }
     : null;
