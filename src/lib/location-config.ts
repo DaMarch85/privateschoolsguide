@@ -57,19 +57,24 @@ const CORE_DATA_NAV: LocationNavigationConfig = {
 const LOCATION_PRESENTATION_OVERRIDES: Record<string, LocationPresentationOverride> = {
   bath: {
     heroImage: '/assets/img/bath/bath-location-hero.jpg',
-    heroImageAlt: 'Bath skyline',
+    heroImageAlt: 'Bath',
     heroSubtitle: 'Bath and North East Somerset',
     nav: FULL_NAV
   },
   bristol: {
     heroImage: '/assets/img/bath/bath-location-hero.jpg',
-    heroImageAlt: 'Bristol skyline',
+    heroImageAlt: 'Bristol',
     heroSubtitle: 'Bristol unitary authority',
     nav: FULL_NAV
   },
   wiltshire: {
-    heroImageAlt: 'Wiltshire countryside',
+    heroImageAlt: 'Wiltshire',
     heroSubtitle: 'Salisbury, Warminster, Chippenham, Trowbridge and county',
+    nav: CORE_DATA_NAV
+  },
+  somerset: {
+    heroImageAlt: 'Somerset',
+    heroSubtitle: 'Taunton, Glastonbury, Bridgwater, Frome and county',
     nav: CORE_DATA_NAV
   }
 };
