@@ -162,9 +162,9 @@ body.home-minimal a{
 
 .location-link{
   display:flex;
-  align-items:flex-end;
-  justify-content:space-between;
-  gap:1rem;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:.22rem;
   padding:1rem 0;
   border-bottom:1px solid var(--home-border);
   transition:color .18s ease, padding-left .18s ease;
@@ -187,6 +187,7 @@ body.home-minimal a{
   font-size:.88rem;
   text-transform:uppercase;
   letter-spacing:.12em;
+  line-height:1.3;
 }
 
 .location-link.is-live .location-state{
