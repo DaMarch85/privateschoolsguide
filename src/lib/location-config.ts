@@ -78,6 +78,7 @@ const LOCATION_PRESENTATION_OVERRIDES: Record<string, LocationPresentationOverri
     nav: CORE_DATA_NAV
   },
   devon: {
+    heroImage: '/assets/img/devon-hero.jpg',
     heroImageAlt: 'Devon',
     heroSubtitle: 'Plymouth, Exeter, Torquay and county',
     nav: CORE_DATA_NAV
