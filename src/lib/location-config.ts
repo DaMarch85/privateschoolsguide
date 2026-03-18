@@ -83,6 +83,7 @@ const LOCATION_PRESENTATION_OVERRIDES: Record<string, LocationPresentationOverri
     nav: CORE_DATA_NAV
   },
   cornwall: {
+    heroImage: '/assets/img/cornwall-hero.jpg',
     heroImageAlt: 'Cornwall',
     heroSubtitle: 'Falmouth, Penzance, St Austell and county',
     nav: CORE_DATA_NAV
