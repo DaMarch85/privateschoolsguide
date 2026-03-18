@@ -87,12 +87,14 @@ const LOCATION_PRESENTATION_OVERRIDES: Record<string, LocationPresentationOverri
     heroImage: '/assets/img/cornwall-hero.jpg',
     heroImageAlt: 'Cornwall',
     heroSubtitle: 'Falmouth, Penzance, St Austell and county',
-    nav: CORE_DATA_NAV,
+    nav: CORE_DATA_NAV
+  },
   dorset: {
     heroImage: '/assets/img/cornwall-hero.jpg',
     heroImageAlt: 'Dorset',
     heroSubtitle: 'Bournemouth, Weymouth and county',
-    nav: CORE_DATA_NAV,
+    nav: CORE_DATA_NAV
+  },
   hampshire: {
     heroImage: '/assets/img/cornwall-hero.jpg',
     heroImageAlt: 'Hampshire',
