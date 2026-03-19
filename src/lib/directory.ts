@@ -46,7 +46,6 @@ export type SchoolSummaryRecord = {
   slug: string;
   name: string;
   school_type: string | null;
-  provision_category?: string | null;
   phase: string | null;
   gender: string | null;
   age_min: number | null;
@@ -60,6 +59,7 @@ export type SchoolSummaryRecord = {
   longitude: number | null;
   website: string | null;
   pupil_numbers: number | null;
+  fees_from: number | null;
   description: string | null;
   inspection_rating: string | null;
 };
@@ -97,7 +97,6 @@ export type LocationBursaryCard = {
   schoolId: string;
   schoolSlug: string;
   schoolName: string;
-  provisionCategory: 'mainstream' | 'sen_specialist';
   summary: string;
 };
 
@@ -105,7 +104,6 @@ export type LocationOpenDayItem = {
   schoolId: string;
   schoolSlug: string;
   schoolName: string;
-  provisionCategory: 'mainstream' | 'sen_specialist';
   title: string;
   startAt: string | null;
   endAt: string | null;
@@ -137,6 +135,27 @@ export type FeeRecord = {
   includes_vat: boolean;
 };
 
+export type AnnualFeeRecord = {
+  academic_year: string;
+  fee_type: string;
+  includes_vat: boolean;
+  amount_gbp_pre_reception_annual_inc_vat: number | string | null;
+  amount_gbp_reception_annual_inc_vat: number | string | null;
+  amount_gbp_year_1_annual_inc_vat: number | string | null;
+  amount_gbp_year_2_annual_inc_vat: number | string | null;
+  amount_gbp_year_3_annual_inc_vat: number | string | null;
+  amount_gbp_year_4_annual_inc_vat: number | string | null;
+  amount_gbp_year_5_annual_inc_vat: number | string | null;
+  amount_gbp_year_6_annual_inc_vat: number | string | null;
+  amount_gbp_year_7_annual_inc_vat: number | string | null;
+  amount_gbp_year_8_annual_inc_vat: number | string | null;
+  amount_gbp_year_9_annual_inc_vat: number | string | null;
+  amount_gbp_year_10_annual_inc_vat: number | string | null;
+  amount_gbp_year_11_annual_inc_vat: number | string | null;
+  amount_gbp_year_12_annual_inc_vat: number | string | null;
+  amount_gbp_year_13_annual_inc_vat: number | string | null;
+};
+
 export type BursaryRecord = {
   has_bursaries: boolean | null;
   status_label: string | null;
@@ -151,7 +170,6 @@ export type SchoolCard = {
   name: string;
   href: string;
   cardClass: string;
-  provisionCategory: 'mainstream' | 'sen_specialist';
   texts: string[];
 };
 
@@ -165,7 +183,6 @@ export type MapSchool = {
   latitude: number;
   longitude: number;
   type: string;
-  provisionCategory: 'mainstream' | 'sen_specialist';
   note: string;
   addressLine1: string;
   address_line1: string;
@@ -198,7 +215,6 @@ export type CompareSchoolRecord = {
   id: string;
   schoolId: string;
   schoolSlug: string;
-  provisionCategory: 'mainstream' | 'sen_specialist';
   name: string;
   slug: string;
   ages: string;
@@ -260,14 +276,6 @@ export function getMapType(phase: string | null, ageMax: number | null): string 
   return 'senior';
 }
 
-export function getProvisionCategory(
-  school: Pick<SchoolSummaryRecord, 'provision_category' | 'school_type'>
-): 'mainstream' | 'sen_specialist' {
-  const raw = String(school.provision_category || '').trim().toLowerCase();
-  if (raw === 'sen_specialist') return 'sen_specialist';
-  return 'mainstream';
-}
-
 export function getGenderLabel(gender: string | null): string {
   const value = (gender || '').toLowerCase();
   if (value.includes('girl')) return 'Girls';
@@ -317,14 +325,7 @@ function buildLocationMapSchool(location: LocationRecord, school: SchoolSummaryR
   if (!coordinates) return null;
 
   const href = `/${location.slug}/schools/${school.slug}/`;
-  const provisionCategory = getProvisionCategory(school);
-  const note = [
-    provisionCategory === 'sen_specialist' ? 'SEN specialist' : null,
-    getPhaseLabel(school.phase, school.age_max),
-    getGenderLabel(school.gender),
-    getFormatLabel(school.day_boarding),
-    `Ages ${getAgeLabel(school.age_min, school.age_max)}`
-  ].filter(Boolean).join(' · ');
+  const note = `${getPhaseLabel(school.phase, school.age_max)} · ${getGenderLabel(school.gender)} · ${getFormatLabel(school.day_boarding)} · Ages ${getAgeLabel(school.age_min, school.age_max)}`;
   const addressLine1 = school.address_line1 || '';
 
   return {
@@ -337,7 +338,6 @@ function buildLocationMapSchool(location: LocationRecord, school: SchoolSummaryR
     latitude: coordinates.lat,
     longitude: coordinates.lng,
     type: getMapType(school.phase, school.age_max),
-    provisionCategory,
     note,
     addressLine1,
     address_line1: addressLine1
@@ -459,6 +459,65 @@ export function feeTypeLabel(type: string): string {
   if (type === 'weekly_boarding') return 'Weekly boarding';
   if (type === 'full_boarding') return 'Full boarding';
   return type.replace(/_/g, ' ');
+}
+
+const ANNUAL_FEE_SELECT_WITH_SCHOOL_ID = `
+  school_id,
+  academic_year,
+  fee_type,
+  includes_vat,
+  amount_gbp_pre_reception_annual_inc_vat,
+  amount_gbp_reception_annual_inc_vat,
+  amount_gbp_year_1_annual_inc_vat,
+  amount_gbp_year_2_annual_inc_vat,
+  amount_gbp_year_3_annual_inc_vat,
+  amount_gbp_year_4_annual_inc_vat,
+  amount_gbp_year_5_annual_inc_vat,
+  amount_gbp_year_6_annual_inc_vat,
+  amount_gbp_year_7_annual_inc_vat,
+  amount_gbp_year_8_annual_inc_vat,
+  amount_gbp_year_9_annual_inc_vat,
+  amount_gbp_year_10_annual_inc_vat,
+  amount_gbp_year_11_annual_inc_vat,
+  amount_gbp_year_12_annual_inc_vat,
+  amount_gbp_year_13_annual_inc_vat
+`.replace(/\s+/g, ' ').trim();
+
+const ANNUAL_FEE_SELECT = ANNUAL_FEE_SELECT_WITH_SCHOOL_ID.replace(/^school_id,\s*/, '');
+
+const ANNUAL_FEE_COLUMNS: Array<{ label: string; key: keyof AnnualFeeRecord }> = [
+  { label: 'Pre-Reception', key: 'amount_gbp_pre_reception_annual_inc_vat' },
+  { label: 'Reception', key: 'amount_gbp_reception_annual_inc_vat' },
+  { label: 'Year 1', key: 'amount_gbp_year_1_annual_inc_vat' },
+  { label: 'Year 2', key: 'amount_gbp_year_2_annual_inc_vat' },
+  { label: 'Year 3', key: 'amount_gbp_year_3_annual_inc_vat' },
+  { label: 'Year 4', key: 'amount_gbp_year_4_annual_inc_vat' },
+  { label: 'Year 5', key: 'amount_gbp_year_5_annual_inc_vat' },
+  { label: 'Year 6', key: 'amount_gbp_year_6_annual_inc_vat' },
+  { label: 'Year 7', key: 'amount_gbp_year_7_annual_inc_vat' },
+  { label: 'Year 8', key: 'amount_gbp_year_8_annual_inc_vat' },
+  { label: 'Year 9', key: 'amount_gbp_year_9_annual_inc_vat' },
+  { label: 'Year 10', key: 'amount_gbp_year_10_annual_inc_vat' },
+  { label: 'Year 11', key: 'amount_gbp_year_11_annual_inc_vat' },
+  { label: 'Year 12', key: 'amount_gbp_year_12_annual_inc_vat' },
+  { label: 'Year 13', key: 'amount_gbp_year_13_annual_inc_vat' }
+];
+
+function expandAnnualFeeRows<T extends AnnualFeeRecord & { school_id?: string | number }>(rows: T[]): Array<FeeRecord & { school_id?: string | number }> {
+  return rows.flatMap((row) =>
+    ANNUAL_FEE_COLUMNS.flatMap(({ label, key }) => {
+      const amount = toNumber(row[key]);
+      if (amount === null) return [];
+      return [{
+        school_id: row.school_id,
+        academic_year: row.academic_year,
+        fee_type: row.fee_type,
+        year_group_label: label,
+        amount_gbp: amount,
+        includes_vat: Boolean(row.includes_vat)
+      }];
+    })
+  );
 }
 
 function splitColumns<T>(rows: T[]): T[][] {
@@ -620,7 +679,7 @@ async function getSchoolsByIds(schoolIds: Array<string | number>): Promise<Schoo
 
   const { data, error } = await supabase
     .from('schools')
-    .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating')
+    .select('id, slug, name, school_type, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, fees_from, description, inspection_rating')
     .in('id', schoolIds);
 
   if (error) fail('Could not load schools', error);
@@ -643,7 +702,6 @@ export async function getLocationDirectoryData(locationSlug: string) {
     name: school.name,
     href: `/${location.slug}/schools/${school.slug}/`,
     cardClass: `school-square-card school-square-card--${getMapType(school.phase, school.age_max)}`,
-    provisionCategory: getProvisionCategory(school),
     texts: [
       getPhaseLabel(school.phase, school.age_max),
       `${getGenderLabel(school.gender)} · ${getFormatLabel(school.day_boarding)}`,
@@ -695,8 +753,8 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
   }
 
   const { data: feeRowsRaw, error: feeRowsError } = await supabase
-    .from('school_fee_profiles')
-    .select('school_id, academic_year, fee_type, year_group_label, amount_gbp, includes_vat')
+    .from('school_fee_profiles_annual')
+    .select(ANNUAL_FEE_SELECT_WITH_SCHOOL_ID)
     .in('school_id', schoolIds);
 
   if (feeRowsError) fail(`Could not load compare fees for ${locationSlug}`, feeRowsError);
@@ -726,7 +784,9 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
 
   if (subjectRowsError) fail(`Could not load compare subjects for ${locationSlug}`, subjectRowsError);
 
-  const feeRows = (feeRowsRaw || []) as Array<FeeRecord & { school_id: string | number }>;
+  const feeRows = expandAnnualFeeRows(
+    ((feeRowsRaw || []) as Array<AnnualFeeRecord & { school_id: string | number }>)
+  ) as Array<FeeRecord & { school_id: string | number }>;
   const bursaryRows = (bursaryRowsRaw || []) as Array<BursaryRecord & { school_id: string | number }>;
   const examRows = (examRowsRaw || []) as Array<ExamResultRecord & { school_id: string | number }>;
   const subjectRows = (subjectRowsRaw || []) as Array<SubjectRecord & { school_id: string | number; result_year: number }>;
@@ -762,7 +822,6 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
       id: school.slug,
       schoolId: String(school.id),
       schoolSlug: school.slug,
-      provisionCategory: getProvisionCategory(school),
       name: school.name,
       slug: `/${location.slug}/schools/${school.slug}/`,
       ages: ageLabel,
@@ -802,14 +861,16 @@ export async function getLocationFeesData(locationSlug: string) {
 
   const { data, error } = schoolIds.length
     ? await supabase
-        .from('school_fee_profiles')
-        .select('school_id, academic_year, fee_type, year_group_label, amount_gbp, includes_vat')
+        .from('school_fee_profiles_annual')
+        .select(ANNUAL_FEE_SELECT_WITH_SCHOOL_ID)
         .in('school_id', schoolIds)
     : { data: [], error: null };
 
   if (error) fail(`Could not load fees for ${locationSlug}`, error);
 
-  const feeRows = (data || []) as Array<FeeRecord & { school_id: string | number }>;
+  const feeRows = expandAnnualFeeRows(
+    ((data || []) as Array<AnnualFeeRecord & { school_id: string | number }>)
+  ) as Array<FeeRecord & { school_id: string | number }>;
   const currentAcademicYear = Array.from(new Set(feeRows.map((row) => row.academic_year))).sort().at(-1) || null;
   const filtered = feeRows
     .filter((row) => !currentAcademicYear || row.academic_year === currentAcademicYear)
@@ -822,8 +883,7 @@ export async function getLocationFeesData(locationSlug: string) {
   const schoolHeaders = schools.map((school) => ({
     schoolId: String(school.id),
     schoolSlug: school.slug,
-    schoolName: school.name,
-    provisionCategory: getProvisionCategory(school)
+    schoolName: school.name
   }));
 
   const feeTypes = Array.from(new Set(filtered.map((row) => row.fee_type))).sort(
@@ -897,7 +957,6 @@ export async function getLocationBursariesData(locationSlug: string) {
       schoolId: String(school.id),
       schoolSlug: school.slug,
       schoolName: school.name,
-      provisionCategory: getProvisionCategory(school),
       summary: summary || 'Coming soon'
     };
   });
@@ -936,7 +995,6 @@ export async function getLocationOpenDaysData(locationSlug: string) {
         schoolId: String(row.school_id),
         schoolSlug: school.slug,
         schoolName: school.name,
-        provisionCategory: getProvisionCategory(school),
         title: row.title,
         startAt: row.start_at,
         endAt: row.end_at,
@@ -1003,7 +1061,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
 
   const { data: schoolData, error: schoolError } = await supabase
     .from('schools')
-    .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating')
+    .select('id, slug, name, school_type, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, fees_from, description, inspection_rating')
     .eq('slug', schoolSlug)
     .single();
 
@@ -1038,8 +1096,8 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
       .limit(1)
       .maybeSingle(),
     supabase
-      .from('school_fee_profiles')
-      .select('academic_year, fee_type, year_group_label, amount_gbp, includes_vat')
+      .from('school_fee_profiles_annual')
+      .select(ANNUAL_FEE_SELECT)
       .eq('school_id', school.id)
       .order('academic_year', { ascending: false }),
     supabase
@@ -1064,7 +1122,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const heroImageUrl = heroImageRes.data?.image_url || locationPresentation.defaultSchoolHeroImage;
   const heroImageAlt = heroImageRes.data?.alt_text || '';
   const alevelResult = (examRes.data || null) as ExamResultRecord | null;
-  const feeRowsAll = (feeRes.data || []) as FeeRecord[];
+  const feeRowsAll = expandAnnualFeeRows((feeRes.data || []) as AnnualFeeRecord[]) as FeeRecord[];
   const bursary = (bursaryRes.data || null) as BursaryRecord | null;
 
   const compareRows = ((compareSchoolsRes.data || []) as Array<{ id: string | number; slug: string; name: string }>);
@@ -1116,8 +1174,6 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const canonicalPath = `/${location.slug}/schools/${school.slug}/`;
   const coordinates = getSchoolCoordinates(school);
 
-  const provisionCategory = getProvisionCategory(school);
-
   const mapData = coordinates
     ? {
         name: school.name,
@@ -1127,17 +1183,25 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
         lng: coordinates.lng,
         latitude: coordinates.lat,
         longitude: coordinates.lng,
-        provisionCategory,
-        note: `${provisionCategory === 'sen_specialist' ? 'SEN specialist · ' : ''}${phaseLabel} · ${genderLabel} · ${formatLabel} · Ages ${ageLabel}`,
+        note: `${phaseLabel} · ${genderLabel} · ${formatLabel} · Ages ${ageLabel}`,
         zoom: coordinates.zoom || 13
       }
     : null;
+
+  const derivedFeesFrom = (() => {
+    const dayAmounts = feeRows
+      .filter((row) => row.fee_type === 'day')
+      .map((row) => toNumber(row.amount_gbp))
+      .filter((value): value is number => value !== null);
+    return dayAmounts.length ? Math.min(...dayAmounts) : school.fees_from;
+  })();
 
   const rawAtGlanceRows = [
     { label: 'Ages', value: ageLabel },
     { label: 'Gender', value: genderLabel },
     { label: 'Format', value: formatLabel },
     school.pupil_numbers ? { label: 'Pupils', value: `${formatInteger(school.pupil_numbers)} pupils` } : null,
+    derivedFeesFrom ? { label: 'Day fees from', value: `${formatCurrency(derivedFeesFrom)} / year` } : null,
     bursary?.status_label
       ? { label: 'Bursaries', value: bursary.status_label }
       : bursary?.has_bursaries === true
