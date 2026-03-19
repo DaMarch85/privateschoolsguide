@@ -97,6 +97,7 @@ export type LocationBursaryCard = {
   schoolId: string;
   schoolSlug: string;
   schoolName: string;
+  provisionCategory: 'mainstream' | 'sen_specialist';
   summary: string;
 };
 
@@ -104,6 +105,7 @@ export type LocationOpenDayItem = {
   schoolId: string;
   schoolSlug: string;
   schoolName: string;
+  provisionCategory: 'mainstream' | 'sen_specialist';
   title: string;
   startAt: string | null;
   endAt: string | null;
@@ -149,6 +151,7 @@ export type SchoolCard = {
   name: string;
   href: string;
   cardClass: string;
+  provisionCategory: 'mainstream' | 'sen_specialist';
   texts: string[];
 };
 
@@ -195,6 +198,7 @@ export type CompareSchoolRecord = {
   id: string;
   schoolId: string;
   schoolSlug: string;
+  provisionCategory: 'mainstream' | 'sen_specialist';
   name: string;
   slug: string;
   ages: string;
@@ -639,6 +643,7 @@ export async function getLocationDirectoryData(locationSlug: string) {
     name: school.name,
     href: `/${location.slug}/schools/${school.slug}/`,
     cardClass: `school-square-card school-square-card--${getMapType(school.phase, school.age_max)}`,
+    provisionCategory: getProvisionCategory(school),
     texts: [
       getPhaseLabel(school.phase, school.age_max),
       `${getGenderLabel(school.gender)} · ${getFormatLabel(school.day_boarding)}`,
@@ -757,6 +762,7 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
       id: school.slug,
       schoolId: String(school.id),
       schoolSlug: school.slug,
+      provisionCategory: getProvisionCategory(school),
       name: school.name,
       slug: `/${location.slug}/schools/${school.slug}/`,
       ages: ageLabel,
@@ -816,7 +822,8 @@ export async function getLocationFeesData(locationSlug: string) {
   const schoolHeaders = schools.map((school) => ({
     schoolId: String(school.id),
     schoolSlug: school.slug,
-    schoolName: school.name
+    schoolName: school.name,
+    provisionCategory: getProvisionCategory(school)
   }));
 
   const feeTypes = Array.from(new Set(filtered.map((row) => row.fee_type))).sort(
@@ -890,6 +897,7 @@ export async function getLocationBursariesData(locationSlug: string) {
       schoolId: String(school.id),
       schoolSlug: school.slug,
       schoolName: school.name,
+      provisionCategory: getProvisionCategory(school),
       summary: summary || 'Coming soon'
     };
   });
@@ -928,6 +936,7 @@ export async function getLocationOpenDaysData(locationSlug: string) {
         schoolId: String(row.school_id),
         schoolSlug: school.slug,
         schoolName: school.name,
+        provisionCategory: getProvisionCategory(school),
         title: row.title,
         startAt: row.start_at,
         endAt: row.end_at,

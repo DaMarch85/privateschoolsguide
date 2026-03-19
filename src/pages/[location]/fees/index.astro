@@ -3,6 +3,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SiteHeader from '../../../components/SiteHeader.astro';
 import SiteFooter from '../../../components/SiteFooter.astro';
 import LocationSideNav from '../../../components/LocationSideNav.astro';
+import ProvisionFilterSwitch from '../../../components/ProvisionFilterSwitch.astro';
 import { formatCurrency, getLocationFeesData, getLocationPaths } from '../../../lib/directory';
 import { getLocationPresentation } from '../../../lib/location-config';
 
@@ -70,24 +71,45 @@ const description = `Annual ${location.name} private school fees including VAT, 
               <thead>
                 <tr>
                   <th>Year</th>
-                  {schoolHeaders.map((school) => <th>{school.schoolName}</th>)}
+                  {schoolHeaders.map((school) => (
+                    <th
+                      data-school-key={school.schoolSlug}
+                      data-school-label={school.schoolName}
+                      data-provision-category={school.provisionCategory}
+                      hidden={school.provisionCategory === 'sen_specialist'}
+                    >
+                      {school.schoolName}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {view.rows.map((row) => (
                   <tr>
                     <th scope="row">{row.label}</th>
-                    {row.cells.map((cell) => <td>{cell.amount !== null ? formatCurrency(cell.amount) : '—'}</td>)}
+                    {row.cells.map((cell, index) => (
+                      <td
+                        data-school-key={schoolHeaders[index]?.schoolSlug}
+                        data-provision-category={schoolHeaders[index]?.provisionCategory}
+                        hidden={schoolHeaders[index]?.provisionCategory === 'sen_specialist'}
+                      >
+                        {cell.amount !== null ? formatCurrency(cell.amount) : '—'}
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )) : <p class="data-page-note">Fee information is being updated.</p>}
+
+        <p class="data-page-note provision-filter-note" data-fees-empty hidden>No schools match the selected school type.</p>
+        <ProvisionFilterSwitch label={`Show ${location.name} schools`} />
       </section>
     </div>
   </main>
 
   <SiteFooter />
-  <script defer src="/assets/js/bath-refined.js?v=20260315-fees-generic"></script>
+  <script defer src="/assets/js/school-provision-filter.js?v=20260319-location-filter"></script>
+  <script defer src="/assets/js/bath-refined.js?v=20260319-fees-sen-filter"></script>
 </BaseLayout>

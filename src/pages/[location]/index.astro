@@ -4,6 +4,7 @@ import SiteHeader from '../../components/SiteHeader.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import LocationSideNav from '../../components/LocationSideNav.astro';
 import SchoolSquareCard from '../../components/SchoolSquareCard.astro';
+import ProvisionFilterSwitch from '../../components/ProvisionFilterSwitch.astro';
 import { getLocationPaths, getLocationDirectoryData } from '../../lib/directory';
 import { getLocationPresentation } from '../../lib/location-config';
 
@@ -83,11 +84,19 @@ const fallbackLng = Number.isFinite(fallbackLngValue) ? fallbackLngValue : null;
       <section class="location-main-column" aria-labelledby="location-grid-title">
         <h2 id="location-grid-title" class="location-grid-title">{location.name} private schools</h2>
         {location.intro_text ? <p class="location-intro">{location.intro_text}</p> : null}
-        <div class="school-square-grid">
+        <div class="school-square-grid" data-provision-container="cards">
           {schoolCards.map((school) => (
-            <SchoolSquareCard {...school} />
+            <div
+              class="school-square-grid-item"
+              data-school-card
+              data-provision-category={school.provisionCategory}
+              hidden={school.provisionCategory === 'sen_specialist'}
+            >
+              <SchoolSquareCard {...school} />
+            </div>
           ))}
         </div>
+        <p class="data-page-note provision-filter-note" data-provision-empty="cards" hidden>No schools match the selected school type.</p>
       </section>
 
       <aside class="location-map-panel">
@@ -108,6 +117,9 @@ const fallbackLng = Number.isFinite(fallbackLngValue) ? fallbackLngValue : null;
         <p id="location-map-empty" class="location-intro" hidden>School locations are being updated.</p>
       </aside>
     </div>
+    <div class="shell">
+      <ProvisionFilterSwitch label={`Show ${location.name} schools`} />
+    </div>
   </main>
 
   <SiteFooter />
@@ -115,5 +127,6 @@ const fallbackLng = Number.isFinite(fallbackLngValue) ? fallbackLngValue : null;
   <script is:inline set:html={locationMapScript}></script>
   <script type="application/json" id="location-map-data">{JSON.stringify(mapSchools)}</script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script defer src="/assets/js/location-pages.js?v=20260316-location-map-stable"></script>
+  <script defer src="/assets/js/school-provision-filter.js?v=20260319-location-filter"></script>
+  <script defer src="/assets/js/location-pages.js?v=20260319-location-map-filter"></script>
 </BaseLayout>

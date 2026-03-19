@@ -1470,3 +1470,57 @@
     min-width:760px;
   }
 }
+
+/* --- 2026-03-19 provision filter switch across location and compare pages --- */
+.location-page .school-square-grid-item{
+  display:flex;
+}
+.location-page .school-square-grid-item > .school-square-card{
+  width:100%;
+}
+.provision-filter-note{
+  margin-top:18px;
+}
+.school-provision-filter{
+  margin-top:24px;
+  padding-top:18px;
+  border-top:1px solid var(--psg-line);
+}
+.school-provision-filter-label{
+  margin:0 0 10px;
+  color:var(--psg-accent);
+  font:600 .78rem/1.2 "Inter",sans-serif;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.school-provision-filter-switch{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  border:1px solid var(--psg-line);
+  background:#fbf7f0;
+}
+.school-provision-filter-switch button{
+  border:none;
+  background:transparent;
+  color:var(--psg-dark);
+  padding:12px 14px;
+  font:600 .82rem/1.3 "Inter",sans-serif;
+  letter-spacing:.08em;
+  cursor:pointer;
+}
+.school-provision-filter-switch button + button{
+  border-left:1px solid var(--psg-line);
+}
+.school-provision-filter-switch button.is-active{
+  background:var(--psg-accent);
+  color:var(--psg-white);
+}
+@media (max-width:720px){
+  .school-provision-filter-switch{
+    grid-template-columns:1fr;
+  }
+  .school-provision-filter-switch button + button{
+    border-left:none;
+    border-top:1px solid var(--psg-line);
+  }
+}

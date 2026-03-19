@@ -2,6 +2,7 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SiteHeader from '../../../components/SiteHeader.astro';
 import SiteFooter from '../../../components/SiteFooter.astro';
+import ProvisionFilterSwitch from '../../../components/ProvisionFilterSwitch.astro';
 import { getLocationPaths, getLocationCompareData } from '../../../lib/directory';
 
 export async function getStaticPaths() {
@@ -94,38 +95,57 @@ const alevelRows = [
             </div>
 
             {compareSchools.length ? (
-              <div class="data-table-wrap compare-table-wrap">
-                <table class="fees-matrix compare-matrix">
-                  <thead>
-                    <tr>
-                      <th>Metric</th>
-                      {compareSchools.map((school) => (
-                        <th data-school-key={school.schoolSlug} data-school-label={school.name}>
-                          <span class="fees-school-name">{school.name}</span>
-                          <button type="button" class="fees-column-toggle" data-school-key={school.schoolSlug} aria-pressed="false">Hide</button>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {alevelRows.map((row) => (
+              <>
+                <div class="data-table-wrap compare-table-wrap">
+                  <table class="fees-matrix compare-matrix">
+                    <thead>
                       <tr>
-                        <th scope="row">{row.label}</th>
-                        {row.values.map((value) => <td>{value || '—'}</td>)}
+                        <th>Metric</th>
+                        {compareSchools.map((school) => (
+                          <th
+                            data-school-key={school.schoolSlug}
+                            data-school-label={school.name}
+                            data-provision-category={school.provisionCategory}
+                            hidden={school.provisionCategory === 'sen_specialist'}
+                          >
+                            <span class="fees-school-name">{school.name}</span>
+                            <button type="button" class="fees-column-toggle" data-school-key={school.schoolSlug} aria-pressed="false">Hide</button>
+                          </th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {alevelRows.map((row) => (
+                        <tr>
+                          <th scope="row">{row.label}</th>
+                          {row.values.map((value, index) => (
+                            <td
+                              data-school-key={compareSchools[index]?.schoolSlug}
+                              data-provision-category={compareSchools[index]?.provisionCategory}
+                              hidden={compareSchools[index]?.provisionCategory === 'sen_specialist'}
+                            >
+                              {value || '—'}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p class="data-page-note provision-filter-note" data-compare-empty hidden>No schools match the selected school type.</p>
+              </>
             ) : (
               <p class="data-page-note">Comparison data is being updated for {location.name}.</p>
             )}
           </section>
         </section>
       </section>
+
+      <ProvisionFilterSwitch label={`Show ${location.name} schools`} />
     </div>
   </main>
 
   <SiteFooter />
-  <script defer src="/assets/js/compare.js?v=20260315-compare-matrix"></script>
+  <script defer src="/assets/js/school-provision-filter.js?v=20260319-location-filter"></script>
+  <script defer src="/assets/js/compare.js?v=20260319-compare-sen-filter"></script>
 </BaseLayout>

@@ -1,0 +1,34 @@
+---
+interface Props {
+  label?: string;
+}
+
+const { label = 'Show schools' } = Astro.props;
+---
+<div class="school-provision-filter" data-provision-filter>
+  <p class="school-provision-filter-label">{label}</p>
+  <div class="school-provision-filter-switch" role="group" aria-label={label}>
+    <button
+      class="is-active"
+      data-provision-filter-option="mainstream"
+      type="button"
+      aria-pressed="true"
+    >
+      Non-SEN schools only
+    </button>
+    <button
+      data-provision-filter-option="sen_specialist"
+      type="button"
+      aria-pressed="false"
+    >
+      SEN specialist schools only
+    </button>
+    <button
+      data-provision-filter-option="both"
+      type="button"
+      aria-pressed="false"
+    >
+      Both
+    </button>
+  </div>
+</div>

@@ -16,6 +16,11 @@
     return Number.isFinite(num) ? num : null;
   }
 
+  function normaliseFilter(value) {
+    if (value === 'sen_specialist' || value === 'both') return value;
+    return 'mainstream';
+  }
+
   function parseMapData(scriptId) {
     const script = document.getElementById(scriptId);
     if (!script) return [];
@@ -55,8 +60,14 @@
       type: item.type || 'senior',
       note: item.note || item.addressLine1 || item.address_line1 || '',
       lat: lat,
-      lng: lng
+      lng: lng,
+      provisionCategory: item.provisionCategory === 'sen_specialist' ? 'sen_specialist' : 'mainstream'
     };
+  }
+
+  function pointMatchesFilter(point, filterValue) {
+    if (filterValue === 'both') return true;
+    return point.provisionCategory === filterValue;
   }
 
   function popupHtml(point) {
@@ -139,6 +150,9 @@
     if (!mapTarget || !window.L) return false;
 
     if (mapTarget.dataset.mapReady === 'true') {
+      if (typeof mapTarget._applyProvisionFilter === 'function') {
+        mapTarget._applyProvisionFilter(normaliseFilter(document.documentElement.dataset.provisionFilter));
+      }
       if (mapTarget._leaflet_map_instance) {
         setTimeout(function () {
           try {
@@ -153,7 +167,10 @@
     const fallbackView = getFallbackView(mapTarget);
 
     if (!points.length && !fallbackView) {
-      if (emptyState) emptyState.hidden = false;
+      if (emptyState) {
+        emptyState.hidden = false;
+        emptyState.textContent = 'School locations are being updated.';
+      }
       mapTarget.style.display = 'none';
       return true;
     }
@@ -180,33 +197,61 @@
     mapTarget._leaflet_tile_layer = tileLayer;
     bindMapReflow(mapTarget, map, tileLayer);
 
-    if (!points.length && fallbackView) {
-      map.setView(fallbackView.center, fallbackView.zoom);
-      if (emptyState) emptyState.hidden = false;
-      scheduleRefresh(map, tileLayer);
-      return true;
+    const markerLayer = window.L.layerGroup().addTo(map);
+
+    function showEmptyState() {
+      if (emptyState) {
+        emptyState.hidden = false;
+        emptyState.textContent = 'No schools match the selected school type.';
+      }
     }
 
-    if (emptyState) emptyState.hidden = true;
-
-    const markers = points.map(function (point) {
-      const marker = window.L.marker([point.lat, point.lng], {
-        icon: markerIcon(point.type)
+    function renderPoints(filterValue) {
+      markerLayer.clearLayers();
+      const visiblePoints = points.filter(function (point) {
+        return pointMatchesFilter(point, filterValue);
       });
 
-      marker.bindPopup(popupHtml(point));
-      marker.addTo(map);
-      return marker;
-    });
+      if (!visiblePoints.length) {
+        if (fallbackView) map.setView(fallbackView.center, fallbackView.zoom);
+        showEmptyState();
+        scheduleRefresh(map, tileLayer);
+        return;
+      }
 
-    if (markers.length === 1) {
-      map.setView([points[0].lat, points[0].lng], 13);
-    } else {
-      const group = window.L.featureGroup(markers);
-      map.fitBounds(group.getBounds(), { padding: [28, 28], maxZoom: 11, animate: false });
+      if (emptyState) emptyState.hidden = true;
+
+      const markers = visiblePoints.map(function (point) {
+        const marker = window.L.marker([point.lat, point.lng], {
+          icon: markerIcon(point.type)
+        });
+
+        marker.bindPopup(popupHtml(point));
+        markerLayer.addLayer(marker);
+        return marker;
+      });
+
+      if (markers.length === 1) {
+        map.setView([visiblePoints[0].lat, visiblePoints[0].lng], 13);
+      } else {
+        const group = window.L.featureGroup(markers);
+        map.fitBounds(group.getBounds(), { padding: [28, 28], maxZoom: 11, animate: false });
+      }
+
+      scheduleRefresh(map, tileLayer);
     }
 
-    scheduleRefresh(map, tileLayer);
+    mapTarget._applyProvisionFilter = renderPoints;
+
+    if (mapTarget.dataset.provisionListenerBound !== 'true') {
+      mapTarget.dataset.provisionListenerBound = 'true';
+      window.addEventListener('psg:provision-filter-change', function (event) {
+        const filterValue = normaliseFilter(event && event.detail ? event.detail.value : null);
+        renderPoints(filterValue);
+      });
+    }
+
+    renderPoints(normaliseFilter(document.documentElement.dataset.provisionFilter));
     return true;
   }
 

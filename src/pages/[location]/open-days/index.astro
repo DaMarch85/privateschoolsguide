@@ -3,6 +3,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SiteHeader from '../../../components/SiteHeader.astro';
 import SiteFooter from '../../../components/SiteFooter.astro';
 import LocationSideNav from '../../../components/LocationSideNav.astro';
+import ProvisionFilterSwitch from '../../../components/ProvisionFilterSwitch.astro';
 import { getLocationOpenDaysData, getLocationPaths } from '../../../lib/directory';
 import { getLocationPresentation } from '../../../lib/location-config';
 
@@ -87,37 +88,43 @@ const lastVerifiedLabel = lastVerifiedAt
         </div>
 
         {openDays.length ? (
-          <div class="data-table-wrap">
-            <table class="fees-matrix open-days-matrix">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>School</th>
-                  <th>Event</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {openDays.map((item) => (
+          <>
+            <div class="data-table-wrap" data-provision-container="open-days">
+              <table class="fees-matrix open-days-matrix">
+                <thead>
                   <tr>
-                    <th scope="row">{formatDate(item.startAt)}</th>
-                    <td><a href={`/${location.slug}/schools/${item.schoolSlug}/`}>{item.schoolName}</a></td>
-                    <td>
-                      <div>{item.title}</div>
-                      {item.bookingUrl ? <div><a href={item.bookingUrl} rel="noreferrer" target="_blank">Book / details</a></div> : null}
-                    </td>
-                    <td>{[formatTimeRange(item.startAt, item.endAt), item.notes].filter(Boolean).join('; ') || '—'}</td>
+                    <th>Date</th>
+                    <th>School</th>
+                    <th>Event</th>
+                    <th>Notes</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {openDays.map((item) => (
+                    <tr data-open-day-row data-provision-category={item.provisionCategory} hidden={item.provisionCategory === 'sen_specialist'}>
+                      <th scope="row">{formatDate(item.startAt)}</th>
+                      <td><a href={`/${location.slug}/schools/${item.schoolSlug}/`}>{item.schoolName}</a></td>
+                      <td>
+                        <div>{item.title}</div>
+                        {item.bookingUrl ? <div><a href={item.bookingUrl} rel="noreferrer" target="_blank">Book / details</a></div> : null}
+                      </td>
+                      <td>{[formatTimeRange(item.startAt, item.endAt), item.notes].filter(Boolean).join('; ') || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p class="data-page-note provision-filter-note" data-provision-empty="open-days" hidden>No schools match the selected school type.</p>
+          </>
         ) : (
           <p class="data-page-note">Open day information is being updated.</p>
         )}
+
+        <ProvisionFilterSwitch label={`Show ${location.name} schools`} />
       </section>
     </div>
   </main>
 
   <SiteFooter />
+  <script defer src="/assets/js/school-provision-filter.js?v=20260319-location-filter"></script>
 </BaseLayout>

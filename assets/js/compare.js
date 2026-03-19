@@ -2,6 +2,8 @@
   const root = document.getElementById('compare-root');
   const tables = Array.from(document.querySelectorAll('.compare-matrix'));
   const visibilityBar = document.querySelector('[data-compare-visibility]');
+  const tableWraps = Array.from(document.querySelectorAll('.compare-table-wrap'));
+  const emptyState = document.querySelector('[data-compare-empty]');
 
   if (!root || !tables.length || !visibilityBar) return;
 
@@ -10,13 +12,20 @@
   const hiddenKeys = new Set(loadHiddenKeys());
   const schoolKeys = [];
   const schoolLabels = new Map();
+  const schoolProvision = new Map();
   const columnCellsByKey = new Map();
-
   const pillsHost = visibilityBar.querySelector('.fees-visibility-pills');
   const showAllButton = visibilityBar.querySelector('.fees-show-all');
 
+  let provisionFilter = normaliseFilter(document.documentElement?.dataset?.provisionFilter || 'mainstream');
+
   function normaliseKey(value) {
     return String(value || '').trim();
+  }
+
+  function normaliseFilter(value) {
+    if (value === 'sen_specialist' || value === 'both') return value;
+    return 'mainstream';
   }
 
   function loadHiddenKeys() {
@@ -37,6 +46,11 @@
     }
   }
 
+  function matchesProvision(key) {
+    if (provisionFilter === 'both') return true;
+    return (schoolProvision.get(key) || 'mainstream') === provisionFilter;
+  }
+
   function collectTableColumns(table) {
     const rows = Array.from(table.querySelectorAll('tr'));
     const headerCells = Array.from(table.querySelectorAll('thead th'));
@@ -53,7 +67,14 @@
       }
 
       if (!schoolLabels.has(key)) {
-        schoolLabels.set(key, normaliseKey(cell.dataset.schoolLabel) || normaliseKey(cell.querySelector('.fees-school-name')?.textContent) || key);
+        schoolLabels.set(
+          key,
+          normaliseKey(cell.dataset.schoolLabel) || normaliseKey(cell.querySelector('.fees-school-name')?.textContent) || key
+        );
+      }
+
+      if (!schoolProvision.has(key)) {
+        schoolProvision.set(key, cell.dataset.provisionCategory === 'sen_specialist' ? 'sen_specialist' : 'mainstream');
       }
 
       const cells = rows
@@ -62,6 +83,9 @@
 
       cells.forEach((entry) => {
         entry.dataset.schoolKey = key;
+        if (!entry.dataset.provisionCategory) {
+          entry.dataset.provisionCategory = schoolProvision.get(key);
+        }
         columnCellsByKey.get(key).push(entry);
       });
     });
@@ -75,7 +99,11 @@
       if (!key) return;
 
       const isHidden = hiddenKeys.has(key);
+      const isProvisionExcluded = !matchesProvision(key);
+
       button.classList.toggle('is-hidden', isHidden);
+      button.disabled = isProvisionExcluded;
+      button.hidden = isProvisionExcluded;
       button.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
       button.textContent = isHidden ? 'Show' : 'Hide';
 
@@ -93,28 +121,38 @@
     if (!pillsHost) return;
 
     pillsHost.innerHTML = '';
-    schoolKeys.forEach((key) => {
-      const label = schoolLabels.get(key) || key;
-      const isHidden = hiddenKeys.has(key);
-      const pill = document.createElement('button');
-      pill.type = 'button';
-      pill.className = 'fees-visibility-pill';
-      pill.dataset.schoolKey = key;
-      pill.classList.toggle('is-hidden', isHidden);
-      pill.setAttribute('aria-pressed', isHidden ? 'false' : 'true');
-      pill.textContent = isHidden ? `Show ${label}` : label;
-      pill.addEventListener('click', () => {
-        if (isHidden) hiddenKeys.delete(key);
-        else hiddenKeys.add(key);
-        applyVisibility();
+    schoolKeys
+      .filter(matchesProvision)
+      .forEach((key) => {
+        const label = schoolLabels.get(key) || key;
+        const isHidden = hiddenKeys.has(key);
+        const pill = document.createElement('button');
+        pill.type = 'button';
+        pill.className = 'fees-visibility-pill';
+        pill.dataset.schoolKey = key;
+        pill.classList.toggle('is-hidden', isHidden);
+        pill.setAttribute('aria-pressed', isHidden ? 'false' : 'true');
+        pill.textContent = isHidden ? `Show ${label}` : label;
+        pill.addEventListener('click', () => {
+          if (isHidden) hiddenKeys.delete(key);
+          else hiddenKeys.add(key);
+          applyVisibility();
+        });
+        pillsHost.appendChild(pill);
       });
-      pillsHost.appendChild(pill);
-    });
   }
 
   function applyVisibility() {
+    let provisionMatchCount = 0;
+    let visibleCount = 0;
+
     schoolKeys.forEach((key) => {
-      const shouldHide = hiddenKeys.has(key);
+      const inProvisionScope = matchesProvision(key);
+      const shouldHide = !inProvisionScope || hiddenKeys.has(key);
+
+      if (inProvisionScope) provisionMatchCount += 1;
+      if (!shouldHide) visibleCount += 1;
+
       (columnCellsByKey.get(key) || []).forEach((cell) => {
         cell.hidden = shouldHide;
       });
@@ -124,6 +162,13 @@
     renderVisibilityPills();
     saveHiddenKeys();
     visibilityBar.classList.toggle('has-hidden-schools', hiddenKeys.size > 0);
+    visibilityBar.hidden = provisionMatchCount === 0;
+
+    tableWraps.forEach((wrap) => {
+      wrap.hidden = visibleCount === 0;
+    });
+
+    if (emptyState) emptyState.hidden = visibleCount > 0;
   }
 
   if (showAllButton) {
@@ -132,6 +177,11 @@
       applyVisibility();
     });
   }
+
+  window.addEventListener('psg:provision-filter-change', function (event) {
+    provisionFilter = normaliseFilter(event && event.detail ? event.detail.value : null);
+    applyVisibility();
+  });
 
   applyVisibility();
 })();
