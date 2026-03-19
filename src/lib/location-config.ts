@@ -101,7 +101,7 @@ const LOCATION_PRESENTATION_OVERRIDES: Record<string, LocationPresentationOverri
     heroSubtitle: 'Southampton, Portsmouth, Winchester and county',
     nav: CORE_DATA_NAV
   },
-  west-sussex: {
+  'west-sussex': {
     heroImage: '/assets/img/cornwall-hero.jpg',
     heroImageAlt: 'West Sussex',
     heroSubtitle: 'Worthing, Crawley and county',
