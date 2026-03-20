@@ -1,355 +1,1195 @@
--- Corrected safe patch for school attributes: urn, age_min, age_max, day_boarding, pupil_numbers
--- Your public.schools table has a UNIQUE constraint on urn.
--- Some prep/junior rows in GIAS share a parent school's URN, so those URNs must be skipped.
---
--- This version:
---   * fills missing values only
---   * matches by slug
---   * skips any URN duplicated inside this patch
---   * skips any URN already used by a different row in public.schools
---   * still applies age/day/pupil updates normally
---
--- If the earlier query failed with a duplicate-URN error, that failed UPDATE statement did not apply its changes.
+import { getLocationPresentation } from './location-config';
+import { supabase } from './supabase';
 
-with patch(slug, urn, age_min, age_max, day_boarding, pupil_numbers) as (
-  values
-    ('appleford-school', 126535, NULL, NULL, NULL, NULL),
-    ('ardingly-college', NULL, NULL, NULL, NULL, 1048),
-    ('avondale-preparatory-school', 126523, NULL, NULL, NULL, NULL),
-    ('ballard-school', 116524, NULL, NULL, NULL, 475),
-    ('bedales-pre-prep', 116527, NULL, NULL, NULL, NULL),
-    ('bedales-prep-school', 116527, NULL, NULL, NULL, NULL),
-    ('bedales-school', NULL, NULL, NULL, NULL, 768),
-    ('boundary-oak-school', 116558, NULL, NULL, NULL, 484),
-    ('bournemouth-collegiate-school', 113937, NULL, NULL, NULL, 385),
-    ('bower-lodge-school', 150911, NULL, NULL, NULL, 13),
-    ('brambletye-school', 126150, NULL, NULL, NULL, 309),
-    ('brighton-college-prep-handcross', 126143, NULL, NULL, NULL, 431),
-    ('brockwood-park-school-and-inwoods-small-school', NULL, NULL, NULL, NULL, 79),
-    ('brunel-college', 144514, NULL, NULL, NULL, NULL),
-    ('bryanston-school', NULL, NULL, NULL, NULL, 778),
-    ('burgess-hill-girls', NULL, NULL, NULL, NULL, 474),
-    ('canford-school', 113922, NULL, NULL, NULL, 646),
-    ('castle-court-school', 113931, NULL, NULL, NULL, 259),
-    ('chafyn-grove-school', 126517, NULL, NULL, NULL, NULL),
-    ('charlton-house-independent-school', 116567, NULL, NULL, NULL, 44),
-    ('christs-hospital-school', NULL, NULL, NULL, NULL, 846),
-    ('churchers-college', NULL, NULL, NULL, NULL, 1332),
-    ('clayesmore-school', NULL, NULL, NULL, NULL, 489),
-    ('connie-rothman-school', NULL, NULL, NULL, NULL, 32),
-    ('copthorne-prep-school', 125406, NULL, NULL, NULL, 161),
-    ('cottesmore-school', 126106, NULL, NULL, NULL, 188),
-    ('courtlands-independent-special-school', 149890, NULL, NULL, NULL, 23),
-    ('cricklade-manor-prep-school', 126533, NULL, NULL, NULL, NULL),
-    ('cumnor-house-sussex', 114623, NULL, NULL, NULL, 425),
-    ('dibden-park-school', 149863, NULL, NULL, NULL, 38),
-    ('ditcham-park-school', 116575, NULL, NULL, NULL, 415),
-    ('dorset-house-school', 126109, NULL, NULL, NULL, 126),
-    ('dumpton-school', 113923, NULL, NULL, NULL, 339),
-    ('durlston-prep-and-senior-school', 116522, NULL, NULL, NULL, 254),
-    ('embley', NULL, NULL, NULL, NULL, 688),
-    ('emmaus-school', 131743, NULL, NULL, NULL, NULL),
-    ('farleigh-school', 116542, NULL, NULL, NULL, 448),
-    ('farlington-school', NULL, NULL, NULL, NULL, 411),
-    ('farnborough-hill', NULL, NULL, NULL, NULL, 502),
-    ('forres-sandle-manor', 116519, NULL, NULL, NULL, 199),
-    ('great-ballard', 126130, NULL, NULL, NULL, 242),
-    ('great-walstead', 126135, NULL, NULL, NULL, 299),
-    ('hambrook-school', 149912, 5, 18, 'Day', 50),
-    ('hanford-school', 113911, NULL, NULL, NULL, 69),
-    ('heywood-prep', 126524, NULL, NULL, NULL, NULL),
-    ('highfield-and-brookham-school', 126151, NULL, NULL, NULL, 448),
-    ('hove-micro-school', 150990, NULL, NULL, NULL, 12),
-    ('hurst-lodge-school', 110150, NULL, NULL, NULL, 188),
-    ('hurstpierpoint-college', NULL, NULL, NULL, NULL, 1317),
-    ('hurstpierpoint-college-preparatory-school', 126136, NULL, NULL, NULL, NULL),
-    ('jubilee-school', 135105, NULL, NULL, NULL, 47),
-    ('king-edward-vi-preparatory-school', 116528, NULL, NULL, NULL, 276),
-    ('king-edward-vi-school', NULL, NULL, NULL, NULL, 992),
-    ('kingfisher-school', NULL, NULL, NULL, NULL, 2),
-    ('kings-bournemouth', 138333, NULL, NULL, NULL, 74),
-    ('lancing-college', NULL, NULL, NULL, NULL, 612),
-    ('lancing-college-preparatory-school-worthing', 126114, NULL, NULL, NULL, 219),
-    ('leehurst-swan-school', 126528, NULL, NULL, NULL, NULL),
-    ('leweston-school', NULL, NULL, NULL, NULL, 576),
-    ('lord-wandsworth-college', NULL, NULL, NULL, NULL, 706),
-    ('luccombe-hub', NULL, NULL, NULL, NULL, 29),
-    ('lumiar-stowford', 146654, NULL, NULL, NULL, NULL),
-    ('lvs-hassocks', 135930, NULL, NULL, NULL, 88),
-    ('manor-house-school', 131139, 5, 18, 'Day', 68),
-    ('maranatha-christian-school', 126536, NULL, NULL, NULL, NULL),
-    ('mayville-high-school', 116573, NULL, NULL, NULL, 458),
-    ('meoncross-school', 116563, NULL, NULL, NULL, 295),
-    ('milton-abbey-school', NULL, NULL, NULL, NULL, 218),
-    ('moyles-court-school', 116559, NULL, NULL, NULL, 186),
-    ('napier-school', 149858, NULL, NULL, NULL, 44),
-    ('oakwood-prep-school', 126104, NULL, NULL, NULL, 308),
-    ('oneschool-global-uk-salisbury-campus', 134460, NULL, NULL, NULL, NULL),
-    ('our-lady-of-sion-school', NULL, NULL, NULL, NULL, 314),
-    ('park-school-bournemouth', 113939, NULL, NULL, NULL, 349),
-    ('pennthorpe-school', 126111, NULL, NULL, NULL, 253),
-    ('pinewood-school', 123301, NULL, NULL, NULL, NULL),
-    ('port-regis', 113915, NULL, NULL, NULL, 317),
-    ('portsmouth-high-school-gdst', NULL, NULL, NULL, NULL, 463),
-    ('princes-mead-school', 116552, NULL, NULL, NULL, 290),
-    ('rookwood-school', NULL, NULL, NULL, NULL, 269),
-    ('salesian-college', NULL, NULL, NULL, NULL, 566),
-    ('salisbury-cathedral-school', 126518, NULL, NULL, NULL, NULL),
-    ('sandroyd-school', 126521, NULL, NULL, NULL, NULL),
-    ('seaford-college', NULL, NULL, NULL, NULL, 962),
-    ('sherborne-girls', NULL, NULL, NULL, NULL, 466),
-    ('sherborne-house-school', 116514, NULL, NULL, NULL, 295),
-    ('sherborne-preparatory-school', 113917, NULL, NULL, NULL, 198),
-    ('sherborne-school', NULL, NULL, NULL, NULL, 573),
-    ('sherfield-school', NULL, NULL, NULL, NULL, 547),
-    ('shoreham-college', 126112, NULL, NULL, NULL, 352),
-    ('slindon-college', 126119, NULL, NULL, NULL, 112),
-    ('sompting-abbotts-school', 126121, NULL, NULL, NULL, 106),
-    ('st-francis-school', 126526, NULL, NULL, NULL, NULL),
-    ('st-margarets-preparatory-school', 126513, NULL, NULL, NULL, NULL),
-    ('st-martins-school', 113940, NULL, NULL, NULL, 78),
-    ('st-neots-preparatory-school', 116516, NULL, NULL, NULL, 339),
-    ('st-nicholas-school-fleet', 116518, NULL, NULL, NULL, 320),
-    ('st-swithuns-prep-school', 116534, NULL, NULL, NULL, NULL),
-    ('st-swithuns-school', NULL, NULL, NULL, NULL, 715),
-    ('sunninghill-prep-school', 113927, NULL, NULL, NULL, 171),
-    ('talbot-heath-school', 113945, NULL, NULL, NULL, 499),
-    ('the-gregg-preparatory-school', 116569, NULL, NULL, NULL, 71),
-    ('the-gregg-school', 116568, NULL, NULL, NULL, 343),
-    ('the-kings-school-eastleigh', 116595, NULL, NULL, NULL, 236),
-    ('the-lion-works-school', NULL, NULL, NULL, NULL, 42),
-    ('the-new-forest-small-school', 136112, NULL, NULL, NULL, 65),
-    ('the-pilgrims-school', 116535, NULL, NULL, NULL, 229),
-    ('the-portsmouth-grammar-school', NULL, NULL, NULL, NULL, 1142),
-    ('the-prebendal-school', 126122, NULL, NULL, NULL, 138),
-    ('the-rikkyo-school-in-england', 126132, NULL, NULL, NULL, 190),
-    ('the-stable-school', 147198, NULL, NULL, NULL, 58),
-    ('the-white-house-school', 149536, NULL, NULL, NULL, 39),
-    ('twyford-school', 116536, NULL, NULL, NULL, 422),
-    ('walhampton-school', 116525, NULL, NULL, NULL, 344),
-    ('wellesley-prep-school', 116550, NULL, NULL, NULL, 289),
-    ('west-hill-park', 116551, NULL, NULL, NULL, 201),
-    ('westbourne-house', 126105, NULL, NULL, NULL, 343),
-    ('winchester-college', NULL, NULL, NULL, NULL, 734),
-    ('windlesham-house-school', 126113, NULL, NULL, NULL, 315),
-    ('worth-school', NULL, NULL, NULL, NULL, 655),
-    ('yarrells-school-and-nursery', 113914, NULL, NULL, NULL, 258),
-    ('yarrow-heights-school', 148599, NULL, NULL, NULL, 130),
-    ('yateley-manor-school', 116553, NULL, NULL, NULL, 245)
-),
-patch_urn_duplicates as (
-  select urn
-  from patch
-  where urn is not null
-  group by urn
-  having count(*) > 1
-),
-validated_patch as (
-  select
-    p.slug,
-    case
-      when p.urn is null then null
-      when exists (
-        select 1
-        from patch_urn_duplicates d
-        where d.urn = p.urn
-      ) then null
-      when exists (
-        select 1
-        from public.schools s2
-        where s2.urn = p.urn
-          and s2.slug <> p.slug
-      ) then null
-      else p.urn
-    end as safe_urn,
-    p.age_min,
-    p.age_max,
-    p.day_boarding,
-    p.pupil_numbers
-  from patch p
-)
-update public.schools s
-set
-  urn = case when s.urn is null and vp.safe_urn is not null then vp.safe_urn else s.urn end,
-  age_min = case when s.age_min is null and vp.age_min is not null then vp.age_min else s.age_min end,
-  age_max = case when s.age_max is null and vp.age_max is not null then vp.age_max else s.age_max end,
-  day_boarding = case when (s.day_boarding is null or btrim(s.day_boarding) = '') and vp.day_boarding is not null then vp.day_boarding else s.day_boarding end,
-  pupil_numbers = case when s.pupil_numbers is null and vp.pupil_numbers is not null then vp.pupil_numbers else s.pupil_numbers end,
-  updated_at = now()
-from validated_patch vp
-where s.slug = vp.slug
-  and (
-    (s.urn is null and vp.safe_urn is not null)
-    or (s.age_min is null and vp.age_min is not null)
-    or (s.age_max is null and vp.age_max is not null)
-    or ((s.day_boarding is null or btrim(s.day_boarding) = '') and vp.day_boarding is not null)
-    or (s.pupil_numbers is null and vp.pupil_numbers is not null)
+export type LocationRecord = {
+  id: string;
+  name: string;
+  slug: string;
+  region: string | null;
+  hero_title: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  intro_text: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  is_live: boolean;
+  show_on_homepage?: boolean | null;
+  homepage_order?: number | null;
+  homepage_status_label?: string | null;
+};
+
+export type HomepageLocationRecord = {
+  name: string;
+  slug: string;
+  is_live: boolean;
+  show_on_homepage: boolean | null;
+  homepage_order: number | null;
+  homepage_status_label: string | null;
+};
+
+export type HomepageLocationItem = {
+  name: string;
+  href: string;
+  state: string;
+  isLive: boolean;
+};
+
+export type LocationSchoolLink = {
+  location_id: string;
+  school_id: string | number;
+  sort_order: number;
+  is_featured?: boolean;
+};
+
+export type SchoolSummaryRecord = {
+  id: string | number;
+  slug: string;
+  name: string;
+  school_type: string | null;
+  provision_category?: string | null;
+  phase: string | null;
+  gender: string | null;
+  age_min: number | null;
+  age_max: number | null;
+  day_boarding: string | null;
+  address_line1: string | null;
+  town: string | null;
+  county: string | null;
+  postcode: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  website: string | null;
+  pupil_numbers: number | null;
+  description: string | null;
+  inspection_rating: string | null;
+};
+
+export type SchoolContentRecord = {
+  admissions_summary: string | null;
+  inspection_snapshot: string | null;
+  assessment_approach: string | null;
+  scholarships: string | null;
+  destinations: string | null;
+  what_parents_say: string | null;
+  what_school_says: string | null;
+  [key: string]: unknown;
+};
+
+export type LocationFeeCell = {
+  schoolId: string;
+  schoolName: string;
+  schoolSlug: string;
+  amount: number | null;
+};
+
+export type LocationFeeRow = {
+  label: string;
+  cells: LocationFeeCell[];
+};
+
+export type LocationFeeView = {
+  feeType: string;
+  label: string;
+  rows: LocationFeeRow[];
+};
+
+export type LocationBursaryCard = {
+  schoolId: string;
+  schoolSlug: string;
+  schoolName: string;
+  provisionCategory: 'mainstream' | 'sen_specialist';
+  summary: string;
+};
+
+export type LocationOpenDayItem = {
+  schoolId: string;
+  schoolSlug: string;
+  schoolName: string;
+  provisionCategory: 'mainstream' | 'sen_specialist';
+  title: string;
+  startAt: string | null;
+  endAt: string | null;
+  bookingUrl: string | null;
+  notes: string | null;
+  isVerified: boolean;
+  lastVerifiedAt: string | null;
+};
+
+export type ExamResultRecord = {
+  result_year: number;
+  entries_count: number | string | null;
+  pct_a_star_a: number | string | null;
+  pct_a_star_b: number | string | null;
+  unique_subjects: number | string | null;
+};
+
+export type SubjectRecord = {
+  subject_name: string;
+  share_of_entries: number | string | null;
+  sort_order: number | null;
+};
+
+export type FeeRecord = {
+  academic_year: string;
+  fee_type: string;
+  year_group_label: string;
+  amount_gbp: number | string;
+  includes_vat: boolean;
+};
+
+export type BursaryRecord = {
+  has_bursaries: boolean | null;
+  status_label: string | null;
+  summary: string | null;
+  entry_points: string | null;
+  published_support_level: string | null;
+  application_and_review: string | null;
+};
+
+export type SchoolCard = {
+  slug: string;
+  name: string;
+  href: string;
+  cardClass: string;
+  provisionCategory: 'mainstream' | 'sen_specialist';
+  texts: string[];
+};
+
+export type MapSchool = {
+  name: string;
+  slug: string;
+  href: string;
+  locationSlug: string;
+  lat: number;
+  lng: number;
+  latitude: number;
+  longitude: number;
+  type: string;
+  provisionCategory: 'mainstream' | 'sen_specialist';
+  note: string;
+  addressLine1: string;
+  address_line1: string;
+};
+
+export type FeePane = {
+  feeType: string;
+  label: string;
+  columns: FeeRecord[][];
+};
+
+export type CompareAlevelMetrics = {
+  totalExams: number | null;
+  pctAStarA: number | null;
+  pctAStarB: number | null;
+  uniqueSubjects: number | null;
+  coreScience: number | null;
+  mathematics: number | null;
+  art: number | null;
+  languages: number | null;
+  economics: number | null;
+  english: number | null;
+  history: number | null;
+  geography: number | null;
+  psychology: number | null;
+  other: number | null;
+};
+
+export type CompareSchoolRecord = {
+  id: string;
+  schoolId: string;
+  schoolSlug: string;
+  provisionCategory: 'mainstream' | 'sen_specialist';
+  name: string;
+  slug: string;
+  ages: string;
+  gender: string;
+  format: string;
+  dayFee: string;
+  boardingFee: string;
+  bursaries: string;
+  location: string;
+  subhead: string;
+  heroImage: string;
+  map: MapSchool | null;
+  alevel: CompareAlevelMetrics | null;
+};
+
+function fail(message: string, error?: { message?: string } | null): never {
+  throw new Error(error?.message ? `${message}: ${error.message}` : message);
+}
+
+export function toNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
+export function formatCurrency(value: unknown): string {
+  const num = toNumber(value);
+  if (num === null) return '—';
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+    maximumFractionDigits: 0
+  }).format(num);
+}
+
+export function formatPercent(value: unknown): string {
+  const num = toNumber(value);
+  if (num === null) return '—';
+  return `${Math.round(num * 100)}%`;
+}
+
+export function formatInteger(value: unknown): string {
+  const num = toNumber(value);
+  if (num === null) return '—';
+  return new Intl.NumberFormat('en-GB').format(num);
+}
+
+export function getPhaseLabel(phase: string | null, ageMax: number | null): string {
+  const value = (phase || '').toLowerCase();
+  if (value.includes('all')) return 'All-through school';
+  if (value.includes('prep') || value.includes('junior') || (ageMax !== null && ageMax <= 11)) return 'Prep school';
+  return 'Senior school';
+}
+
+export function getMapType(phase: string | null, ageMax: number | null): string {
+  const value = (phase || '').toLowerCase();
+  if (value.includes('all')) return 'allthrough';
+  if (value.includes('prep') || value.includes('junior') || (ageMax !== null && ageMax <= 11)) return 'junior';
+  return 'senior';
+}
+
+export function getProvisionCategory(
+  school: Pick<SchoolSummaryRecord, 'provision_category' | 'school_type'>
+): 'mainstream' | 'sen_specialist' {
+  const raw = String(school.provision_category || '').trim().toLowerCase();
+  if (raw === 'sen_specialist') return 'sen_specialist';
+  return 'mainstream';
+}
+
+export function getGenderLabel(gender: string | null): string {
+  const value = (gender || '').toLowerCase();
+  if (value.includes('girl')) return 'Girls';
+  if (value.includes('boy')) return 'Boys';
+  return 'Co-ed';
+}
+
+export function getFormatLabel(dayBoarding: string | null): string {
+  if (!dayBoarding) return 'Day';
+  return dayBoarding
+    .replace(/_/g, ' ')
+    .replace(/\bday boarding\b/i, 'Day & boarding')
+    .replace(/\bboarding and day\b/i, 'Day & boarding')
+    .replace(/\bday and boarding\b/i, 'Day & boarding')
+    .replace(/\bfull boarding\b/i, 'Full boarding')
+    .replace(/\bweekly boarding\b/i, 'Weekly boarding')
+    .replace(/\bday\b/i, 'Day');
+}
+
+export function getAgeLabel(ageMin: number | null, ageMax: number | null): string {
+  if (ageMin !== null && ageMax !== null) return `${ageMin}–${ageMax}`;
+  if (ageMin !== null) return `${ageMin}+`;
+  if (ageMax !== null) return `Up to ${ageMax}`;
+  return 'To be confirmed';
+}
+
+export function buildAddress(school: Pick<SchoolSummaryRecord, 'address_line1' | 'town' | 'postcode'>): string {
+  return [school.address_line1, school.town, school.postcode].filter(Boolean).join(', ');
+}
+
+
+function getSchoolCoordinates(
+  school: Pick<SchoolSummaryRecord, 'latitude' | 'longitude'>
+) {
+  const lat = toNumber(school.latitude);
+  const lng = toNumber(school.longitude);
+
+  if (lat === null || lng === null) {
+    return null;
+  }
+
+  return { lat, lng, zoom: 13 };
+}
+
+function buildLocationMapSchool(location: LocationRecord, school: SchoolSummaryRecord): MapSchool | null {
+  const coordinates = getSchoolCoordinates(school);
+  if (!coordinates) return null;
+
+  const href = `/${location.slug}/schools/${school.slug}/`;
+  const provisionCategory = getProvisionCategory(school);
+  const note = [
+    provisionCategory === 'sen_specialist' ? 'SEN specialist' : null,
+    getPhaseLabel(school.phase, school.age_max),
+    getGenderLabel(school.gender),
+    getFormatLabel(school.day_boarding),
+    `Ages ${getAgeLabel(school.age_min, school.age_max)}`
+  ].filter(Boolean).join(' · ');
+  const addressLine1 = school.address_line1 || '';
+
+  return {
+    name: school.name,
+    slug: href,
+    href,
+    locationSlug: location.slug,
+    lat: coordinates.lat,
+    lng: coordinates.lng,
+    latitude: coordinates.lat,
+    longitude: coordinates.lng,
+    type: getMapType(school.phase, school.age_max),
+    provisionCategory,
+    note,
+    addressLine1,
+    address_line1: addressLine1
+  };
+}
+
+export function splitPipeList(text: string | null | undefined): string[] {
+  return String(text || '')
+    .split('|')
+    .map((item) => item.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+}
+
+export function splitParagraphs(text: string | null | undefined): string[] {
+  const value = String(text || '').trim();
+  if (!value) return [];
+  if (value.includes('|')) return [];
+  return value
+    .split(/\n\s*\n|\r\n\s*\r\n/)
+    .map((item) => item.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+}
+
+
+type RawSchoolContentRecord = Partial<SchoolContentRecord> & Record<string, unknown>;
+
+function contentValueToString(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string') {
+    const cleaned = value.replace(/\s+/g, ' ').trim();
+    return cleaned || null;
+  }
+  if (Array.isArray(value)) {
+    const cleanedItems = value
+      .map((item) => (typeof item === 'string' ? item.replace(/\s+/g, ' ').trim() : ''))
+      .filter(Boolean);
+    return cleanedItems.length ? cleanedItems.join(' | ') : null;
+  }
+  return null;
+}
+
+function pickFirstContentValue(content: RawSchoolContentRecord | null, keys: string[]): string | null {
+  if (!content) return null;
+
+  for (const key of keys) {
+    const value = contentValueToString(content[key]);
+    if (value) return value;
+  }
+
+  return null;
+}
+
+function normalizeSchoolContent(content: RawSchoolContentRecord | null): SchoolContentRecord | null {
+  if (!content) return null;
+
+  return {
+    ...content,
+    admissions_summary: pickFirstContentValue(content, [
+      'admissions_summary',
+      'admissions',
+      'admissions_notes'
+    ]),
+    inspection_snapshot: pickFirstContentValue(content, [
+      'inspection_snapshot',
+      'inspection_overview'
+    ]),
+    assessment_approach: pickFirstContentValue(content, [
+      'assessment_approach',
+      'assessment',
+      'assessment_summary'
+    ]),
+    scholarships: pickFirstContentValue(content, [
+      'scholarships',
+      'scholarship_summary',
+      'scholarships_summary'
+    ]),
+    destinations: pickFirstContentValue(content, [
+      'destinations',
+      'leavers_destinations',
+      'leaver_destinations',
+      'destination_summary'
+    ]),
+    what_parents_say: pickFirstContentValue(content, [
+      'what_parents_say',
+      'parents_like',
+      'what_parents_like',
+      'parent_likes',
+      'parents_say'
+    ]),
+    what_school_says: pickFirstContentValue(content, [
+      'what_school_says',
+      'how_the_school_describes_itself',
+      'how_school_describes_itself',
+      'school_describes_itself',
+      'school_voice'
+    ])
+  };
+}
+
+function yearGroupOrder(label: string): number {
+  const trimmed = label.trim();
+  if (/^(pre[\s-]?reception|preschool|pre-school|pre school)/i.test(trimmed)) return -2;
+  if (/^nursery/i.test(trimmed)) return -1;
+  if (/^reception/i.test(trimmed)) return 0;
+  const match = trimmed.match(/^year\s*(\d{1,2})/i);
+  if (match) return Number(match[1]);
+  return 999;
+}
+
+function feeTypeOrder(type: string): number {
+  if (type === 'day') return 1;
+  if (type === 'weekly_boarding') return 2;
+  if (type === 'full_boarding') return 3;
+  return 9;
+}
+
+export function feeTypeLabel(type: string): string {
+  if (type === 'day') return 'Day';
+  if (type === 'weekly_boarding') return 'Weekly boarding';
+  if (type === 'full_boarding') return 'Full boarding';
+  return type.replace(/_/g, ' ');
+}
+
+function splitColumns<T>(rows: T[]): T[][] {
+  if (rows.length <= 4) return [rows];
+  const midpoint = Math.ceil(rows.length / 2);
+  return [rows.slice(0, midpoint), rows.slice(midpoint)];
+}
+
+function formatFeeRange(rows: FeeRecord[]): string {
+  const amounts = rows
+    .map((row) => toNumber(row.amount_gbp))
+    .filter((value): value is number => value !== null);
+
+  if (!amounts.length) return 'Not listed';
+
+  const min = Math.min(...amounts);
+  const max = Math.max(...amounts);
+  if (min === max) return `${formatCurrency(min)} / year`;
+  return `${formatCurrency(min)}–${formatCurrency(max)} / year`;
+}
+
+function formatBursaryStatus(bursary: BursaryRecord | null): string {
+  if (!bursary) return '—';
+  if (bursary.status_label) return bursary.status_label;
+  if (bursary.has_bursaries === true) return 'Available';
+  if (bursary.has_bursaries === false) return 'Not currently published';
+  return '—';
+}
+
+function formatLocationLabel(school: SchoolSummaryRecord, fallbackLocationName: string): string {
+  const parts = [school.town, school.county].filter(Boolean) as string[];
+  return parts.length ? parts.join(', ') : fallbackLocationName;
+}
+
+function normalizeSubjectName(subjectName: string): string {
+  return subjectName
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function bucketSubject(subjectName: string): keyof Omit<CompareAlevelMetrics, 'totalExams' | 'pctAStarA' | 'pctAStarB' | 'uniqueSubjects'> {
+  const value = normalizeSubjectName(subjectName);
+
+  if (/\benglish\b/.test(value)) return 'english';
+  if (/\b(french|spanish|german|latin|greek|mandarin|italian|russian|portuguese|japanese|chinese|arabic|language|languages)\b/.test(value)) return 'languages';
+  if (/\b(math|maths|mathematics|further mathematics|further maths|statistics)\b/.test(value)) return 'mathematics';
+  if (/\b(biology|chemistry|physics|science)\b/.test(value)) return 'coreScience';
+  if (/\b(economics|business|accounting)\b/.test(value)) return 'economics';
+  if (/\b(history|ancient history)\b/.test(value)) return 'history';
+  if (/\bgeography\b/.test(value)) return 'geography';
+  if (/\bpsychology\b/.test(value)) return 'psychology';
+  if (/\b(art|design|drama|theatre|music|photography|film|media|textiles)\b/.test(value)) return 'art';
+  return 'other';
+}
+
+function aggregateAlevelMetrics(examResult: ExamResultRecord | null, subjectRows: SubjectRecord[]): CompareAlevelMetrics | null {
+  if (!examResult) return null;
+
+  const buckets: Record<string, number> = {
+    coreScience: 0,
+    mathematics: 0,
+    art: 0,
+    languages: 0,
+    economics: 0,
+    english: 0,
+    history: 0,
+    geography: 0,
+    psychology: 0,
+    other: 0
+  };
+
+  subjectRows.forEach((row) => {
+    const bucket = bucketSubject(row.subject_name);
+    const share = toNumber(row.share_of_entries) ?? 0;
+    buckets[bucket] += share;
+  });
+
+  return {
+    totalExams: toNumber(examResult.entries_count),
+    pctAStarA: toNumber(examResult.pct_a_star_a),
+    pctAStarB: toNumber(examResult.pct_a_star_b),
+    uniqueSubjects: toNumber(examResult.unique_subjects),
+    coreScience: buckets.coreScience,
+    mathematics: buckets.mathematics,
+    art: buckets.art,
+    languages: buckets.languages,
+    economics: buckets.economics,
+    english: buckets.english,
+    history: buckets.history,
+    geography: buckets.geography,
+    psychology: buckets.psychology,
+    other: buckets.other
+  };
+}
+
+export async function getLiveLocations(): Promise<LocationRecord[]> {
+  const { data, error } = await supabase
+    .from('locations')
+    .select('*')
+    .eq('is_live', true)
+    .order('name', { ascending: true });
+
+  if (error) fail('Could not load live locations', error);
+  return (data || []) as LocationRecord[];
+}
+
+
+export async function getHomepageLocations(): Promise<HomepageLocationItem[]> {
+  const { data, error } = await supabase
+    .from('locations')
+    .select('name, slug, is_live, show_on_homepage, homepage_order, homepage_status_label')
+    .eq('show_on_homepage', true)
+    .order('homepage_order', { ascending: true })
+    .order('name', { ascending: true });
+
+  if (error) fail('Could not load homepage locations', error);
+
+  return ((data || []) as HomepageLocationRecord[]).map((location) => ({
+    name: location.name,
+    href: `/${location.slug}/`,
+    state: String(location.homepage_status_label || '').trim() || (location.is_live ? 'Live now' : 'Coming soon'),
+    isLive: Boolean(location.is_live)
+  }));
+}
+
+export async function getLocationBySlug(locationSlug: string): Promise<LocationRecord> {
+  const { data, error } = await supabase
+    .from('locations')
+    .select('*')
+    .eq('slug', locationSlug)
+    .eq('is_live', true)
+    .single();
+
+  if (error || !data) fail(`Could not load location ${locationSlug}`, error);
+  return data as LocationRecord;
+}
+
+export async function getLocationPaths() {
+  const locations = await getLiveLocations();
+  return locations.map((location) => ({ params: { location: location.slug } }));
+}
+
+async function getLocationSchoolLinks(locationId: string): Promise<LocationSchoolLink[]> {
+  const { data, error } = await supabase
+    .from('location_schools')
+    .select('location_id, school_id, sort_order, is_featured')
+    .eq('location_id', locationId)
+    .order('sort_order', { ascending: true });
+
+  if (error) fail(`Could not load location school links for ${locationId}`, error);
+  return (data || []) as LocationSchoolLink[];
+}
+
+async function getSchoolsByIds(schoolIds: Array<string | number>): Promise<SchoolSummaryRecord[]> {
+  if (!schoolIds.length) return [];
+
+  const { data, error } = await supabase
+    .from('schools')
+    .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating')
+    .in('id', schoolIds);
+
+  if (error) fail('Could not load schools', error);
+  return (data || []) as SchoolSummaryRecord[];
+}
+
+export async function getLocationDirectoryData(locationSlug: string) {
+  const location = await getLocationBySlug(locationSlug);
+  const locationLinks = await getLocationSchoolLinks(location.id);
+  const schoolIds = locationLinks.map((row) => row.school_id);
+  const schoolsRaw = await getSchoolsByIds(schoolIds);
+  const schoolMap = new Map(schoolsRaw.map((school) => [String(school.id), school]));
+
+  const schools = locationLinks
+    .map((link) => schoolMap.get(String(link.school_id)))
+    .filter(Boolean) as SchoolSummaryRecord[];
+
+  const schoolCards: SchoolCard[] = schools.map((school) => ({
+    slug: school.slug,
+    name: school.name,
+    href: `/${location.slug}/schools/${school.slug}/`,
+    cardClass: `school-square-card school-square-card--${getMapType(school.phase, school.age_max)}`,
+    provisionCategory: getProvisionCategory(school),
+    texts: [
+      getPhaseLabel(school.phase, school.age_max),
+      `${getGenderLabel(school.gender)} · ${getFormatLabel(school.day_boarding)}`,
+      `Ages ${getAgeLabel(school.age_min, school.age_max)}`
+    ]
+  }));
+
+  const mapSchools: MapSchool[] = schools
+    .map((school) => buildLocationMapSchool(location, school))
+    .filter((school): school is MapSchool => Boolean(school));
+
+  return { location, locationLinks, schools, schoolCards, mapSchools };
+}
+
+
+export async function getHomepageMapSchools(): Promise<MapSchool[]> {
+  const liveLocations = await getLiveLocations();
+  const directoryEntries = await Promise.all(
+    liveLocations.map((location) => getLocationDirectoryData(location.slug))
   );
 
--- URN rows deliberately skipped because they would violate the unique-URN rule
-with patch(slug, urn) as (
-  values
-    ('appleford-school', 126535),
-    ('ardingly-college', NULL),
-    ('avondale-preparatory-school', 126523),
-    ('ballard-school', 116524),
-    ('bedales-pre-prep', 116527),
-    ('bedales-prep-school', 116527),
-    ('bedales-school', NULL),
-    ('boundary-oak-school', 116558),
-    ('bournemouth-collegiate-school', 113937),
-    ('bower-lodge-school', 150911),
-    ('brambletye-school', 126150),
-    ('brighton-college-prep-handcross', 126143),
-    ('brockwood-park-school-and-inwoods-small-school', NULL),
-    ('brunel-college', 144514),
-    ('bryanston-school', NULL),
-    ('burgess-hill-girls', NULL),
-    ('canford-school', 113922),
-    ('castle-court-school', 113931),
-    ('chafyn-grove-school', 126517),
-    ('charlton-house-independent-school', 116567),
-    ('christs-hospital-school', NULL),
-    ('churchers-college', NULL),
-    ('clayesmore-school', NULL),
-    ('connie-rothman-school', NULL),
-    ('copthorne-prep-school', 125406),
-    ('cottesmore-school', 126106),
-    ('courtlands-independent-special-school', 149890),
-    ('cricklade-manor-prep-school', 126533),
-    ('cumnor-house-sussex', 114623),
-    ('dibden-park-school', 149863),
-    ('ditcham-park-school', 116575),
-    ('dorset-house-school', 126109),
-    ('dumpton-school', 113923),
-    ('durlston-prep-and-senior-school', 116522),
-    ('embley', NULL),
-    ('emmaus-school', 131743),
-    ('farleigh-school', 116542),
-    ('farlington-school', NULL),
-    ('farnborough-hill', NULL),
-    ('forres-sandle-manor', 116519),
-    ('great-ballard', 126130),
-    ('great-walstead', 126135),
-    ('hambrook-school', 149912),
-    ('hanford-school', 113911),
-    ('heywood-prep', 126524),
-    ('highfield-and-brookham-school', 126151),
-    ('hove-micro-school', 150990),
-    ('hurst-lodge-school', 110150),
-    ('hurstpierpoint-college', NULL),
-    ('hurstpierpoint-college-preparatory-school', 126136),
-    ('jubilee-school', 135105),
-    ('king-edward-vi-preparatory-school', 116528),
-    ('king-edward-vi-school', NULL),
-    ('kingfisher-school', NULL),
-    ('kings-bournemouth', 138333),
-    ('lancing-college', NULL),
-    ('lancing-college-preparatory-school-worthing', 126114),
-    ('leehurst-swan-school', 126528),
-    ('leweston-school', NULL),
-    ('lord-wandsworth-college', NULL),
-    ('luccombe-hub', NULL),
-    ('lumiar-stowford', 146654),
-    ('lvs-hassocks', 135930),
-    ('manor-house-school', 131139),
-    ('maranatha-christian-school', 126536),
-    ('mayville-high-school', 116573),
-    ('meoncross-school', 116563),
-    ('milton-abbey-school', NULL),
-    ('moyles-court-school', 116559),
-    ('napier-school', 149858),
-    ('oakwood-prep-school', 126104),
-    ('oneschool-global-uk-salisbury-campus', 134460),
-    ('our-lady-of-sion-school', NULL),
-    ('park-school-bournemouth', 113939),
-    ('pennthorpe-school', 126111),
-    ('pinewood-school', 123301),
-    ('port-regis', 113915),
-    ('portsmouth-high-school-gdst', NULL),
-    ('princes-mead-school', 116552),
-    ('rookwood-school', NULL),
-    ('salesian-college', NULL),
-    ('salisbury-cathedral-school', 126518),
-    ('sandroyd-school', 126521),
-    ('seaford-college', NULL),
-    ('sherborne-girls', NULL),
-    ('sherborne-house-school', 116514),
-    ('sherborne-preparatory-school', 113917),
-    ('sherborne-school', NULL),
-    ('sherfield-school', NULL),
-    ('shoreham-college', 126112),
-    ('slindon-college', 126119),
-    ('sompting-abbotts-school', 126121),
-    ('st-francis-school', 126526),
-    ('st-margarets-preparatory-school', 126513),
-    ('st-martins-school', 113940),
-    ('st-neots-preparatory-school', 116516),
-    ('st-nicholas-school-fleet', 116518),
-    ('st-swithuns-prep-school', 116534),
-    ('st-swithuns-school', NULL),
-    ('sunninghill-prep-school', 113927),
-    ('talbot-heath-school', 113945),
-    ('the-gregg-preparatory-school', 116569),
-    ('the-gregg-school', 116568),
-    ('the-kings-school-eastleigh', 116595),
-    ('the-lion-works-school', NULL),
-    ('the-new-forest-small-school', 136112),
-    ('the-pilgrims-school', 116535),
-    ('the-portsmouth-grammar-school', NULL),
-    ('the-prebendal-school', 126122),
-    ('the-rikkyo-school-in-england', 126132),
-    ('the-stable-school', 147198),
-    ('the-white-house-school', 149536),
-    ('twyford-school', 116536),
-    ('walhampton-school', 116525),
-    ('wellesley-prep-school', 116550),
-    ('west-hill-park', 116551),
-    ('westbourne-house', 126105),
-    ('winchester-college', NULL),
-    ('windlesham-house-school', 126113),
-    ('worth-school', NULL),
-    ('yarrells-school-and-nursery', 113914),
-    ('yarrow-heights-school', 148599),
-    ('yateley-manor-school', 116553)
-),
-patch_urn_duplicates as (
-  select urn
-  from patch
-  where urn is not null
-  group by urn
-  having count(*) > 1
-)
-select
-  p.slug,
-  p.urn,
-  case
-    when exists (select 1 from patch_urn_duplicates d where d.urn = p.urn) then 'duplicate within patch'
-    when exists (select 1 from public.schools s2 where s2.urn = p.urn and s2.slug <> p.slug) then 'already used by another school'
-  end as skip_reason
-from patch p
-where p.urn is not null
-  and (
-    exists (select 1 from patch_urn_duplicates d where d.urn = p.urn)
-    or exists (select 1 from public.schools s2 where s2.urn = p.urn and s2.slug <> p.slug)
-  )
-order by p.urn, p.slug;
+  const seen = new Set<string>();
+  const mapSchools: MapSchool[] = [];
 
--- Audit query
-select
-  count(*) filter (where urn is null) as missing_urn,
-  count(*) filter (where age_min is null) as missing_age_min,
-  count(*) filter (where age_max is null) as missing_age_max,
-  count(*) filter (where day_boarding is null or btrim(day_boarding) = '') as missing_day_boarding,
-  count(*) filter (where pupil_numbers is null) as missing_pupil_numbers
-from public.schools;
+  directoryEntries.forEach((entry) => {
+    entry.mapSchools.forEach((school) => {
+      const key = school.href || school.slug;
+      if (seen.has(key)) return;
+      seen.add(key);
+      mapSchools.push(school);
+    });
+  });
 
--- Rows still missing after this corrected patch
-select id, name, slug, provision_category, urn, age_min, age_max, day_boarding, pupil_numbers
-from public.schools
-where urn is null
-   or age_min is null
-   or age_max is null
-   or day_boarding is null or btrim(day_boarding) = ''
-   or pupil_numbers is null
-order by slug;
+  return mapSchools;
+}
+
+export async function getLocationCompareData(locationSlug: string): Promise<{ location: LocationRecord; compareSchools: CompareSchoolRecord[] }> {
+  const location = await getLocationBySlug(locationSlug);
+  const locationLinks = await getLocationSchoolLinks(location.id);
+  const schoolIds = locationLinks.map((row) => row.school_id);
+  const schoolsRaw = await getSchoolsByIds(schoolIds);
+  const schoolMap = new Map(schoolsRaw.map((school) => [String(school.id), school]));
+  const orderedSchools = locationLinks
+    .map((link) => schoolMap.get(String(link.school_id)))
+    .filter(Boolean) as SchoolSummaryRecord[];
+
+  if (!orderedSchools.length) {
+    return { location, compareSchools: [] };
+  }
+
+  const { data: feeRowsRaw, error: feeRowsError } = await supabase
+    .from('school_fee_profiles')
+    .select('school_id, academic_year, fee_type, year_group_label, amount_gbp, includes_vat')
+    .in('school_id', schoolIds);
+
+  if (feeRowsError) fail(`Could not load compare fees for ${locationSlug}`, feeRowsError);
+
+  const { data: bursaryRowsRaw, error: bursaryRowsError } = await supabase
+    .from('school_bursaries')
+    .select('school_id, has_bursaries, status_label, summary, entry_points, published_support_level, application_and_review')
+    .in('school_id', schoolIds);
+
+  if (bursaryRowsError) fail(`Could not load compare bursaries for ${locationSlug}`, bursaryRowsError);
+
+  const { data: examRowsRaw, error: examRowsError } = await supabase
+    .from('school_exam_results')
+    .select('school_id, result_year, entries_count, pct_a_star_a, pct_a_star_b, unique_subjects')
+    .in('school_id', schoolIds)
+    .eq('exam_type', 'alevel')
+    .order('result_year', { ascending: false });
+
+  if (examRowsError) fail(`Could not load compare exam results for ${locationSlug}`, examRowsError);
+
+  const { data: subjectRowsRaw, error: subjectRowsError } = await supabase
+    .from('school_subject_popularity')
+    .select('school_id, result_year, subject_name, share_of_entries, sort_order')
+    .in('school_id', schoolIds)
+    .eq('exam_type', 'alevel')
+    .order('sort_order', { ascending: true });
+
+  if (subjectRowsError) fail(`Could not load compare subjects for ${locationSlug}`, subjectRowsError);
+
+  const feeRows = (feeRowsRaw || []) as Array<FeeRecord & { school_id: string | number }>;
+  const bursaryRows = (bursaryRowsRaw || []) as Array<BursaryRecord & { school_id: string | number }>;
+  const examRows = (examRowsRaw || []) as Array<ExamResultRecord & { school_id: string | number }>;
+  const subjectRows = (subjectRowsRaw || []) as Array<SubjectRecord & { school_id: string | number; result_year: number }>;
+
+  const bursaryBySchool = new Map(bursaryRows.map((row) => [String(row.school_id), row]));
+  const latestExamBySchool = new Map<string, ExamResultRecord>();
+  examRows.forEach((row) => {
+    const key = String(row.school_id);
+    if (!latestExamBySchool.has(key)) latestExamBySchool.set(key, row);
+  });
+
+  const presentation = getLocationPresentation(location.slug, location.name);
+
+  const compareSchools: CompareSchoolRecord[] = orderedSchools.map((school) => {
+    const key = String(school.id);
+    const schoolFeeRows = feeRows.filter((row) => String(row.school_id) === key);
+    const currentAcademicYear = Array.from(new Set(schoolFeeRows.map((row) => row.academic_year))).sort().at(-1) || null;
+    const currentFeeRows = currentAcademicYear
+      ? schoolFeeRows.filter((row) => row.academic_year === currentAcademicYear)
+      : [];
+
+    const latestExam = latestExamBySchool.get(key) || null;
+    const latestSubjects = latestExam
+      ? subjectRows.filter((row) => String(row.school_id) === key && row.result_year === latestExam.result_year)
+      : [];
+
+    const phaseLabel = getPhaseLabel(school.phase, school.age_max);
+    const genderLabel = getGenderLabel(school.gender);
+    const formatLabel = getFormatLabel(school.day_boarding);
+    const ageLabel = getAgeLabel(school.age_min, school.age_max);
+
+    return {
+      id: school.slug,
+      schoolId: String(school.id),
+      schoolSlug: school.slug,
+      provisionCategory: getProvisionCategory(school),
+      name: school.name,
+      slug: `/${location.slug}/schools/${school.slug}/`,
+      ages: ageLabel,
+      gender: genderLabel,
+      format: formatLabel,
+      dayFee: formatFeeRange(currentFeeRows.filter((row) => row.fee_type === 'day')),
+      boardingFee: formatFeeRange(currentFeeRows.filter((row) => row.fee_type === 'weekly_boarding' || row.fee_type === 'full_boarding')),
+      bursaries: formatBursaryStatus(bursaryBySchool.get(key) || null),
+      location: formatLocationLabel(school, location.name),
+      subhead: school.description || `${phaseLabel} in ${school.town || location.name}.`,
+      heroImage: presentation.defaultSchoolHeroImage,
+      map: buildLocationMapSchool(location, school),
+      alevel: aggregateAlevelMetrics(latestExam, latestSubjects)
+    };
+  });
+
+  return { location, compareSchools };
+}
+
+
+async function getOrderedLocationSchools(locationSlug: string) {
+  const location = await getLocationBySlug(locationSlug);
+  const locationLinks = await getLocationSchoolLinks(location.id);
+  const schoolIds = locationLinks.map((row) => row.school_id);
+  const schoolsRaw = await getSchoolsByIds(schoolIds);
+  const schoolMap = new Map(schoolsRaw.map((school) => [String(school.id), school]));
+
+  const schools = locationLinks
+    .map((link) => schoolMap.get(String(link.school_id)))
+    .filter(Boolean) as SchoolSummaryRecord[];
+
+  return { location, locationLinks, schoolIds, schools, schoolMap };
+}
+
+export async function getLocationFeesData(locationSlug: string) {
+  const { location, schools, schoolIds } = await getOrderedLocationSchools(locationSlug);
+
+  const { data, error } = schoolIds.length
+    ? await supabase
+        .from('school_fee_profiles')
+        .select('school_id, academic_year, fee_type, year_group_label, amount_gbp, includes_vat')
+        .in('school_id', schoolIds)
+    : { data: [], error: null };
+
+  if (error) fail(`Could not load fees for ${locationSlug}`, error);
+
+  const feeRows = (data || []) as Array<FeeRecord & { school_id: string | number }>;
+  const currentAcademicYear = Array.from(new Set(feeRows.map((row) => row.academic_year))).sort().at(-1) || null;
+  const filtered = feeRows
+    .filter((row) => !currentAcademicYear || row.academic_year === currentAcademicYear)
+    .sort((a, b) => {
+      const feeTypeDelta = feeTypeOrder(a.fee_type) - feeTypeOrder(b.fee_type);
+      if (feeTypeDelta !== 0) return feeTypeDelta;
+      return yearGroupOrder(a.year_group_label) - yearGroupOrder(b.year_group_label);
+    });
+
+  const schoolHeaders = schools.map((school) => ({
+    schoolId: String(school.id),
+    schoolSlug: school.slug,
+    schoolName: school.name,
+    provisionCategory: getProvisionCategory(school)
+  }));
+
+  const feeTypes = Array.from(new Set(filtered.map((row) => row.fee_type))).sort(
+    (a, b) => feeTypeOrder(a) - feeTypeOrder(b)
+  );
+
+  const views: LocationFeeView[] = feeTypes.map((feeType) => {
+    const rowsForType = filtered.filter((row) => row.fee_type === feeType);
+    const labels = Array.from(new Set(rowsForType.map((row) => row.year_group_label))).sort(
+      (a, b) => yearGroupOrder(a) - yearGroupOrder(b)
+    );
+
+    const rows: LocationFeeRow[] = labels.map((label) => ({
+      label,
+      cells: schools.map((school) => {
+        const match = rowsForType.find(
+          (row) => String(row.school_id) === String(school.id) && row.year_group_label === label
+        );
+        return {
+          schoolId: String(school.id),
+          schoolName: school.name,
+          schoolSlug: school.slug,
+          amount: match ? toNumber(match.amount_gbp) : null
+        };
+      })
+    }));
+
+    return {
+      feeType,
+      label: feeTypeLabel(feeType),
+      rows
+    };
+  });
+
+  const allFeesIncludeVat = filtered.length ? filtered.every((row) => row.includes_vat) : false;
+
+  return {
+    location,
+    schoolHeaders,
+    currentAcademicYear,
+    allFeesIncludeVat,
+    views
+  };
+}
+
+export async function getLocationBursariesData(locationSlug: string) {
+  const { location, schools, schoolIds } = await getOrderedLocationSchools(locationSlug);
+
+  const { data, error } = schoolIds.length
+    ? await supabase
+        .from('school_bursaries')
+        .select('school_id, has_bursaries, status_label, summary, entry_points, published_support_level, application_and_review')
+        .in('school_id', schoolIds)
+    : { data: [], error: null };
+
+  if (error) fail(`Could not load bursaries for ${locationSlug}`, error);
+
+  const bursaryBySchool = new Map(
+    ((data || []) as Array<BursaryRecord & { school_id: string | number }>).map((row) => [String(row.school_id), row])
+  );
+
+  const cards: LocationBursaryCard[] = schools.map((school) => {
+    const bursary = bursaryBySchool.get(String(school.id)) || null;
+    const summary = String(
+      bursary?.summary ||
+      bursary?.status_label ||
+      (bursary?.has_bursaries === true ? 'Bursary information is being updated.' : 'Coming soon')
+    ).trim();
+
+    return {
+      schoolId: String(school.id),
+      schoolSlug: school.slug,
+      schoolName: school.name,
+      provisionCategory: getProvisionCategory(school),
+      summary: summary || 'Coming soon'
+    };
+  });
+
+  return { location, cards };
+}
+
+export async function getLocationOpenDaysData(locationSlug: string) {
+  const { location, schools, schoolIds } = await getOrderedLocationSchools(locationSlug);
+
+  const { data, error } = schoolIds.length
+    ? await supabase
+        .from('school_open_days')
+        .select('school_id, title, start_at, end_at, booking_url, notes, is_verified, last_verified_at')
+        .in('school_id', schoolIds)
+        .order('start_at', { ascending: true })
+    : { data: [], error: null };
+
+  if (error) fail(`Could not load open days for ${locationSlug}`, error);
+
+  const schoolMap = new Map(schools.map((school) => [String(school.id), school]));
+  const openDays: LocationOpenDayItem[] = ((data || []) as Array<{
+    school_id: string | number;
+    title: string;
+    start_at: string | null;
+    end_at: string | null;
+    booking_url: string | null;
+    notes: string | null;
+    is_verified: boolean;
+    last_verified_at: string | null;
+  }>)
+    .map((row) => {
+      const school = schoolMap.get(String(row.school_id));
+      if (!school) return null;
+      return {
+        schoolId: String(row.school_id),
+        schoolSlug: school.slug,
+        schoolName: school.name,
+        provisionCategory: getProvisionCategory(school),
+        title: row.title,
+        startAt: row.start_at,
+        endAt: row.end_at,
+        bookingUrl: row.booking_url,
+        notes: row.notes,
+        isVerified: Boolean(row.is_verified),
+        lastVerifiedAt: row.last_verified_at
+      };
+    })
+    .filter(Boolean) as LocationOpenDayItem[];
+
+  const lastVerifiedAt = openDays
+    .map((row) => row.lastVerifiedAt)
+    .filter(Boolean)
+    .sort()
+    .at(-1) || null;
+
+  return {
+    location,
+    openDays,
+    lastVerifiedAt
+  };
+}
+
+export async function getAllLocationSchoolPaths() {
+  const locations = await getLiveLocations();
+  if (!locations.length) return [];
+
+  const locationById = new Map(locations.map((location) => [String(location.id), location.slug]));
+  const locationIds = locations.map((location) => location.id);
+
+  const { data: linksRaw, error: linksError } = await supabase
+    .from('location_schools')
+    .select('location_id, school_id')
+    .in('location_id', locationIds);
+
+  if (linksError) fail('Could not load location-school combinations', linksError);
+
+  const links = (linksRaw || []) as Array<{ location_id: string; school_id: string | number }>;
+  const schoolIds = Array.from(new Set(links.map((link) => link.school_id)));
+
+  const { data: schoolsRaw, error: schoolsError } = schoolIds.length
+    ? await supabase.from('schools').select('id, slug').in('id', schoolIds)
+    : { data: [], error: null };
+
+  if (schoolsError) fail('Could not load school slugs for dynamic paths', schoolsError);
+
+  const schoolSlugById = new Map((schoolsRaw || []).map((school) => [String(school.id), school.slug]));
+
+  return links
+    .map((link) => {
+      const locationSlug = locationById.get(String(link.location_id));
+      const schoolSlug = schoolSlugById.get(String(link.school_id));
+      if (!locationSlug || !schoolSlug) return null;
+      return { params: { location: locationSlug, slug: schoolSlug } };
+    })
+    .filter(Boolean);
+}
+
+export async function getLocationSchoolProfile(locationSlug: string, schoolSlug: string) {
+  const location = await getLocationBySlug(locationSlug);
+  const locationLinks = await getLocationSchoolLinks(location.id);
+  const schoolIds = locationLinks.map((row) => row.school_id);
+
+  const { data: schoolData, error: schoolError } = await supabase
+    .from('schools')
+    .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating')
+    .eq('slug', schoolSlug)
+    .single();
+
+  if (schoolError || !schoolData) fail(`Could not load school ${schoolSlug}`, schoolError);
+
+  const school = schoolData as SchoolSummaryRecord;
+  const allowedSchoolIds = new Set(schoolIds.map((id) => String(id)));
+  if (!allowedSchoolIds.has(String(school.id))) {
+    throw new Error(`${schoolSlug} is not linked to ${locationSlug}`);
+  }
+
+  const [contentRes, heroImageRes, examRes, feeRes, bursaryRes, compareSchoolsRes] = await Promise.all([
+    supabase
+      .from('school_content')
+      .select('*')
+      .eq('school_id', school.id)
+      .maybeSingle(),
+    supabase
+      .from('school_images')
+      .select('image_url, alt_text')
+      .eq('school_id', school.id)
+      .eq('image_type', 'hero')
+      .order('sort_order', { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from('school_exam_results')
+      .select('result_year, entries_count, pct_a_star_a, pct_a_star_b, unique_subjects')
+      .eq('school_id', school.id)
+      .eq('exam_type', 'alevel')
+      .order('result_year', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from('school_fee_profiles')
+      .select('academic_year, fee_type, year_group_label, amount_gbp, includes_vat')
+      .eq('school_id', school.id)
+      .order('academic_year', { ascending: false }),
+    supabase
+      .from('school_bursaries')
+      .select('has_bursaries, status_label, summary, entry_points, published_support_level, application_and_review')
+      .eq('school_id', school.id)
+      .maybeSingle(),
+    schoolIds.length
+      ? supabase.from('schools').select('id, slug, name').in('id', schoolIds)
+      : Promise.resolve({ data: [], error: null })
+  ]);
+
+  if (contentRes.error) fail(`Could not load school content for ${schoolSlug}`, contentRes.error);
+  if (heroImageRes.error) fail(`Could not load school image for ${schoolSlug}`, heroImageRes.error);
+  if (examRes.error) fail(`Could not load exam results for ${schoolSlug}`, examRes.error);
+  if (feeRes.error) fail(`Could not load fees for ${schoolSlug}`, feeRes.error);
+  if (bursaryRes.error) fail(`Could not load bursary data for ${schoolSlug}`, bursaryRes.error);
+  if (compareSchoolsRes.error) fail(`Could not load compare links for ${schoolSlug}`, compareSchoolsRes.error);
+
+  const content = normalizeSchoolContent((contentRes.data || null) as RawSchoolContentRecord | null);
+  const locationPresentation = getLocationPresentation(location.slug, location.name);
+  const heroImageUrl = heroImageRes.data?.image_url || locationPresentation.defaultSchoolHeroImage;
+  const heroImageAlt = heroImageRes.data?.alt_text || '';
+  const alevelResult = (examRes.data || null) as ExamResultRecord | null;
+  const feeRowsAll = (feeRes.data || []) as FeeRecord[];
+  const bursary = (bursaryRes.data || null) as BursaryRecord | null;
+
+  const compareRows = ((compareSchoolsRes.data || []) as Array<{ id: string | number; slug: string; name: string }>);
+  const compareSchoolMap = new Map(compareRows.map((row) => [String(row.id), row]));
+  const compareLinks = locationLinks
+    .map((row) => compareSchoolMap.get(String(row.school_id)))
+    .filter((row): row is { id: string | number; slug: string; name: string } => Boolean(row))
+    .filter((row) => row.slug !== school.slug)
+    .map((row) => ({ slug: row.slug, name: row.name }));
+
+  const { data: subjectRowsRaw, error: subjectRowsError } = alevelResult
+    ? await supabase
+        .from('school_subject_popularity')
+        .select('subject_name, share_of_entries, sort_order')
+        .eq('school_id', school.id)
+        .eq('exam_type', 'alevel')
+        .eq('result_year', alevelResult.result_year)
+        .order('sort_order', { ascending: true })
+    : { data: [], error: null };
+
+  if (subjectRowsError) fail(`Could not load subject popularity for ${schoolSlug}`, subjectRowsError);
+
+  const subjectRows = (subjectRowsRaw || []) as SubjectRecord[];
+  const currentAcademicYear = Array.from(new Set(feeRowsAll.map((row) => row.academic_year))).sort().at(-1) || null;
+  const feeRows = feeRowsAll
+    .filter((row) => row.academic_year === currentAcademicYear)
+    .sort((a, b) => {
+      const feeTypeDelta = feeTypeOrder(a.fee_type) - feeTypeOrder(b.fee_type);
+      if (feeTypeDelta !== 0) return feeTypeDelta;
+      return yearGroupOrder(a.year_group_label) - yearGroupOrder(b.year_group_label);
+    });
+
+  const feePanes: FeePane[] = Array.from(new Set(feeRows.map((row) => row.fee_type))).map((feeType) => {
+    const rows = feeRows.filter((row) => row.fee_type === feeType);
+    return {
+      feeType,
+      label: feeTypeLabel(feeType),
+      columns: splitColumns(rows)
+    };
+  });
+
+  const allFeesIncludeVat = feeRows.length ? feeRows.every((row) => row.includes_vat) : false;
+  const phaseLabel = getPhaseLabel(school.phase, school.age_max);
+  const genderLabel = getGenderLabel(school.gender);
+  const formatLabel = getFormatLabel(school.day_boarding);
+  const ageLabel = getAgeLabel(school.age_min, school.age_max);
+  const address = buildAddress(school);
+  const subhead = school.description || `${phaseLabel} in ${school.town || location.name}.`;
+  const canonicalPath = `/${location.slug}/schools/${school.slug}/`;
+  const coordinates = getSchoolCoordinates(school);
+
+  const provisionCategory = getProvisionCategory(school);
+
+  const mapData = coordinates
+    ? {
+        name: school.name,
+        slug: canonicalPath,
+        href: canonicalPath,
+        lat: coordinates.lat,
+        lng: coordinates.lng,
+        latitude: coordinates.lat,
+        longitude: coordinates.lng,
+        provisionCategory,
+        note: `${provisionCategory === 'sen_specialist' ? 'SEN specialist · ' : ''}${phaseLabel} · ${genderLabel} · ${formatLabel} · Ages ${ageLabel}`,
+        zoom: coordinates.zoom || 13
+      }
+    : null;
+
+  const rawAtGlanceRows = [
+    { label: 'Ages', value: ageLabel },
+    { label: 'Gender', value: genderLabel },
+    { label: 'Format', value: formatLabel },
+    school.pupil_numbers ? { label: 'Pupils', value: `${formatInteger(school.pupil_numbers)} pupils` } : null,
+    bursary?.status_label
+      ? { label: 'Bursaries', value: bursary.status_label }
+      : bursary?.has_bursaries === true
+        ? { label: 'Bursaries', value: 'Available' }
+        : bursary?.has_bursaries === false
+          ? { label: 'Bursaries', value: 'Not currently published' }
+          : null
+  ];
+
+  const atGlanceRows = rawAtGlanceRows.filter((row): row is { label: string; value: string } => Boolean(row));
+  const parentLikes = splitPipeList(content?.what_parents_say);
+  const schoolVoice = splitPipeList(content?.what_school_says);
+  const inspectionBullets = splitPipeList(content?.inspection_snapshot);
+  const scholarshipBullets = splitPipeList(content?.scholarships);
+  const destinationsBullets = splitPipeList(content?.destinations);
+  const assessmentBullets = splitPipeList(content?.assessment_approach);
+  const bursaryBullets = [
+    bursary?.entry_points,
+    bursary?.published_support_level,
+    bursary?.application_and_review
+  ].filter(Boolean) as string[];
+
+  return {
+    location,
+    school,
+    content,
+    heroImageUrl,
+    heroImageAlt,
+    alevelResult,
+    subjectRows,
+    subjectTopRows: subjectRows.slice(0, 5),
+    subjectExtraRows: subjectRows.slice(5),
+    bursary,
+    bursaryBullets,
+    feePanes,
+    currentAcademicYear,
+    allFeesIncludeVat,
+    compareLinks,
+    atGlanceRows,
+    parentLikes,
+    schoolVoice,
+    inspectionBullets,
+    scholarshipBullets,
+    destinationsBullets,
+    assessmentBullets,
+    phaseLabel,
+    genderLabel,
+    formatLabel,
+    ageLabel,
+    address,
+    subhead,
+    canonicalPath,
+    mapData
+  };
+}
