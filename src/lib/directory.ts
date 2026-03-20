@@ -137,6 +137,27 @@ export type FeeRecord = {
   includes_vat: boolean;
 };
 
+export type AnnualFeeRecord = {
+  academic_year: string;
+  fee_type: string;
+  includes_vat: boolean;
+  amount_gbp_pre_reception_annual_inc_vat: number | string | null;
+  amount_gbp_reception_annual_inc_vat: number | string | null;
+  amount_gbp_year_1_annual_inc_vat: number | string | null;
+  amount_gbp_year_2_annual_inc_vat: number | string | null;
+  amount_gbp_year_3_annual_inc_vat: number | string | null;
+  amount_gbp_year_4_annual_inc_vat: number | string | null;
+  amount_gbp_year_5_annual_inc_vat: number | string | null;
+  amount_gbp_year_6_annual_inc_vat: number | string | null;
+  amount_gbp_year_7_annual_inc_vat: number | string | null;
+  amount_gbp_year_8_annual_inc_vat: number | string | null;
+  amount_gbp_year_9_annual_inc_vat: number | string | null;
+  amount_gbp_year_10_annual_inc_vat: number | string | null;
+  amount_gbp_year_11_annual_inc_vat: number | string | null;
+  amount_gbp_year_12_annual_inc_vat: number | string | null;
+  amount_gbp_year_13_annual_inc_vat: number | string | null;
+};
+
 export type BursaryRecord = {
   has_bursaries: boolean | null;
   status_label: string | null;
@@ -216,6 +237,37 @@ export type CompareSchoolRecord = {
 
 function fail(message: string, error?: { message?: string } | null): never {
   throw new Error(error?.message ? `${message}: ${error.message}` : message);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isTransientSupabaseError(error?: { message?: string } | null): boolean {
+  const message = String(error?.message || '').toLowerCase();
+  return (
+    message.includes('502') ||
+    message.includes('503') ||
+    message.includes('504') ||
+    message.includes('bad gateway') ||
+    message.includes('<!doctype html') ||
+    message.includes('cloudflare')
+  );
+}
+
+async function withRetry<T extends { error: { message?: string } | null }>(
+  run: () => Promise<T>,
+  attempts = 3,
+  baseDelayMs = 300
+): Promise<T> {
+  let result = await run();
+
+  for (let attempt = 1; attempt < attempts && result.error && isTransientSupabaseError(result.error); attempt += 1) {
+    await sleep(baseDelayMs * attempt);
+    result = await run();
+  }
+
+  return result;
 }
 
 export function toNumber(value: unknown): number | null {
@@ -461,6 +513,65 @@ export function feeTypeLabel(type: string): string {
   return type.replace(/_/g, ' ');
 }
 
+const ANNUAL_FEE_SELECT_WITH_SCHOOL_ID = `
+  school_id,
+  academic_year,
+  fee_type,
+  includes_vat,
+  amount_gbp_pre_reception_annual_inc_vat,
+  amount_gbp_reception_annual_inc_vat,
+  amount_gbp_year_1_annual_inc_vat,
+  amount_gbp_year_2_annual_inc_vat,
+  amount_gbp_year_3_annual_inc_vat,
+  amount_gbp_year_4_annual_inc_vat,
+  amount_gbp_year_5_annual_inc_vat,
+  amount_gbp_year_6_annual_inc_vat,
+  amount_gbp_year_7_annual_inc_vat,
+  amount_gbp_year_8_annual_inc_vat,
+  amount_gbp_year_9_annual_inc_vat,
+  amount_gbp_year_10_annual_inc_vat,
+  amount_gbp_year_11_annual_inc_vat,
+  amount_gbp_year_12_annual_inc_vat,
+  amount_gbp_year_13_annual_inc_vat
+`.replace(/\s+/g, ' ').trim();
+
+const ANNUAL_FEE_SELECT = ANNUAL_FEE_SELECT_WITH_SCHOOL_ID.replace(/^school_id,\s*/, '');
+
+const ANNUAL_FEE_COLUMNS: Array<{ label: string; key: keyof AnnualFeeRecord }> = [
+  { label: 'Pre-Reception', key: 'amount_gbp_pre_reception_annual_inc_vat' },
+  { label: 'Reception', key: 'amount_gbp_reception_annual_inc_vat' },
+  { label: 'Year 1', key: 'amount_gbp_year_1_annual_inc_vat' },
+  { label: 'Year 2', key: 'amount_gbp_year_2_annual_inc_vat' },
+  { label: 'Year 3', key: 'amount_gbp_year_3_annual_inc_vat' },
+  { label: 'Year 4', key: 'amount_gbp_year_4_annual_inc_vat' },
+  { label: 'Year 5', key: 'amount_gbp_year_5_annual_inc_vat' },
+  { label: 'Year 6', key: 'amount_gbp_year_6_annual_inc_vat' },
+  { label: 'Year 7', key: 'amount_gbp_year_7_annual_inc_vat' },
+  { label: 'Year 8', key: 'amount_gbp_year_8_annual_inc_vat' },
+  { label: 'Year 9', key: 'amount_gbp_year_9_annual_inc_vat' },
+  { label: 'Year 10', key: 'amount_gbp_year_10_annual_inc_vat' },
+  { label: 'Year 11', key: 'amount_gbp_year_11_annual_inc_vat' },
+  { label: 'Year 12', key: 'amount_gbp_year_12_annual_inc_vat' },
+  { label: 'Year 13', key: 'amount_gbp_year_13_annual_inc_vat' }
+];
+
+function expandAnnualFeeRows<T extends AnnualFeeRecord & { school_id?: string | number }>(rows: T[]): Array<FeeRecord & { school_id?: string | number }> {
+  return rows.flatMap((row) =>
+    ANNUAL_FEE_COLUMNS.flatMap(({ label, key }) => {
+      const amount = toNumber(row[key]);
+      if (amount === null) return [];
+      return [{
+        school_id: row.school_id,
+        academic_year: row.academic_year,
+        fee_type: row.fee_type,
+        year_group_label: label,
+        amount_gbp: amount,
+        includes_vat: Boolean(row.includes_vat)
+      }];
+    })
+  );
+}
+
 function splitColumns<T>(rows: T[]): T[][] {
   if (rows.length <= 4) return [rows];
   const midpoint = Math.ceil(rows.length / 2);
@@ -695,8 +806,8 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
   }
 
   const { data: feeRowsRaw, error: feeRowsError } = await supabase
-    .from('school_fee_profiles')
-    .select('school_id, academic_year, fee_type, year_group_label, amount_gbp, includes_vat')
+    .from('school_fee_profiles_annual')
+    .select(ANNUAL_FEE_SELECT_WITH_SCHOOL_ID)
     .in('school_id', schoolIds);
 
   if (feeRowsError) fail(`Could not load compare fees for ${locationSlug}`, feeRowsError);
@@ -726,7 +837,9 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
 
   if (subjectRowsError) fail(`Could not load compare subjects for ${locationSlug}`, subjectRowsError);
 
-  const feeRows = (feeRowsRaw || []) as Array<FeeRecord & { school_id: string | number }>;
+  const feeRows = expandAnnualFeeRows(
+    ((feeRowsRaw || []) as Array<AnnualFeeRecord & { school_id: string | number }>)
+  );
   const bursaryRows = (bursaryRowsRaw || []) as Array<BursaryRecord & { school_id: string | number }>;
   const examRows = (examRowsRaw || []) as Array<ExamResultRecord & { school_id: string | number }>;
   const subjectRows = (subjectRowsRaw || []) as Array<SubjectRecord & { school_id: string | number; result_year: number }>;
@@ -802,14 +915,16 @@ export async function getLocationFeesData(locationSlug: string) {
 
   const { data, error } = schoolIds.length
     ? await supabase
-        .from('school_fee_profiles')
-        .select('school_id, academic_year, fee_type, year_group_label, amount_gbp, includes_vat')
+        .from('school_fee_profiles_annual')
+        .select(ANNUAL_FEE_SELECT_WITH_SCHOOL_ID)
         .in('school_id', schoolIds)
     : { data: [], error: null };
 
   if (error) fail(`Could not load fees for ${locationSlug}`, error);
 
-  const feeRows = (data || []) as Array<FeeRecord & { school_id: string | number }>;
+  const feeRows = expandAnnualFeeRows(
+    ((data || []) as Array<AnnualFeeRecord & { school_id: string | number }>)
+  );
   const currentAcademicYear = Array.from(new Set(feeRows.map((row) => row.academic_year))).sort().at(-1) || null;
   const filtered = feeRows
     .filter((row) => !currentAcademicYear || row.academic_year === currentAcademicYear)
@@ -1016,43 +1131,55 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   }
 
   const [contentRes, heroImageRes, examRes, feeRes, bursaryRes, compareSchoolsRes] = await Promise.all([
-    supabase
-      .from('school_content')
-      .select('*')
-      .eq('school_id', school.id)
-      .maybeSingle(),
-    supabase
-      .from('school_images')
-      .select('image_url, alt_text')
-      .eq('school_id', school.id)
-      .eq('image_type', 'hero')
-      .order('sort_order', { ascending: true })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from('school_exam_results')
-      .select('result_year, entries_count, pct_a_star_a, pct_a_star_b, unique_subjects')
-      .eq('school_id', school.id)
-      .eq('exam_type', 'alevel')
-      .order('result_year', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from('school_fee_profiles')
-      .select('academic_year, fee_type, year_group_label, amount_gbp, includes_vat')
-      .eq('school_id', school.id)
-      .order('academic_year', { ascending: false }),
-    supabase
-      .from('school_bursaries')
-      .select('has_bursaries, status_label, summary, entry_points, published_support_level, application_and_review')
-      .eq('school_id', school.id)
-      .maybeSingle(),
+    withRetry(() =>
+      supabase
+        .from('school_content')
+        .select('*')
+        .eq('school_id', school.id)
+        .maybeSingle()
+    ),
+    withRetry(() =>
+      supabase
+        .from('school_images')
+        .select('image_url, alt_text')
+        .eq('school_id', school.id)
+        .eq('image_type', 'hero')
+        .order('sort_order', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+    ),
+    withRetry(() =>
+      supabase
+        .from('school_exam_results')
+        .select('result_year, entries_count, pct_a_star_a, pct_a_star_b, unique_subjects')
+        .eq('school_id', school.id)
+        .eq('exam_type', 'alevel')
+        .order('result_year', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    ),
+    withRetry(() =>
+      supabase
+        .from('school_fee_profiles_annual')
+        .select(ANNUAL_FEE_SELECT)
+        .eq('school_id', school.id)
+        .order('academic_year', { ascending: false })
+    ),
+    withRetry(() =>
+      supabase
+        .from('school_bursaries')
+        .select('has_bursaries, status_label, summary, entry_points, published_support_level, application_and_review')
+        .eq('school_id', school.id)
+        .maybeSingle()
+    ),
     schoolIds.length
-      ? supabase.from('schools').select('id, slug, name').in('id', schoolIds)
+      ? withRetry(() => supabase.from('schools').select('id, slug, name').in('id', schoolIds))
       : Promise.resolve({ data: [], error: null })
   ]);
 
-  if (contentRes.error) fail(`Could not load school content for ${schoolSlug}`, contentRes.error);
+  if (contentRes.error && !isTransientSupabaseError(contentRes.error)) {
+    fail(`Could not load school content for ${schoolSlug}`, contentRes.error);
+  }
   if (heroImageRes.error) fail(`Could not load school image for ${schoolSlug}`, heroImageRes.error);
   if (examRes.error) fail(`Could not load exam results for ${schoolSlug}`, examRes.error);
   if (feeRes.error) fail(`Could not load fees for ${schoolSlug}`, feeRes.error);
@@ -1064,7 +1191,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const heroImageUrl = heroImageRes.data?.image_url || locationPresentation.defaultSchoolHeroImage;
   const heroImageAlt = heroImageRes.data?.alt_text || '';
   const alevelResult = (examRes.data || null) as ExamResultRecord | null;
-  const feeRowsAll = (feeRes.data || []) as FeeRecord[];
+  const feeRowsAll = expandAnnualFeeRows((feeRes.data || []) as AnnualFeeRecord[]) as FeeRecord[];
   const bursary = (bursaryRes.data || null) as BursaryRecord | null;
 
   const compareRows = ((compareSchoolsRes.data || []) as Array<{ id: string | number; slug: string; name: string }>);
@@ -1076,13 +1203,15 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
     .map((row) => ({ slug: row.slug, name: row.name }));
 
   const { data: subjectRowsRaw, error: subjectRowsError } = alevelResult
-    ? await supabase
-        .from('school_subject_popularity')
-        .select('subject_name, share_of_entries, sort_order')
-        .eq('school_id', school.id)
-        .eq('exam_type', 'alevel')
-        .eq('result_year', alevelResult.result_year)
-        .order('sort_order', { ascending: true })
+    ? await withRetry(() =>
+        supabase
+          .from('school_subject_popularity')
+          .select('subject_name, share_of_entries, sort_order')
+          .eq('school_id', school.id)
+          .eq('exam_type', 'alevel')
+          .eq('result_year', alevelResult.result_year)
+          .order('sort_order', { ascending: true })
+      )
     : { data: [], error: null };
 
   if (subjectRowsError) fail(`Could not load subject popularity for ${schoolSlug}`, subjectRowsError);
