@@ -59,7 +59,6 @@ export type SchoolSummaryRecord = {
   longitude: number | null;
   website: string | null;
   pupil_numbers: number | null;
-  fees_from: number | null;
   description: string | null;
   inspection_rating: string | null;
 };
@@ -679,7 +678,7 @@ async function getSchoolsByIds(schoolIds: Array<string | number>): Promise<Schoo
 
   const { data, error } = await supabase
     .from('schools')
-    .select('id, slug, name, school_type, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, fees_from, description, inspection_rating')
+    .select('id, slug, name, school_type, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating')
     .in('id', schoolIds);
 
   if (error) fail('Could not load schools', error);
@@ -1061,7 +1060,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
 
   const { data: schoolData, error: schoolError } = await supabase
     .from('schools')
-    .select('id, slug, name, school_type, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, fees_from, description, inspection_rating')
+    .select('id, slug, name, school_type, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating')
     .eq('slug', schoolSlug)
     .single();
 
@@ -1193,7 +1192,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
       .filter((row) => row.fee_type === 'day')
       .map((row) => toNumber(row.amount_gbp))
       .filter((value): value is number => value !== null);
-    return dayAmounts.length ? Math.min(...dayAmounts) : school.fees_from;
+    return dayAmounts.length ? Math.min(...dayAmounts) : null;
   })();
 
   const rawAtGlanceRows = [
