@@ -4,9 +4,9 @@ import SiteHeader from '../../components/SiteHeader.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import LocationSideNav from '../../components/LocationSideNav.astro';
 import SchoolSquareCard from '../../components/SchoolSquareCard.astro';
-import ProvisionFilterSwitch from '../../components/ProvisionFilterSwitch.astro';
 import { getLocationPaths, getLocationDirectoryData } from '../../lib/directory';
 import { getLocationPresentation } from '../../lib/location-config';
+import { supabase } from '../../lib/supabase';
 
 export async function getStaticPaths() {
   return await getLocationPaths();
@@ -16,16 +16,21 @@ const { location: locationSlug } = Astro.params;
 if (!locationSlug) throw new Error('Missing location slug');
 
 const { location, schoolCards, mapSchools } = await getLocationDirectoryData(locationSlug);
-const presentation = getLocationPresentation(location.slug, location.name);
-const heroSubtitle = presentation.heroSubtitle;
+const presentation = getLocationPresentation(location);
+
+const { data: locationMeta, error: locationMetaError } = await supabase
+  .from('locations')
+  .select('hero_subtitle')
+  .eq('slug', location.slug)
+  .single();
+
+if (locationMetaError) {
+  throw new Error(`Could not load location subtitle for ${location.slug}: ${locationMetaError.message}`);
+}
+
+const heroSubtitle = String(locationMeta?.hero_subtitle || '').trim();
 const fallbackMetaTitle = `${location.name} private schools | The Private School Guide`;
 const fallbackMetaDescription = `Independent guide to ${location.name} private schools. Compare schools, review fees and bursaries, explore open days, and use the map to narrow your shortlist.`;
-const locationMapScript = `window.locationPageMapData = ${JSON.stringify(mapSchools)};`;
-
-const fallbackLatValue = location.latitude !== null ? Number(location.latitude) : NaN;
-const fallbackLngValue = location.longitude !== null ? Number(location.longitude) : NaN;
-const fallbackLat = Number.isFinite(fallbackLatValue) ? fallbackLatValue : null;
-const fallbackLng = Number.isFinite(fallbackLngValue) ? fallbackLngValue : null;
 ---
 <BaseLayout
   title={location.meta_title || fallbackMetaTitle}
@@ -75,28 +80,20 @@ const fallbackLng = Number.isFinite(fallbackLngValue) ? fallbackLngValue : null;
       {heroSubtitle && <p class="location-hero-subtitle">{heroSubtitle}</p>}
     </div>
   </section>
-  <div class="page-back-strip"><div class="shell"><a class="page-back-link" href="/">Back to homepage</a></div></div>
+  <div class="school-back-strip"><div class="shell"><a class="school-back-link" href="/">← Back to home</a></div></div>
 
   <main id="main" class="page-shell">
     <div class="shell location-layout">
-      <LocationSideNav locationSlug={location.slug} locationName={location.name} currentSection="overview" />
+      <LocationSideNav locationSlug={location.slug} locationName={location.name} nav={presentation.nav} currentSection="location" />
 
       <section class="location-main-column" aria-labelledby="location-grid-title">
         <h2 id="location-grid-title" class="location-grid-title">{location.name} private schools</h2>
         {location.intro_text ? <p class="location-intro">{location.intro_text}</p> : null}
-        <div class="school-square-grid" data-provision-container="cards">
+        <div class="school-square-grid">
           {schoolCards.map((school) => (
-            <div
-              class="school-square-grid-item"
-              data-school-card
-              data-provision-category={school.provisionCategory}
-              hidden={school.provisionCategory === 'sen_specialist'}
-            >
-              <SchoolSquareCard {...school} />
-            </div>
+            <SchoolSquareCard {...school} />
           ))}
         </div>
-        <p class="data-page-note provision-filter-note" data-provision-empty="cards" hidden>No schools match the selected school type.</p>
       </section>
 
       <aside class="location-map-panel">
@@ -110,23 +107,16 @@ const fallbackLng = Number.isFinite(fallbackLngValue) ? fallbackLngValue : null;
           aria-label={`${location.name} school map`}
           data-directory-map
           data-map-data-id="location-map-data"
-          data-fallback-lat={fallbackLat ?? undefined}
-          data-fallback-lng={fallbackLng ?? undefined}
-          data-fallback-zoom="11"
+          data-empty-state-id="location-map-empty"
         ></div>
         <p id="location-map-empty" class="location-intro" hidden>School locations are being updated.</p>
       </aside>
-    </div>
-    <div class="shell">
-      <ProvisionFilterSwitch label={`Show ${location.name} schools`} />
     </div>
   </main>
 
   <SiteFooter />
 
-  <script is:inline set:html={locationMapScript}></script>
   <script type="application/json" id="location-map-data">{JSON.stringify(mapSchools)}</script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script defer src="/assets/js/school-provision-filter.js?v=20260319-location-filter"></script>
-  <script defer src="/assets/js/location-pages.js?v=20260319-location-map-filter"></script>
+  <script defer src="/assets/js/location-pages.js?v=20260316-tile-restore"></script>
 </BaseLayout>

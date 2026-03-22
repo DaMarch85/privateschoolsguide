@@ -3,7 +3,6 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SiteHeader from '../../../components/SiteHeader.astro';
 import SiteFooter from '../../../components/SiteFooter.astro';
 import LocationSideNav from '../../../components/LocationSideNav.astro';
-import ProvisionFilterSwitch from '../../../components/ProvisionFilterSwitch.astro';
 import { getLocationBursariesData, getLocationPaths } from '../../../lib/directory';
 import { getLocationPresentation } from '../../../lib/location-config';
 
@@ -15,7 +14,8 @@ const { location: locationSlug } = Astro.params;
 if (!locationSlug) throw new Error('Missing location slug');
 
 const { location, cards } = await getLocationBursariesData(locationSlug);
-const { heroImage, heroImageAlt } = getLocationPresentation(location.slug, location.name);
+const presentation = getLocationPresentation(location);
+const { heroImage, heroImageAlt } = presentation;
 const title = `${location.name} private school bursaries | The Private School Guide`;
 const description = `Parent-friendly bursary summaries for ${location.name} private schools.`;
 ---
@@ -44,7 +44,7 @@ const description = `Parent-friendly bursary summaries for ${location.name} priv
 
   <main id="main" class="page-shell">
     <div class="shell location-layout location-layout--no-map">
-      <LocationSideNav locationSlug={location.slug} locationName={location.name} currentSection="bursaries" />
+      <LocationSideNav locationSlug={location.slug} locationName={location.name} nav={presentation.nav} currentSection="bursaries" />
 
       <section class="location-main-column" aria-labelledby="bursaries-title">
         <div class="data-page-head">
@@ -53,14 +53,9 @@ const description = `Parent-friendly bursary summaries for ${location.name} priv
           <p class="data-page-note">These summaries are intended as a parent-friendly guide. Schools can change eligibility, deadlines and award levels, so always check the official school website before applying.</p>
         </div>
 
-        <div class="bursary-grid" data-provision-container="bursaries">
+        <div class="bursary-grid">
           {cards.map((card) => (
-            <article
-              class="bursary-square-card"
-              data-bursary-card
-              data-provision-category={card.provisionCategory}
-              hidden={card.provisionCategory === 'sen_specialist'}
-            >
+            <article class="bursary-square-card">
               <div class="school-square-body">
                 <h2>{card.schoolName}</h2>
                 <p class="bursary-card-text">{card.summary}</p>
@@ -68,12 +63,9 @@ const description = `Parent-friendly bursary summaries for ${location.name} priv
             </article>
           ))}
         </div>
-        <p class="data-page-note provision-filter-note" data-provision-empty="bursaries" hidden>No schools match the selected school type.</p>
-        <ProvisionFilterSwitch label={`Show ${location.name} schools`} />
       </section>
     </div>
   </main>
 
   <SiteFooter />
-  <script defer src="/assets/js/school-provision-filter.js?v=20260319-location-filter"></script>
 </BaseLayout>
