@@ -144,6 +144,31 @@ export type FeeRecord = {
   includes_vat: boolean;
 };
 
+export type AnnualFeeRecord = {
+  academic_year: string;
+  fee_type: string;
+  amount_gbp_pre_reception_annual_inc_vat: number | string | null;
+  amount_gbp_reception_annual_inc_vat: number | string | null;
+  amount_gbp_year_1_annual_inc_vat: number | string | null;
+  amount_gbp_year_2_annual_inc_vat: number | string | null;
+  amount_gbp_year_3_annual_inc_vat: number | string | null;
+  amount_gbp_year_4_annual_inc_vat: number | string | null;
+  amount_gbp_year_5_annual_inc_vat: number | string | null;
+  amount_gbp_year_6_annual_inc_vat: number | string | null;
+  amount_gbp_year_7_annual_inc_vat: number | string | null;
+  amount_gbp_year_8_annual_inc_vat: number | string | null;
+  amount_gbp_year_9_annual_inc_vat: number | string | null;
+  amount_gbp_year_10_annual_inc_vat: number | string | null;
+  amount_gbp_year_11_annual_inc_vat: number | string | null;
+  amount_gbp_year_12_annual_inc_vat: number | string | null;
+  amount_gbp_year_13_annual_inc_vat: number | string | null;
+  includes_vat: boolean;
+};
+
+type AnnualFeeRecordWithSchoolId = AnnualFeeRecord & {
+  school_id: string | number;
+};
+
 export type BursaryRecord = {
   has_bursaries: boolean | null;
   status_label: string | null;
@@ -455,6 +480,83 @@ function splitColumns<T>(rows: T[]): T[][] {
   return [rows.slice(0, midpoint), rows.slice(midpoint)];
 }
 
+const annualFeeYearGroups: Array<{ key: keyof AnnualFeeRecord; label: string }> = [
+  { key: 'amount_gbp_pre_reception_annual_inc_vat', label: 'Pre-Reception' },
+  { key: 'amount_gbp_reception_annual_inc_vat', label: 'Reception' },
+  { key: 'amount_gbp_year_1_annual_inc_vat', label: 'Year 1' },
+  { key: 'amount_gbp_year_2_annual_inc_vat', label: 'Year 2' },
+  { key: 'amount_gbp_year_3_annual_inc_vat', label: 'Year 3' },
+  { key: 'amount_gbp_year_4_annual_inc_vat', label: 'Year 4' },
+  { key: 'amount_gbp_year_5_annual_inc_vat', label: 'Year 5' },
+  { key: 'amount_gbp_year_6_annual_inc_vat', label: 'Year 6' },
+  { key: 'amount_gbp_year_7_annual_inc_vat', label: 'Year 7' },
+  { key: 'amount_gbp_year_8_annual_inc_vat', label: 'Year 8' },
+  { key: 'amount_gbp_year_9_annual_inc_vat', label: 'Year 9' },
+  { key: 'amount_gbp_year_10_annual_inc_vat', label: 'Year 10' },
+  { key: 'amount_gbp_year_11_annual_inc_vat', label: 'Year 11' },
+  { key: 'amount_gbp_year_12_annual_inc_vat', label: 'Year 12' },
+  { key: 'amount_gbp_year_13_annual_inc_vat', label: 'Year 13' }
+];
+
+const annualFeeSelect = [
+  'academic_year',
+  'fee_type',
+  'amount_gbp_pre_reception_annual_inc_vat',
+  'amount_gbp_reception_annual_inc_vat',
+  'amount_gbp_year_1_annual_inc_vat',
+  'amount_gbp_year_2_annual_inc_vat',
+  'amount_gbp_year_3_annual_inc_vat',
+  'amount_gbp_year_4_annual_inc_vat',
+  'amount_gbp_year_5_annual_inc_vat',
+  'amount_gbp_year_6_annual_inc_vat',
+  'amount_gbp_year_7_annual_inc_vat',
+  'amount_gbp_year_8_annual_inc_vat',
+  'amount_gbp_year_9_annual_inc_vat',
+  'amount_gbp_year_10_annual_inc_vat',
+  'amount_gbp_year_11_annual_inc_vat',
+  'amount_gbp_year_12_annual_inc_vat',
+  'amount_gbp_year_13_annual_inc_vat',
+  'includes_vat'
+].join(', ');
+
+const annualFeeSelectWithSchoolId = `school_id, ${annualFeeSelect}`;
+
+function expandAnnualFeeRow(row: AnnualFeeRecord): FeeRecord[] {
+  return annualFeeYearGroups.flatMap(({ key, label }) => {
+    const amount = row[key] as number | string | null;
+    if (amount === null || amount === undefined || amount === '') return [];
+
+    return [{
+      academic_year: row.academic_year,
+      fee_type: row.fee_type,
+      year_group_label: label,
+      amount_gbp: amount,
+      includes_vat: row.includes_vat
+    }];
+  });
+}
+
+function expandAnnualFeeRows(rows: AnnualFeeRecord[]): FeeRecord[] {
+  return rows.flatMap((row) => expandAnnualFeeRow(row));
+}
+
+function expandAnnualFeeRowsWithSchoolId(rows: AnnualFeeRecordWithSchoolId[]): Array<FeeRecord & { school_id: string | number }> {
+  return rows.flatMap((row) =>
+    expandAnnualFeeRow(row).map((feeRow) => ({
+      school_id: row.school_id,
+      ...feeRow
+    }))
+  );
+}
+
+function getLowestFee(rows: FeeRecord[]): number | null {
+  const amounts = rows
+    .map((row) => toNumber(row.amount_gbp))
+    .filter((value): value is number => value !== null);
+
+  return amounts.length ? Math.min(...amounts) : null;
+}
+
 function formatFeeRange(rows: FeeRecord[]): string {
   const amounts = rows
     .map((row) => toNumber(row.amount_gbp))
@@ -682,8 +784,8 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
   }
 
   const { data: feeRowsRaw, error: feeRowsError } = await supabase
-    .from('school_fee_profiles')
-    .select('school_id, academic_year, fee_type, year_group_label, amount_gbp, includes_vat')
+    .from('school_fee_profiles_annual')
+    .select(annualFeeSelectWithSchoolId)
     .in('school_id', schoolIds);
 
   if (feeRowsError) fail(`Could not load compare fees for ${locationSlug}`, feeRowsError);
@@ -713,7 +815,7 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
 
   if (subjectRowsError) fail(`Could not load compare subjects for ${locationSlug}`, subjectRowsError);
 
-  const feeRows = (feeRowsRaw || []) as Array<FeeRecord & { school_id: string | number }>;
+  const feeRows = expandAnnualFeeRowsWithSchoolId((feeRowsRaw || []) as AnnualFeeRecordWithSchoolId[]);
   const bursaryRows = (bursaryRowsRaw || []) as Array<BursaryRecord & { school_id: string | number }>;
   const examRows = (examRowsRaw || []) as Array<ExamResultRecord & { school_id: string | number }>;
   const subjectRows = (subjectRowsRaw || []) as Array<SubjectRecord & { school_id: string | number; result_year: number }>;
@@ -788,14 +890,14 @@ export async function getLocationFeesData(locationSlug: string) {
 
   const { data, error } = schoolIds.length
     ? await supabase
-        .from('school_fee_profiles')
-        .select('school_id, academic_year, fee_type, year_group_label, amount_gbp, includes_vat')
+        .from('school_fee_profiles_annual')
+        .select(annualFeeSelectWithSchoolId)
         .in('school_id', schoolIds)
     : { data: [], error: null };
 
   if (error) fail(`Could not load fees for ${locationSlug}`, error);
 
-  const feeRows = (data || []) as Array<FeeRecord & { school_id: string | number }>;
+  const feeRows = expandAnnualFeeRowsWithSchoolId((data || []) as AnnualFeeRecordWithSchoolId[]);
   const currentAcademicYear = Array.from(new Set(feeRows.map((row) => row.academic_year))).sort().at(-1) || null;
   const filtered = feeRows
     .filter((row) => !currentAcademicYear || row.academic_year === currentAcademicYear)
@@ -1021,8 +1123,8 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
       .limit(1)
       .maybeSingle(),
     supabase
-      .from('school_fee_profiles')
-      .select('academic_year, fee_type, year_group_label, amount_gbp, includes_vat')
+      .from('school_fee_profiles_annual')
+      .select(annualFeeSelect)
       .eq('school_id', school.id)
       .order('academic_year', { ascending: false }),
     supabase
@@ -1047,7 +1149,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const heroImageUrl = heroImageRes.data?.image_url || locationPresentation.defaultSchoolHeroImage;
   const heroImageAlt = heroImageRes.data?.alt_text || '';
   const alevelResult = (examRes.data || null) as ExamResultRecord | null;
-  const feeRowsAll = (feeRes.data || []) as FeeRecord[];
+  const feeRowsAll = expandAnnualFeeRows((feeRes.data || []) as AnnualFeeRecord[]);
   const bursary = (bursaryRes.data || null) as BursaryRecord | null;
 
   const compareRows = ((compareSchoolsRes.data || []) as Array<{ id: string | number; slug: string; name: string }>);
@@ -1113,12 +1215,14 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
       }
     : null;
 
+  const dayFeesFrom = getLowestFee(feeRows.filter((row) => row.fee_type === 'day')) ?? toNumber(school.fees_from);
+
   const rawAtGlanceRows = [
     { label: 'Ages', value: ageLabel },
     { label: 'Gender', value: genderLabel },
     { label: 'Format', value: formatLabel },
     school.pupil_numbers ? { label: 'Pupils', value: `${formatInteger(school.pupil_numbers)} pupils` } : null,
-    school.fees_from ? { label: 'Day fees from', value: `${formatCurrency(school.fees_from)} / year` } : null,
+    dayFeesFrom !== null ? { label: 'Day fees from', value: `${formatCurrency(dayFeesFrom)} / year` } : null,
     bursary?.status_label
       ? { label: 'Bursaries', value: bursary.status_label }
       : bursary?.has_bursaries === true
