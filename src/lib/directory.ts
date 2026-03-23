@@ -520,6 +520,56 @@ const annualFeeSelect = [
 ].join(', ');
 
 const annualFeeSelectWithSchoolId = `school_id, ${annualFeeSelect}`;
+const legacyFeeSelect = 'school_id, academic_year, fee_type, year_group_label, amount_gbp, includes_vat';
+const legacyFeeSelectWithoutSchoolId = 'academic_year, fee_type, year_group_label, amount_gbp, includes_vat';
+
+async function loadFeeRowsForSchoolIds(schoolIds: Array<string | number>, context: string): Promise<Array<FeeRecord & { school_id: string | number }>> {
+  if (!schoolIds.length) return [];
+
+  const annualRes = await supabase
+    .from('school_fee_profiles_annual')
+    .select(annualFeeSelectWithSchoolId)
+    .in('school_id', schoolIds);
+
+  if (!annualRes.error) {
+    return expandAnnualFeeRowsWithSchoolId((annualRes.data || []) as AnnualFeeRecordWithSchoolId[]);
+  }
+
+  console.warn(`[fees] Falling back to school_fee_profiles for ${context}`, annualRes.error);
+
+  const legacyRes = await supabase
+    .from('school_fee_profiles')
+    .select(legacyFeeSelect)
+    .in('school_id', schoolIds);
+
+  if (legacyRes.error) fail(`Could not load fees for ${context}`, legacyRes.error);
+
+  return (legacyRes.data || []) as Array<FeeRecord & { school_id: string | number }>;
+}
+
+async function loadFeeRowsForSchoolId(schoolId: string | number, context: string): Promise<FeeRecord[]> {
+  const annualRes = await supabase
+    .from('school_fee_profiles_annual')
+    .select(annualFeeSelect)
+    .eq('school_id', schoolId)
+    .order('academic_year', { ascending: false });
+
+  if (!annualRes.error) {
+    return expandAnnualFeeRows((annualRes.data || []) as AnnualFeeRecord[]);
+  }
+
+  console.warn(`[fees] Falling back to school_fee_profiles for ${context}`, annualRes.error);
+
+  const legacyRes = await supabase
+    .from('school_fee_profiles')
+    .select(legacyFeeSelectWithoutSchoolId)
+    .eq('school_id', schoolId)
+    .order('academic_year', { ascending: false });
+
+  if (legacyRes.error) fail(`Could not load fees for ${context}`, legacyRes.error);
+
+  return (legacyRes.data || []) as FeeRecord[];
+}
 
 function expandAnnualFeeRow(row: AnnualFeeRecord): FeeRecord[] {
   return annualFeeYearGroups.flatMap(({ key, label }) => {
@@ -783,12 +833,7 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
     return { location, compareSchools: [] };
   }
 
-  const { data: feeRowsRaw, error: feeRowsError } = await supabase
-    .from('school_fee_profiles_annual')
-    .select(annualFeeSelectWithSchoolId)
-    .in('school_id', schoolIds);
-
-  if (feeRowsError) fail(`Could not load compare fees for ${locationSlug}`, feeRowsError);
+  const feeRows = await loadFeeRowsForSchoolIds(schoolIds, `compare page for ${locationSlug}`);
 
   const { data: bursaryRowsRaw, error: bursaryRowsError } = await supabase
     .from('school_bursaries')
@@ -815,7 +860,6 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
 
   if (subjectRowsError) fail(`Could not load compare subjects for ${locationSlug}`, subjectRowsError);
 
-  const feeRows = expandAnnualFeeRowsWithSchoolId((feeRowsRaw || []) as AnnualFeeRecordWithSchoolId[]);
   const bursaryRows = (bursaryRowsRaw || []) as Array<BursaryRecord & { school_id: string | number }>;
   const examRows = (examRowsRaw || []) as Array<ExamResultRecord & { school_id: string | number }>;
   const subjectRows = (subjectRowsRaw || []) as Array<SubjectRecord & { school_id: string | number; result_year: number }>;
@@ -888,16 +932,7 @@ async function getOrderedLocationSchools(locationSlug: string) {
 export async function getLocationFeesData(locationSlug: string) {
   const { location, schools, schoolIds } = await getOrderedLocationSchools(locationSlug);
 
-  const { data, error } = schoolIds.length
-    ? await supabase
-        .from('school_fee_profiles_annual')
-        .select(annualFeeSelectWithSchoolId)
-        .in('school_id', schoolIds)
-    : { data: [], error: null };
-
-  if (error) fail(`Could not load fees for ${locationSlug}`, error);
-
-  const feeRows = expandAnnualFeeRowsWithSchoolId((data || []) as AnnualFeeRecordWithSchoolId[]);
+  const feeRows = await loadFeeRowsForSchoolIds(schoolIds, `fees page for ${locationSlug}`);
   const currentAcademicYear = Array.from(new Set(feeRows.map((row) => row.academic_year))).sort().at(-1) || null;
   const filtered = feeRows
     .filter((row) => !currentAcademicYear || row.academic_year === currentAcademicYear)
@@ -1069,7 +1104,8 @@ export async function getAllLocationSchoolPaths() {
 
   if (schoolsError) fail('Could not load school slugs for dynamic paths', schoolsError);
 
-  const schoolSlugById = new Map((schoolsRaw || []).map((school) => [String(school.id), school.slug]));
+  const schoolRows = (schoolsRaw || []) as Array<{ id: string | number; slug: string }> ;
+  const schoolSlugById = new Map(schoolRows.map((school) => [String(school.id), school.slug]));
 
   return links
     .map((link) => {
@@ -1122,11 +1158,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
       .order('result_year', { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase
-      .from('school_fee_profiles_annual')
-      .select(annualFeeSelect)
-      .eq('school_id', school.id)
-      .order('academic_year', { ascending: false }),
+    loadFeeRowsForSchoolId(school.id, `school profile for ${schoolSlug}`),
     supabase
       .from('school_bursaries')
       .select('has_bursaries, status_label, summary, entry_points, published_support_level, application_and_review')
@@ -1140,7 +1172,6 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   if (contentRes.error) fail(`Could not load school content for ${schoolSlug}`, contentRes.error);
   if (heroImageRes.error) fail(`Could not load school image for ${schoolSlug}`, heroImageRes.error);
   if (examRes.error) fail(`Could not load exam results for ${schoolSlug}`, examRes.error);
-  if (feeRes.error) fail(`Could not load fees for ${schoolSlug}`, feeRes.error);
   if (bursaryRes.error) fail(`Could not load bursary data for ${schoolSlug}`, bursaryRes.error);
   if (compareSchoolsRes.error) fail(`Could not load compare links for ${schoolSlug}`, compareSchoolsRes.error);
 
@@ -1149,7 +1180,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const heroImageUrl = heroImageRes.data?.image_url || locationPresentation.defaultSchoolHeroImage;
   const heroImageAlt = heroImageRes.data?.alt_text || '';
   const alevelResult = (examRes.data || null) as ExamResultRecord | null;
-  const feeRowsAll = expandAnnualFeeRows((feeRes.data || []) as AnnualFeeRecord[]);
+  const feeRowsAll = feeRes as FeeRecord[];
   const bursary = (bursaryRes.data || null) as BursaryRecord | null;
 
   const compareRows = ((compareSchoolsRes.data || []) as Array<{ id: string | number; slug: string; name: string }>);
