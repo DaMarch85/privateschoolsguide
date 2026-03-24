@@ -726,16 +726,84 @@ async function getLocationSchoolLinks(locationId: string): Promise<LocationSchoo
   return (data || []) as LocationSchoolLink[];
 }
 
+function dedupeIds<T extends string | number>(values: T[]): T[] {
+  return Array.from(new Map(values.map((value) => [String(value), value])).values());
+}
+
+function chunkArray<T>(values: T[], size: number): T[][] {
+  if (size <= 0) return [values];
+
+  const chunks: T[][] = [];
+  for (let index = 0; index < values.length; index += size) {
+    chunks.push(values.slice(index, index + size));
+  }
+  return chunks;
+}
+
+async function getSchoolSlugMapByIds(schoolIds: Array<string | number>): Promise<Map<string, string>> {
+  const uniqueSchoolIds = dedupeIds(schoolIds);
+  if (!uniqueSchoolIds.length) return new Map();
+
+  const rows: Array<{ id: string | number; slug: string }> = [];
+
+  for (const batch of chunkArray(uniqueSchoolIds, 500)) {
+    const { data, error } = await supabase
+      .from('schools')
+      .select('id, slug')
+      .in('id', batch);
+
+    if (error) fail('Could not load school slugs for dynamic paths', error);
+    rows.push(...(((data || []) as Array<{ id: string | number; slug: string }>)));
+  }
+
+  return new Map(rows.map((school) => [String(school.id), school.slug]));
+}
+
+async function getLocationSchoolPathLinks(locationIds: string[]): Promise<Array<{ location_id: string; school_id: string | number }>> {
+  if (!locationIds.length) return [];
+
+  const rows: Array<{ location_id: string; school_id: string | number }> = [];
+  const pageSize = 500;
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from('location_schools')
+      .select('location_id, school_id')
+      .in('location_id', locationIds)
+      .order('location_id', { ascending: true })
+      .order('school_id', { ascending: true })
+      .range(from, from + pageSize - 1);
+
+    if (error) fail('Could not load location-school combinations', error);
+
+    const page = (data || []) as Array<{ location_id: string; school_id: string | number }>;
+    rows.push(...page);
+
+    if (page.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return rows;
+}
+
 async function getSchoolsByIds(schoolIds: Array<string | number>): Promise<SchoolSummaryRecord[]> {
-  if (!schoolIds.length) return [];
+  const uniqueSchoolIds = dedupeIds(schoolIds);
+  if (!uniqueSchoolIds.length) return [];
 
-  const { data, error } = await supabase
-    .from('schools')
-    .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating')
-    .in('id', schoolIds);
+  const rows: SchoolSummaryRecord[] = [];
 
-  if (error) fail('Could not load schools', error);
-  return (data || []) as SchoolSummaryRecord[];
+  for (const batch of chunkArray(uniqueSchoolIds, 500)) {
+    const { data, error } = await supabase
+      .from('schools')
+      .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating')
+      .in('id', batch);
+
+    if (error) fail('Could not load schools', error);
+    rows.push(...((data || []) as SchoolSummaryRecord[]));
+  }
+
+  return rows;
 }
 
 export async function getLocationDirectoryData(locationSlug: string) {
@@ -1083,24 +1151,9 @@ export async function getAllLocationSchoolPaths() {
 
   const locationById = new Map(locations.map((location) => [String(location.id), location.slug]));
   const locationIds = locations.map((location) => location.id);
-
-  const { data: linksRaw, error: linksError } = await supabase
-    .from('location_schools')
-    .select('location_id, school_id')
-    .in('location_id', locationIds);
-
-  if (linksError) fail('Could not load location-school combinations', linksError);
-
-  const links = (linksRaw || []) as Array<{ location_id: string; school_id: string | number }>;
-  const schoolIds = Array.from(new Set(links.map((link) => link.school_id)));
-
-  const { data: schoolsRaw, error: schoolsError } = schoolIds.length
-    ? await supabase.from('schools').select('id, slug').in('id', schoolIds)
-    : { data: [], error: null };
-
-  if (schoolsError) fail('Could not load school slugs for dynamic paths', schoolsError);
-
-  const schoolSlugById = new Map((schoolsRaw || []).map((school) => [String(school.id), school.slug]));
+  const links = await getLocationSchoolPathLinks(locationIds);
+  const schoolIds = dedupeIds(links.map((link) => link.school_id));
+  const schoolSlugById = await getSchoolSlugMapByIds(schoolIds);
 
   return links
     .map((link) => {
