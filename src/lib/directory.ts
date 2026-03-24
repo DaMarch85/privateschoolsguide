@@ -55,6 +55,7 @@ export type SchoolSummaryRecord = {
   slug: string;
   name: string;
   school_type: string | null;
+  provision_category: string | null;
   phase: string | null;
   gender: string | null;
   age_min: number | null;
@@ -68,7 +69,6 @@ export type SchoolSummaryRecord = {
   longitude: number | null;
   website: string | null;
   pupil_numbers: number | null;
-  fees_from: number | null;
   description: string | null;
   inspection_rating: string | null;
 };
@@ -607,6 +607,10 @@ function getLowestFee(rows: FeeRecord[]): number | null {
   return amounts.length ? Math.min(...amounts) : null;
 }
 
+function isPublicDirectorySchool(school: Pick<SchoolSummaryRecord, 'provision_category'>): boolean {
+  return String(school.provision_category || '').trim().toLowerCase() !== 'sen_specialist';
+}
+
 function formatFeeRange(rows: FeeRecord[]): string {
   const amounts = rows
     .map((row) => toNumber(row.amount_gbp))
@@ -760,7 +764,7 @@ async function getSchoolsByIds(schoolIds: Array<string | number>): Promise<Schoo
 
   const { data, error } = await supabase
     .from('schools')
-    .select('id, slug, name, school_type, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, fees_from, description, inspection_rating')
+    .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating')
     .in('id', schoolIds);
 
   if (error) fail('Could not load schools', error);
@@ -776,7 +780,7 @@ export async function getLocationDirectoryData(locationSlug: string) {
 
   const schools = locationLinks
     .map((link) => schoolMap.get(String(link.school_id)))
-    .filter(Boolean) as SchoolSummaryRecord[];
+    .filter((school): school is SchoolSummaryRecord => Boolean(school) && isPublicDirectorySchool(school));
 
   const schoolCards: SchoolCard[] = schools.map((school) => ({
     slug: school.slug,
@@ -827,25 +831,27 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
   const schoolMap = new Map(schoolsRaw.map((school) => [String(school.id), school]));
   const orderedSchools = locationLinks
     .map((link) => schoolMap.get(String(link.school_id)))
-    .filter(Boolean) as SchoolSummaryRecord[];
+    .filter((school): school is SchoolSummaryRecord => Boolean(school) && isPublicDirectorySchool(school));
+
+  const visibleSchoolIds = orderedSchools.map((school) => school.id);
 
   if (!orderedSchools.length) {
     return { location, compareSchools: [] };
   }
 
-  const feeRows = await loadFeeRowsForSchoolIds(schoolIds, `compare page for ${locationSlug}`);
+  const feeRows = await loadFeeRowsForSchoolIds(visibleSchoolIds, `compare page for ${locationSlug}`);
 
   const { data: bursaryRowsRaw, error: bursaryRowsError } = await supabase
     .from('school_bursaries')
     .select('school_id, has_bursaries, status_label, summary, entry_points, published_support_level, application_and_review')
-    .in('school_id', schoolIds);
+      .in('school_id', visibleSchoolIds);
 
   if (bursaryRowsError) fail(`Could not load compare bursaries for ${locationSlug}`, bursaryRowsError);
 
   const { data: examRowsRaw, error: examRowsError } = await supabase
     .from('school_exam_results')
     .select('school_id, result_year, entries_count, pct_a_star_a, pct_a_star_b, unique_subjects')
-    .in('school_id', schoolIds)
+      .in('school_id', visibleSchoolIds)
     .eq('exam_type', 'alevel')
     .order('result_year', { ascending: false });
 
@@ -854,7 +860,7 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
   const { data: subjectRowsRaw, error: subjectRowsError } = await supabase
     .from('school_subject_popularity')
     .select('school_id, result_year, subject_name, share_of_entries, sort_order')
-    .in('school_id', schoolIds)
+      .in('school_id', visibleSchoolIds)
     .eq('exam_type', 'alevel')
     .order('sort_order', { ascending: true });
 
@@ -871,7 +877,7 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
     if (!latestExamBySchool.has(key)) latestExamBySchool.set(key, row);
   });
 
-  const presentation = getLocationPresentation(location);
+  const presentation = getLocationPresentation(location.slug, location.name);
 
   const compareSchools: CompareSchoolRecord[] = orderedSchools.map((school) => {
     const key = String(school.id);
@@ -918,13 +924,15 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
 async function getOrderedLocationSchools(locationSlug: string) {
   const location = await getLocationBySlug(locationSlug);
   const locationLinks = await getLocationSchoolLinks(location.id);
-  const schoolIds = locationLinks.map((row) => row.school_id);
-  const schoolsRaw = await getSchoolsByIds(schoolIds);
+  const linkedSchoolIds = locationLinks.map((row) => row.school_id);
+  const schoolsRaw = await getSchoolsByIds(linkedSchoolIds);
   const schoolMap = new Map(schoolsRaw.map((school) => [String(school.id), school]));
 
   const schools = locationLinks
     .map((link) => schoolMap.get(String(link.school_id)))
-    .filter(Boolean) as SchoolSummaryRecord[];
+    .filter((school): school is SchoolSummaryRecord => Boolean(school) && isPublicDirectorySchool(school));
+
+  const schoolIds = schools.map((school) => school.id);
 
   return { location, locationLinks, schoolIds, schools, schoolMap };
 }
@@ -1099,13 +1107,17 @@ export async function getAllLocationSchoolPaths() {
   const schoolIds = Array.from(new Set(links.map((link) => link.school_id)));
 
   const { data: schoolsRaw, error: schoolsError } = schoolIds.length
-    ? await supabase.from('schools').select('id, slug').in('id', schoolIds)
+    ? await supabase.from('schools').select('id, slug, provision_category').in('id', schoolIds)
     : { data: [], error: null };
 
   if (schoolsError) fail('Could not load school slugs for dynamic paths', schoolsError);
 
-  const schoolRows = (schoolsRaw || []) as Array<{ id: string | number; slug: string }> ;
-  const schoolSlugById = new Map(schoolRows.map((school) => [String(school.id), school.slug]));
+  const schoolRows = (schoolsRaw || []) as Array<{ id: string | number; slug: string; provision_category: string | null }>;
+  const schoolSlugById = new Map(
+    schoolRows
+      .filter((school) => String(school.provision_category || '').trim().toLowerCase() !== 'sen_specialist')
+      .map((school) => [String(school.id), school.slug])
+  );
 
   return links
     .map((link) => {
@@ -1124,7 +1136,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
 
   const { data: schoolData, error: schoolError } = await supabase
     .from('schools')
-    .select('id, slug, name, school_type, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, fees_from, description, inspection_rating')
+    .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating')
     .eq('slug', schoolSlug)
     .single();
 
@@ -1134,6 +1146,9 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const allowedSchoolIds = new Set(schoolIds.map((id) => String(id)));
   if (!allowedSchoolIds.has(String(school.id))) {
     throw new Error(`${schoolSlug} is not linked to ${locationSlug}`);
+  }
+  if (!isPublicDirectorySchool(school)) {
+    throw new Error(`${schoolSlug} is not available in the public directory`);
   }
 
   const [contentRes, heroImageRes, examRes, feeRes, bursaryRes, compareSchoolsRes] = await Promise.all([
@@ -1165,7 +1180,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
       .eq('school_id', school.id)
       .maybeSingle(),
     schoolIds.length
-      ? supabase.from('schools').select('id, slug, name').in('id', schoolIds)
+      ? supabase.from('schools').select('id, slug, name, provision_category').in('id', schoolIds)
       : Promise.resolve({ data: [], error: null })
   ]);
 
@@ -1176,14 +1191,15 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   if (compareSchoolsRes.error) fail(`Could not load compare links for ${schoolSlug}`, compareSchoolsRes.error);
 
   const content = normalizeSchoolContent((contentRes.data || null) as RawSchoolContentRecord | null);
-  const locationPresentation = getLocationPresentation(location);
+  const locationPresentation = getLocationPresentation(location.slug, location.name);
   const heroImageUrl = heroImageRes.data?.image_url || locationPresentation.defaultSchoolHeroImage;
   const heroImageAlt = heroImageRes.data?.alt_text || '';
   const alevelResult = (examRes.data || null) as ExamResultRecord | null;
   const feeRowsAll = feeRes as FeeRecord[];
   const bursary = (bursaryRes.data || null) as BursaryRecord | null;
 
-  const compareRows = ((compareSchoolsRes.data || []) as Array<{ id: string | number; slug: string; name: string }>);
+  const compareRows = ((compareSchoolsRes.data || []) as Array<{ id: string | number; slug: string; name: string; provision_category: string | null }>)
+    .filter((row) => String(row.provision_category || '').trim().toLowerCase() !== 'sen_specialist');
   const compareSchoolMap = new Map(compareRows.map((row) => [String(row.id), row]));
   const compareLinks = locationLinks
     .map((row) => compareSchoolMap.get(String(row.school_id)))
@@ -1246,7 +1262,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
       }
     : null;
 
-  const dayFeesFrom = getLowestFee(feeRows.filter((row) => row.fee_type === 'day')) ?? toNumber(school.fees_from);
+  const dayFeesFrom = getLowestFee(feeRows.filter((row) => row.fee_type === 'day'));
 
   const rawAtGlanceRows = [
     { label: 'Ages', value: ageLabel },

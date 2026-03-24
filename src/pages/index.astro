@@ -3,17 +3,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import { supabase } from '../lib/supabase';
 import { getLocationDirectoryData } from '../lib/directory';
-import { getLocationPresentation } from '../lib/location-config';
 
 type HomepageLocationRow = {
   name: string;
   slug: string;
+  hero_subtitle: string | null;
+  search_terms: string[] | null;
   homepage_order: number | null;
 };
 
 const { data: homepageLocationsRaw, error: homepageLocationsError } = await supabase
   .from('locations')
-  .select('name, slug, homepage_order')
+  .select('name, slug, hero_subtitle, search_terms, homepage_order')
   .eq('is_live', true)
   .eq('show_on_homepage', true)
   .order('homepage_order', { ascending: true, nullsFirst: false })
@@ -26,14 +27,13 @@ if (homepageLocationsError) {
 const homepageLocations = (homepageLocationsRaw || []) as HomepageLocationRow[];
 
 const locations = homepageLocations.map((location) => {
-  const presentation = getLocationPresentation(location.slug, location.name);
-  const subtitle = presentation.heroSubtitle;
-
+  const subtitle = String(location.hero_subtitle || '').trim();
+  const searchTerms = Array.isArray(location.search_terms) ? location.search_terms : [];
   return {
     name: location.name,
     href: `/${location.slug}/`,
     subtitle,
-    searchText: [location.name, subtitle].filter(Boolean).join(' ')
+    searchText: [location.name, subtitle, ...searchTerms].filter(Boolean).join(' ')
   };
 });
 
@@ -42,19 +42,19 @@ const directoryEntries = await Promise.all(
 );
 
 const seenSchoolHrefs = new Set<string>();
-const mapSchools = directoryEntries.flatMap(({ mapSchools }) =>
+const mapSchools = directoryEntries.flatMap(({ location, mapSchools }) =>
   mapSchools.flatMap((school) => {
-    const href = school.href;
+    const href = school.slug;
     if (seenSchoolHrefs.has(href)) return [];
     seenSchoolHrefs.add(href);
     return [{
       name: school.name,
-      href: school.href,
+      href: school.slug,
       lat: school.lat,
       lng: school.lng,
       type: school.type,
-      provisionCategory: school.provisionCategory,
-      note: school.note
+      note: school.note,
+      locationName: location.name
     }];
   })
 );
@@ -92,62 +92,56 @@ const homepageMapScript = `window.homepageMapData = ${JSON.stringify(mapSchools)
 
     <section aria-labelledby="finder-title" class="home-finder shell">
       <div class="finder-grid">
-        <div class="finder-panel finder-locations">
-          <p class="section-kicker">Find a location</p>
-          <h2 id="finder-title">Choose the guide you want.</h2>
-          <label class="visually-hidden" for="location-search">Search locations</label>
-          <input autocomplete="off" class="location-search" id="location-search" placeholder="Search locations" type="search" />
-          <ul class="location-list" id="location-list">
-            {locations.map((location) => (
-              <li>
-                <a class="location-link is-live" data-location-item data-name={location.name} data-search={location.searchText} href={location.href}>
-                  <span class="location-name">{location.name}</span>
-                  <span class="location-state">{location.subtitle || 'Private school guide'}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <aside class="finder-panel finder-locations" aria-labelledby="finder-title">
+          <div class="finder-locations-inner">
+            <div class="finder-locations-header">
+              <p class="section-kicker">Find a location</p>
+              <h2 id="finder-title">Choose the guide you want.</h2>
+              <label class="visually-hidden" for="location-search">Search locations</label>
+              <input autocomplete="off" class="location-search" id="location-search" placeholder="Search locations" type="search" />
+            </div>
 
-        <div class="finder-panel finder-map-panel">
-          <div class="finder-map-head">
-            <div>
-              <p class="section-kicker">Current live schools</p>
-              <h2>School map</h2>
+            <div class="finder-location-scroll">
+              <ul class="location-list" id="location-list">
+                {locations.map((location) => (
+                  <li>
+                    <a class="location-link is-live" data-location-item data-name={location.name} data-search={location.searchText} href={location.href}>
+                      <span class="location-name">{location.name}</span>
+                      <span class="location-state">{location.subtitle || 'Private school guide'}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
-          <div aria-label="Private school map" class="homepage-map" id="homepage-map"></div>
+        </aside>
 
-          <div class="homepage-map-filter">
-            <p class="finder-filter-label">Show on map</p>
-            <div class="homepage-filter-switch" data-school-filter>
-              <button
-                class="is-active"
-                data-school-filter-option="mainstream"
-                type="button"
-                aria-pressed="true"
-              >
-                Mainstream schools only
-              </button>
-              <button
-                data-school-filter-option="sen_specialist"
-                type="button"
-                aria-pressed="false"
-              >
-                SEN specialist schools only
-              </button>
-              <button
-                data-school-filter-option="both"
-                type="button"
-                aria-pressed="false"
-              >
-                Both
-              </button>
+        <section class="finder-panel finder-map-panel" aria-labelledby="finder-map-title">
+          <div class="finder-map-column">
+            <div class="finder-map-stage">
+              <div class="finder-map-head">
+                <div>
+                  <p class="section-kicker">Current live schools</p>
+                  <h2 id="finder-map-title">School map</h2>
+                </div>
+              </div>
+              <div aria-label="Private school map" class="homepage-map" id="homepage-map"></div>
+              <p class="finder-note" id="homepage-map-empty" hidden>School locations are being updated.</p>
             </div>
-          </div>
 
-          <p class="finder-note" id="homepage-map-empty" hidden>School locations are being updated.</p>
-        </div>
+            <section class="finder-results" aria-labelledby="finder-results-title">
+              <div class="finder-results-head">
+                <div>
+                  <p class="section-kicker">Visible on map</p>
+                  <h2 id="finder-results-title">Schools in view</h2>
+                </div>
+                <p class="finder-results-count" id="homepage-results-count">Showing 0 schools</p>
+              </div>
+              <p class="finder-note finder-results-empty" id="homepage-results-empty" hidden>Pan or zoom the map to update the schools shown below.</p>
+              <div class="homepage-school-grid" id="homepage-school-grid"></div>
+            </section>
+          </div>
+        </section>
       </div>
     </section>
   </main>
@@ -156,5 +150,5 @@ const homepageMapScript = `window.homepageMapData = ${JSON.stringify(mapSchools)
 
   <script is:inline set:html={homepageMapScript}></script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script defer src="/assets/js/homepage.js?v=20260317-homepage-sen-filter"></script>
+  <script defer src="/assets/js/homepage.js?v=20260324-homepage-sticky-grid"></script>
 </BaseLayout>
