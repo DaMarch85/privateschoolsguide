@@ -1,32 +1,30 @@
 (function () {
-  var MAX_VISIBLE_CARDS = 50;
-
   function escapeHtml(str) {
-    return String(str || '').replace(/[&<>"']/g, function (match) {
-      return {
+    return String(str || '').replace(/[&<>"']/g, function (m) {
+      return ({
         '&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
         '"': '&quot;',
         "'": '&#39;'
-      }[match];
+      })[m];
     });
   }
 
   function bindLocationSearch() {
-    var searchInput = document.getElementById('location-search');
-    var locationItems = Array.from(document.querySelectorAll('[data-location-item]'));
+    const searchInput = document.getElementById('location-search');
+    const locationItems = Array.from(document.querySelectorAll('[data-location-item]'));
 
     if (!searchInput || !locationItems.length) return;
 
     function filterLocations() {
-      var query = searchInput.value.trim().toLowerCase();
-      var firstVisibleHref = '';
+      const query = searchInput.value.trim().toLowerCase();
+      let firstVisibleHref = '';
 
       locationItems.forEach(function (item) {
-        var searchText = (item.dataset.search || item.dataset.name || '').toLowerCase();
-        var match = !query || searchText.includes(query);
-        var href = item.getAttribute('href') || '';
+        const searchText = (item.dataset.search || item.dataset.name || '').toLowerCase();
+        const match = !query || searchText.includes(query);
+        const href = item.getAttribute('href') || '';
 
         if (item.parentElement) {
           item.parentElement.hidden = !match;
@@ -43,7 +41,7 @@
     searchInput.addEventListener('input', filterLocations);
     searchInput.addEventListener('keydown', function (event) {
       if (event.key === 'Enter') {
-        var href = searchInput.dataset.firstVisibleHref;
+        const href = searchInput.dataset.firstVisibleHref;
         if (href) {
           event.preventDefault();
           window.location.href = href;
@@ -54,28 +52,30 @@
     filterLocations();
   }
 
-  function normalisePoint(item) {
-    if (!item || typeof item !== 'object') return null;
-
-    var lat = Number(item.lat != null ? item.lat : item.latitude);
-    var lng = Number(item.lng != null ? item.lng : item.longitude);
-
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-
-    return {
-      name: item.name || 'School',
-      href: item.href || item.slug || '',
-      lat: lat,
-      lng: lng,
-      type: item.type || 'senior',
-      note: item.note || '',
-      locationName: item.locationName || ''
-    };
-  }
-
   function getMapPoints() {
     if (!Array.isArray(window.homepageMapData)) return [];
-    return window.homepageMapData.map(normalisePoint).filter(Boolean);
+
+    return window.homepageMapData
+      .map(function (item) {
+        const lat = Number(item && (item.lat ?? item.latitude));
+        const lng = Number(item && (item.lng ?? item.longitude));
+
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
+        return {
+          name: item.name || 'School',
+          href: item.href || item.slug || '',
+          lat: lat,
+          lng: lng,
+          type: item.type || 'senior',
+          note: item.note || '',
+          provisionCategory: item.provisionCategory === 'sen_specialist' ? 'sen_specialist' : 'mainstream'
+        };
+      })
+      .filter(Boolean)
+      .filter(function (point) {
+        return point.provisionCategory === 'mainstream';
+      });
   }
 
   function buildIcon(type) {
@@ -92,92 +92,36 @@
     return (
       '<div class="map-popup">' +
       '<h3 class="map-popup-title">' + escapeHtml(point.name) + '</h3>' +
-      (point.locationName ? '<p class="map-popup-location">' + escapeHtml(point.locationName) + '</p>' : '') +
       (point.note ? '<p class="map-popup-meta">' + escapeHtml(point.note) + '</p>' : '') +
       (point.href ? '<a class="map-popup-link" href="' + escapeHtml(point.href) + '">View school</a>' : '') +
       '</div>'
     );
   }
 
-  function getResultsElements() {
-    return {
-      grid: document.getElementById('homepage-school-grid'),
-      count: document.getElementById('homepage-results-count'),
-      empty: document.getElementById('homepage-results-empty')
-    };
-  }
-
   function schoolCardHtml(point) {
     return (
-      '<article class="homepage-school-card homepage-school-card--' + escapeHtml(point.type) + '">' +
-        (point.locationName ? '<p class="homepage-school-card-location">' + escapeHtml(point.locationName) + '</p>' : '') +
-        '<h3 class="homepage-school-card-title">' +
-          (point.href
-            ? '<a href="' + escapeHtml(point.href) + '">' + escapeHtml(point.name) + '</a>'
-            : escapeHtml(point.name)) +
-        '</h3>' +
-        (point.note ? '<p class="homepage-school-card-note">' + escapeHtml(point.note) + '</p>' : '') +
-        (point.href ? '<a class="homepage-school-card-link" href="' + escapeHtml(point.href) + '">View school</a>' : '') +
-      '</article>'
+      '<a class="homepage-school-card homepage-school-card--' + escapeHtml(point.type) + '" href="' + escapeHtml(point.href) + '">' +
+        '<div class="homepage-school-card__body">' +
+          '<h3 class="homepage-school-card__title">' + escapeHtml(point.name) + '</h3>' +
+          (point.note ? '<p class="homepage-school-card__meta">' + escapeHtml(point.note) + '</p>' : '') +
+        '</div>' +
+      '</a>'
     );
   }
 
-  function updateResultsCopy(visibleCount, renderedCount) {
-    var elements = getResultsElements();
-    if (elements.count) {
-      if (!visibleCount) {
-        elements.count.textContent = 'Showing 0 schools';
-      } else if (visibleCount > renderedCount) {
-        elements.count.textContent = 'Showing ' + renderedCount + ' of ' + visibleCount + ' schools';
-      } else {
-        elements.count.textContent = 'Showing ' + visibleCount + ' school' + (visibleCount === 1 ? '' : 's');
-      }
-    }
-
-    if (elements.empty) {
-      elements.empty.hidden = visibleCount > 0;
-      if (!visibleCount) {
-        elements.empty.textContent = 'No schools are visible in the current map area.';
-      }
-    }
-  }
-
-  function renderVisibleCards(map, points) {
-    var elements = getResultsElements();
-    if (!elements.grid || !map) return;
-
-    var bounds = map.getBounds();
-    var visiblePoints = points.filter(function (point) {
-      return bounds.contains([point.lat, point.lng]);
-    });
-
-    visiblePoints.sort(function (a, b) {
-      var locationCompare = String(a.locationName || '').localeCompare(String(b.locationName || ''), 'en', { sensitivity: 'base' });
-      if (locationCompare !== 0) return locationCompare;
-      return String(a.name || '').localeCompare(String(b.name || ''), 'en', { sensitivity: 'base' });
-    });
-
-    var renderedPoints = visiblePoints.slice(0, MAX_VISIBLE_CARDS);
-    elements.grid.innerHTML = renderedPoints.map(schoolCardHtml).join('');
-    updateResultsCopy(visiblePoints.length, renderedPoints.length);
-  }
-
   function initHomepageMap() {
-    var mapTarget = document.getElementById('homepage-map');
-    var emptyState = document.getElementById('homepage-map-empty');
+    const mapTarget = document.getElementById('homepage-map');
+    const emptyState = document.getElementById('homepage-map-empty');
+    const cardGrid = document.getElementById('homepage-visible-school-grid');
+    const cardEmpty = document.getElementById('homepage-visible-school-empty');
 
     if (!mapTarget || !window.L) return false;
-    if (mapTarget.dataset.mapReady === 'true') {
-      if (mapTarget._leaflet_map_instance) {
-        renderVisibleCards(mapTarget._leaflet_map_instance, getMapPoints());
-      }
-      return true;
-    }
+    if (mapTarget.dataset.mapReady === 'true') return true;
 
-    var points = getMapPoints();
-    var map = window.L.map(mapTarget, {
+    const points = getMapPoints();
+    const map = window.L.map(mapTarget, {
       zoomControl: true,
-      scrollWheelZoom: false,
+      scrollWheelZoom: true,
       zoomAnimation: false,
       fadeAnimation: false,
       markerZoomAnimation: false
@@ -186,61 +130,84 @@
     mapTarget.dataset.mapReady = 'true';
     mapTarget._leaflet_map_instance = map;
 
-    var tileLayer = window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const tileLayer = window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
       attribution: '© OpenStreetMap contributors',
       detectRetina: window.devicePixelRatio > 1
     }).addTo(map);
 
+    const markerLayer = window.L.layerGroup().addTo(map);
+
     function sharpenMap() {
       requestAnimationFrame(function () {
-        map.invalidateSize({ pan: false, animate: false });
-        if (typeof tileLayer.redraw === 'function') tileLayer.redraw();
+        try {
+          map.invalidateSize({ pan: false, animate: false });
+        } catch (error) {}
+        if (typeof tileLayer.redraw === 'function') {
+          try {
+            tileLayer.redraw();
+          } catch (error) {}
+        }
       });
     }
 
-    function syncVisibleCards() {
-      renderVisibleCards(map, points);
+    function updateVisibleSchoolCards() {
+      if (!cardGrid) return;
+      const bounds = map.getBounds();
+      const visible = points
+        .filter(function (point) {
+          return bounds.contains([point.lat, point.lng]);
+        })
+        .sort(function (a, b) {
+          return a.name.localeCompare(b.name, 'en');
+        });
+
+      const shown = visible.slice(0, 50);
+      cardGrid.innerHTML = shown.map(schoolCardHtml).join('');
+
+      if (cardEmpty) {
+        cardEmpty.hidden = shown.length > 0;
+        if (!shown.length) {
+          cardEmpty.textContent = 'No schools are currently visible on the map.';
+        } else if (visible.length > shown.length) {
+          cardEmpty.hidden = false;
+          cardEmpty.textContent = 'Showing the first 50 schools visible on the map.';
+        }
+      }
     }
 
     if (!points.length) {
-      map.setView([54.5, -3.2], 6);
+      map.setView([51.41, -2.47], 8);
       if (emptyState) emptyState.hidden = false;
+      if (cardGrid) cardGrid.innerHTML = '';
+      if (cardEmpty) {
+        cardEmpty.hidden = false;
+        cardEmpty.textContent = 'School locations are being updated.';
+      }
       sharpenMap();
-      setTimeout(sharpenMap, 80);
-      setTimeout(sharpenMap, 260);
-      syncVisibleCards();
       return true;
     }
 
     if (emptyState) emptyState.hidden = true;
 
-    var markers = points.map(function (point) {
-      var marker = window.L.marker([point.lat, point.lng], { icon: buildIcon(point.type) }).addTo(map);
+    const markers = points.map(function (point) {
+      const marker = window.L.marker([point.lat, point.lng], { icon: buildIcon(point.type) });
       marker.bindPopup(popupHtml(point));
+      markerLayer.addLayer(marker);
       return marker;
     });
 
-    var group = window.L.featureGroup(markers);
-    map.fitBounds(group.getBounds(), { padding: [28, 28], maxZoom: 10, animate: false });
+    const group = window.L.featureGroup(markers);
+    map.fitBounds(group.getBounds(), { padding: [28, 28], maxZoom: 11, animate: false });
 
-    map.on('moveend zoomend', syncVisibleCards);
-    tileLayer.on('load', syncVisibleCards);
+    map.on('moveend zoomend', updateVisibleSchoolCards);
+    map.on('resize', updateVisibleSchoolCards);
 
+    updateVisibleSchoolCards();
     sharpenMap();
-    syncVisibleCards();
-    setTimeout(function () {
-      sharpenMap();
-      syncVisibleCards();
-    }, 80);
-    setTimeout(function () {
-      sharpenMap();
-      syncVisibleCards();
-    }, 260);
-    setTimeout(function () {
-      sharpenMap();
-      syncVisibleCards();
-    }, 600);
+    setTimeout(sharpenMap, 80);
+    setTimeout(sharpenMap, 260);
+    setTimeout(sharpenMap, 600);
 
     return true;
   }
@@ -248,9 +215,7 @@
   function bootHomepageMap(attempt) {
     if (initHomepageMap()) return;
     if (attempt >= 50) return;
-    setTimeout(function () {
-      bootHomepageMap(attempt + 1);
-    }, 100);
+    setTimeout(function () { bootHomepageMap(attempt + 1); }, 100);
   }
 
   function initHomepage() {
@@ -264,7 +229,5 @@
     initHomepage();
   }
 
-  window.addEventListener('load', function () {
-    bootHomepageMap(0);
-  });
+  window.addEventListener('load', function () { bootHomepageMap(0); });
 })();
