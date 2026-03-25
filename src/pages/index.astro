@@ -111,13 +111,7 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
     <section aria-labelledby="school-filter-title" class="home-school-filter-bar">
       <div class="shell">
         <form class="school-filter-form" id="homepage-school-filters" novalidate>
-          <div class="school-filter-form__header">
-            <div>
-              <p class="school-filter-kicker">Search private schools</p>
-              <h2 class="school-filter-title" id="school-filter-title">Find schools by location and key filters</h2>
-            </div>
-            <p class="school-filter-intro">Enter a postcode, town, village or area, then refine by provision below.</p>
-          </div>
+          <h2 class="visually-hidden" id="school-filter-title">School filters</h2>
 
           <div class="school-filter-grid">
             <div class="school-filter-field school-filter-field--location">
@@ -137,62 +131,87 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
               <input class="school-filter-input" id="school-filter-radius" min="1" name="radius" step="1" type="number" value="10" />
             </div>
 
-            <fieldset class="school-filter-field">
-              <legend class="school-filter-label">Gender</legend>
-              <div class="school-filter-options">
-                {genderOptions.map((option) => (
-                  <label class="school-filter-option">
-                    <input name="gender" type="checkbox" value={option.value} />
-                    <span>{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+            <div class="school-filter-field school-filter-field--compact">
+              <span class="school-filter-label">Gender</span>
+              <details class="school-filter-dropdown" data-dropdown>
+                <summary class="school-filter-dropdown__summary">
+                  <span class="school-filter-dropdown__value" data-default-label="Any" data-dropdown-value>Any</span>
+                </summary>
+                <div class="school-filter-dropdown__panel">
+                  <div class="school-filter-options school-filter-options--stacked">
+                    {genderOptions.map((option) => (
+                      <label class="school-filter-option school-filter-option--dropdown">
+                        <input data-option-label={option.label} name="gender" type="checkbox" value={option.value} />
+                        <span>{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </details>
+            </div>
 
-            <fieldset class="school-filter-field">
-              <legend class="school-filter-label">Boarding</legend>
-              <div class="school-filter-options">
-                {boardingOptions.map((option) => (
-                  <label class="school-filter-option">
-                    <input name="boarding" type="checkbox" value={option.value} />
-                    <span>{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+            <div class="school-filter-field school-filter-field--compact">
+              <span class="school-filter-label">Boarding</span>
+              <details class="school-filter-dropdown" data-dropdown>
+                <summary class="school-filter-dropdown__summary">
+                  <span class="school-filter-dropdown__value" data-default-label="Any" data-dropdown-value>Any</span>
+                </summary>
+                <div class="school-filter-dropdown__panel">
+                  <div class="school-filter-options school-filter-options--stacked">
+                    {boardingOptions.map((option) => (
+                      <label class="school-filter-option school-filter-option--dropdown">
+                        <input data-option-label={option.label} name="boarding" type="checkbox" value={option.value} />
+                        <span>{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </details>
+            </div>
 
-            <fieldset class="school-filter-field school-filter-field--includes">
-              <legend class="school-filter-label">Includes</legend>
-              <div class="school-filter-options">
-                <label class="school-filter-option">
-                  <input id="school-filter-sixth-form" name="sixthForm" type="checkbox" />
-                  <span>Sixth form</span>
-                </label>
-                <label class="school-filter-option">
-                  <input id="school-filter-nursery" name="nursery" type="checkbox" />
-                  <span>Nursery</span>
-                </label>
-              </div>
-            </fieldset>
+            <div class="school-filter-field school-filter-field--compact">
+              <span class="school-filter-label">Includes</span>
+              <details class="school-filter-dropdown" data-dropdown>
+                <summary class="school-filter-dropdown__summary">
+                  <span class="school-filter-dropdown__value" data-default-label="Any" data-dropdown-value>Any</span>
+                </summary>
+                <div class="school-filter-dropdown__panel">
+                  <div class="school-filter-options school-filter-options--stacked">
+                    <label class="school-filter-option school-filter-option--dropdown">
+                      <input data-option-label="Sixth form" id="school-filter-sixth-form" name="sixthForm" type="checkbox" />
+                      <span>Sixth form</span>
+                    </label>
+                    <label class="school-filter-option school-filter-option--dropdown">
+                      <input data-option-label="Nursery" id="school-filter-nursery" name="nursery" type="checkbox" />
+                      <span>Nursery</span>
+                    </label>
+                  </div>
+                </div>
+              </details>
+            </div>
 
-            <fieldset class="school-filter-field school-filter-field--religion">
-              <legend class="school-filter-label">Religion</legend>
-              <div class="school-filter-options">
-                {religionOptions.map((religion) => (
-                  <label class="school-filter-option">
-                    <input name="religion" type="checkbox" value={religion} />
-                    <span>{religion}</span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+            <div class="school-filter-field school-filter-field--compact school-filter-field--religion">
+              <span class="school-filter-label">Religion</span>
+              <details class="school-filter-dropdown school-filter-dropdown--wide" data-dropdown>
+                <summary class="school-filter-dropdown__summary">
+                  <span class="school-filter-dropdown__value" data-default-label="Any" data-dropdown-value>Any</span>
+                </summary>
+                <div class="school-filter-dropdown__panel school-filter-dropdown__panel--religion">
+                  <div class="school-filter-options school-filter-options--grid">
+                    {religionOptions.map((religion) => (
+                      <label class="school-filter-option school-filter-option--dropdown">
+                        <input data-option-label={religion} name="religion" type="checkbox" value={religion} />
+                        <span>{religion}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </details>
+            </div>
           </div>
 
           <div class="school-filter-actions">
-            <div>
-              <p class="school-filter-helper">Radius is used when a location is entered. Without a location, the other filters apply across the current school directory.</p>
-              <p aria-live="polite" class="school-filter-error" hidden id="homepage-school-filter-error"></p>
-            </div>
+            <p aria-live="polite" class="school-filter-error" hidden id="homepage-school-filter-error"></p>
 
             <div class="school-filter-button-row">
               <button class="school-filter-submit" id="homepage-school-filter-submit" type="submit">Apply filters</button>
