@@ -312,6 +312,78 @@
     };
   }
 
+  function getFilterDropdowns() {
+    return Array.from(document.querySelectorAll('[data-dropdown]'));
+  }
+
+  function closeFilterDropdowns(exceptDropdown) {
+    getFilterDropdowns().forEach(function (dropdown) {
+      if (dropdown !== exceptDropdown) {
+        dropdown.open = false;
+      }
+    });
+  }
+
+  function getDropdownSelectionLabel(labels, fallback) {
+    if (!labels.length) return fallback || 'Any';
+    if (labels.length === 1) return labels[0];
+    if (labels.length === 2) {
+      const joined = labels.join(', ');
+      if (joined.length <= 26) return joined;
+    }
+    return labels.length + ' selected';
+  }
+
+  function updateFilterDropdownLabel(dropdown) {
+    if (!dropdown) return;
+    const valueTarget = dropdown.querySelector('[data-dropdown-value]');
+    if (!valueTarget) return;
+
+    const checkedLabels = Array.from(dropdown.querySelectorAll('input[type="checkbox"]:checked')).map(function (input) {
+      return input.dataset.optionLabel || '';
+    }).filter(Boolean);
+
+    valueTarget.textContent = getDropdownSelectionLabel(checkedLabels, valueTarget.dataset.defaultLabel || 'Any');
+  }
+
+  function refreshFilterDropdownLabels() {
+    getFilterDropdowns().forEach(updateFilterDropdownLabel);
+  }
+
+  function bindFilterDropdowns() {
+    const dropdowns = getFilterDropdowns();
+    if (!dropdowns.length) return;
+
+    dropdowns.forEach(function (dropdown) {
+      dropdown.addEventListener('toggle', function () {
+        if (dropdown.open) {
+          closeFilterDropdowns(dropdown);
+        }
+      });
+
+      dropdown.addEventListener('change', function (event) {
+        if (event.target && event.target.matches('input[type="checkbox"]')) {
+          updateFilterDropdownLabel(dropdown);
+        }
+      });
+    });
+
+    document.addEventListener('click', function (event) {
+      const clickedInsideDropdown = event.target && event.target.closest('[data-dropdown]');
+      if (!clickedInsideDropdown) {
+        closeFilterDropdowns();
+      }
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        closeFilterDropdowns();
+      }
+    });
+
+    refreshFilterDropdownLabels();
+  }
+
   function filterSchools(filters, resolvedLocation) {
     const genders = new Set(filters.genders || []);
     const boarding = new Set(filters.boarding || []);
@@ -632,6 +704,7 @@
 
     form.addEventListener('submit', function (event) {
       event.preventDefault();
+      closeFilterDropdowns();
       applyFilters();
     });
 
@@ -639,6 +712,8 @@
       resetButton.addEventListener('click', function () {
         form.reset();
         state.resolvedLocation = null;
+        closeFilterDropdowns();
+        refreshFilterDropdownLabels();
         updateError('');
         applyFilters();
       });
@@ -648,6 +723,7 @@
   function initHomepage() {
     state.schools = getSchoolData();
     bindGuideLocationSearch();
+    bindFilterDropdowns();
     bindFilterForm();
     bootHomepageMap(0);
     applyFilters();
