@@ -40,8 +40,8 @@ const FULL_NAV: LocationNavigationConfig = {
   compareOverview: true,
   compareAlevels: true,
   fees: true,
-  bursaries: true,
-  openDays: true,
+  bursaries: false,
+  openDays: false,
   movingToSection: true
 };
 
