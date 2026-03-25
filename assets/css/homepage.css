@@ -283,6 +283,251 @@ body.home-minimal a{
 .map-popup-meta{margin:0 0 .65rem;color:var(--home-muted);font-size:.9rem}
 .map-popup-link{color:var(--home-accent);font-size:.92rem;font-weight:600}
 
+
+.home-school-filter-bar{
+  background:var(--home-paper);
+  border-top:1px solid var(--home-border);
+  border-bottom:1px solid var(--home-border);
+}
+
+.school-filter-form{
+  padding:1.4rem 1.5rem 1.65rem;
+}
+
+.school-filter-form__header{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:1rem 1.5rem;
+}
+
+.school-filter-kicker,
+.finder-kicker{
+  margin:0 0 .3rem;
+  color:var(--home-accent);
+  font-size:.77rem;
+  font-weight:700;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+}
+
+.school-filter-title,
+.finder-results-title{
+  margin:0;
+  color:var(--home-ink);
+  font-family:"EB Garamond", ui-serif, Georgia, serif;
+  font-weight:500;
+  line-height:1.04;
+}
+
+.school-filter-title{
+  font-size:clamp(1.65rem, 2.8vw, 2.35rem);
+}
+
+.finder-results-title{
+  font-size:1.7rem;
+}
+
+.school-filter-intro{
+  margin:0;
+  max-width:48ch;
+  color:var(--home-muted);
+  line-height:1.55;
+}
+
+.school-filter-grid{
+  display:grid;
+  grid-template-columns:minmax(260px, 1.35fr) minmax(130px, .45fr) repeat(3, minmax(0, 1fr));
+  gap:1rem;
+  margin-top:1.3rem;
+}
+
+.school-filter-field{
+  margin:0;
+  padding:0;
+  border:0;
+  min-width:0;
+}
+
+.school-filter-field--religion{
+  grid-column:1 / -1;
+}
+
+.school-filter-label{
+  display:block;
+  margin:0 0 .55rem;
+  color:var(--home-muted);
+  font-size:.79rem;
+  font-weight:700;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+}
+
+.school-filter-input{
+  width:100%;
+  min-height:48px;
+  padding:.85rem 1rem;
+  border:1px solid var(--home-border);
+  background:#f8f4ee;
+  color:var(--home-ink);
+  font:500 1rem/1.3 "Inter",system-ui,sans-serif;
+}
+
+.school-filter-input:focus{
+  outline:none;
+  border-color:rgba(179,91,46,.55);
+  box-shadow:0 0 0 3px rgba(179,91,46,.12);
+}
+
+.school-filter-options{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.6rem;
+}
+
+.school-filter-option{
+  display:inline-flex;
+  align-items:center;
+  gap:.5rem;
+  min-height:44px;
+  padding:.55rem .75rem;
+  border:1px solid var(--home-border);
+  background:#f8f4ee;
+  color:var(--home-ink);
+  font-size:.94rem;
+  line-height:1.35;
+  cursor:pointer;
+}
+
+.school-filter-option input{
+  margin:0;
+  accent-color:var(--home-accent);
+}
+
+.school-filter-actions{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:1rem 1.5rem;
+  margin-top:1.35rem;
+  padding-top:1rem;
+  border-top:1px solid var(--home-border);
+}
+
+.school-filter-helper{
+  margin:0;
+  max-width:60ch;
+  color:var(--home-muted);
+  font-size:.95rem;
+  line-height:1.5;
+}
+
+.school-filter-error{
+  margin:.45rem 0 0;
+  color:#8c2b14;
+  font-size:.94rem;
+  line-height:1.45;
+}
+
+.school-filter-button-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.75rem;
+}
+
+.school-filter-submit,
+.school-filter-reset{
+  min-height:46px;
+  padding:.8rem 1.1rem;
+  border:1px solid var(--home-border);
+  font:600 .95rem/1 "Inter",system-ui,sans-serif;
+  cursor:pointer;
+}
+
+.school-filter-submit{
+  background:var(--home-dark);
+  border-color:var(--home-dark);
+  color:#fff;
+}
+
+.school-filter-submit:disabled{
+  opacity:.7;
+  cursor:wait;
+}
+
+.school-filter-reset{
+  background:#fff;
+  color:var(--home-ink);
+}
+
+.home-finder{
+  padding:1.2rem 0 4rem;
+}
+
+.finder-results-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:1rem 1.25rem;
+  margin-bottom:1rem;
+}
+
+.finder-results-summary{
+  margin:0;
+  max-width:34ch;
+  color:var(--home-muted);
+  font-size:.95rem;
+  line-height:1.5;
+  text-align:right;
+}
+
+.finder-locations-head{
+  margin-bottom:.35rem;
+}
+
+.homepage-school-card__eyebrow{
+  margin:0;
+  color:var(--home-accent);
+  font-size:.78rem;
+  font-weight:600;
+  letter-spacing:.08em;
+  line-height:1.4;
+  text-transform:uppercase;
+}
+
+.homepage-school-card__meta--secondary{
+  color:var(--home-ink);
+  opacity:.72;
+}
+
+.homepage-school-card__status{
+  margin:0;
+  color:var(--home-accent);
+  font-size:.82rem;
+  font-weight:700;
+  letter-spacing:.08em;
+  line-height:1.35;
+  text-transform:uppercase;
+}
+
+.homepage-school-card--static{
+  cursor:default;
+}
+
+.homepage-school-card--static:hover,
+.homepage-school-card--static:focus-visible{
+  transform:none;
+  border-color:var(--home-border);
+  box-shadow:none;
+}
+
+.map-popup-link--muted{
+  margin:0;
+  color:var(--home-muted);
+  font-size:.92rem;
+  font-weight:600;
+}
+
 .site-footer{
   background:var(--home-dark);
   color:#ece3d7;
@@ -309,6 +554,15 @@ body.home-minimal a{
 .footer-bottom{margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.12)}
 
 @media (max-width: 1220px){
+  .school-filter-grid{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
+
+  .school-filter-field--location,
+  .school-filter-field--religion{
+    grid-column:1 / -1;
+  }
+
   .homepage-visible-school-grid{
     grid-template-columns:repeat(2, minmax(0, 1fr));
   }
@@ -318,6 +572,31 @@ body.home-minimal a{
   .home-hero,
   .hero-centre{
     min-height:74vh;
+  }
+
+  .school-filter-form{
+    padding:1.25rem 1.1rem 1.35rem;
+  }
+
+  .school-filter-form__header,
+  .school-filter-actions,
+  .finder-results-head{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .finder-results-summary{
+    max-width:none;
+    text-align:left;
+  }
+
+  .school-filter-grid{
+    grid-template-columns:1fr;
+  }
+
+  .school-filter-field--location,
+  .school-filter-field--religion{
+    grid-column:auto;
   }
 
   .hero-video-desktop{display:none}
@@ -381,6 +660,19 @@ body.home-minimal a{
   .home-hero,
   .hero-centre{
     min-height:72vh;
+  }
+
+  .school-filter-title{
+    font-size:1.55rem;
+  }
+
+  .school-filter-button-row{
+    width:100%;
+  }
+
+  .school-filter-submit,
+  .school-filter-reset{
+    flex:1 1 auto;
   }
 
   .hero-title{

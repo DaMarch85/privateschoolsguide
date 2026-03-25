@@ -2,7 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import { supabase } from '../lib/supabase';
-import { getLocationDirectoryData } from '../lib/directory';
+import { getHomepageSearchSchools } from '../lib/directory';
 import { getLocationPresentation } from '../lib/location-config';
 
 type HomepageLocationRow = {
@@ -37,33 +37,51 @@ const locations = homepageLocations.map((location) => {
   };
 });
 
-const directoryEntries = await Promise.all(
-  homepageLocations.map((location) => getLocationDirectoryData(location.slug))
-);
+const homepageSchools = await getHomepageSearchSchools();
+const initialSchoolCount = new Intl.NumberFormat('en-GB').format(homepageSchools.length);
+const religionSortOrder = [
+  'Church of England',
+  'Christian',
+  'Roman Catholic',
+  'Jewish',
+  'Muslim',
+  'Non-denominational',
+  'Multi-faith',
+  'Methodist',
+  'Plymouth Brethren Christian Church',
+  'Quaker',
+  'Seventh-day Adventist',
+  'Hindu',
+  'Sikh',
+  'United Reformed Church'
+];
+const religionOptions = Array.from(new Set(homepageSchools.map((school) => school.religion).filter(Boolean) as string[]))
+  .sort((a, b) => {
+    const aIndex = religionSortOrder.indexOf(a);
+    const bIndex = religionSortOrder.indexOf(b);
+    const safeA = aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex;
+    const safeB = bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex;
+    if (safeA !== safeB) return safeA - safeB;
+    return a.localeCompare(b, 'en');
+  });
 
-const seenSchoolHrefs = new Set<string>();
-const mapSchools = directoryEntries.flatMap(({ mapSchools }) =>
-  mapSchools.flatMap((school) => {
-    const href = school.href;
-    if (seenSchoolHrefs.has(href)) return [];
-    seenSchoolHrefs.add(href);
-    return [{
-      name: school.name,
-      href: school.href,
-      lat: school.lat,
-      lng: school.lng,
-      type: school.type,
-      provisionCategory: school.provisionCategory,
-      note: school.note
-    }];
-  })
-);
+const genderOptions = [
+  { value: 'boys', label: 'Boys' },
+  { value: 'girls', label: 'Girls' },
+  { value: 'mixed', label: 'Mixed' }
+];
 
-const homepageMapScript = `window.homepageMapData = ${JSON.stringify(mapSchools)};`;
+const boardingOptions = [
+  { value: 'day', label: 'Day only' },
+  { value: 'boarding', label: 'Boarding only' },
+  { value: 'both', label: 'Both' }
+];
+
+const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.stringify(homepageSchools)};`;
 ---
 <BaseLayout
   title="The Private School Guide"
-  description="Find your location and move into the relevant private school guide."
+  description="Search private schools by UK location, distance and core filters."
   canonicalPath="/"
   includeLeaflet={true}
   bodyClass="home-minimal"
@@ -90,20 +108,127 @@ const homepageMapScript = `window.homepageMapData = ${JSON.stringify(mapSchools)
       </div>
     </section>
 
+    <section aria-labelledby="school-filter-title" class="home-school-filter-bar">
+      <div class="shell">
+        <form class="school-filter-form" id="homepage-school-filters" novalidate>
+          <div class="school-filter-form__header">
+            <div>
+              <p class="school-filter-kicker">Search private schools</p>
+              <h2 class="school-filter-title" id="school-filter-title">Find schools by location and key filters</h2>
+            </div>
+            <p class="school-filter-intro">Enter a postcode, town, village or area, then refine by provision below.</p>
+          </div>
+
+          <div class="school-filter-grid">
+            <div class="school-filter-field school-filter-field--location">
+              <label class="school-filter-label" for="school-filter-location">Location</label>
+              <input
+                autocomplete="postal-code"
+                class="school-filter-input"
+                id="school-filter-location"
+                name="location"
+                placeholder="Postcode or UK location"
+                type="text"
+              />
+            </div>
+
+            <div class="school-filter-field school-filter-field--radius">
+              <label class="school-filter-label" for="school-filter-radius">Radius (miles)</label>
+              <input class="school-filter-input" id="school-filter-radius" min="1" name="radius" step="1" type="number" value="10" />
+            </div>
+
+            <fieldset class="school-filter-field">
+              <legend class="school-filter-label">Gender</legend>
+              <div class="school-filter-options">
+                {genderOptions.map((option) => (
+                  <label class="school-filter-option">
+                    <input name="gender" type="checkbox" value={option.value} />
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset class="school-filter-field">
+              <legend class="school-filter-label">Boarding</legend>
+              <div class="school-filter-options">
+                {boardingOptions.map((option) => (
+                  <label class="school-filter-option">
+                    <input name="boarding" type="checkbox" value={option.value} />
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset class="school-filter-field school-filter-field--includes">
+              <legend class="school-filter-label">Includes</legend>
+              <div class="school-filter-options">
+                <label class="school-filter-option">
+                  <input id="school-filter-sixth-form" name="sixthForm" type="checkbox" />
+                  <span>Sixth form</span>
+                </label>
+                <label class="school-filter-option">
+                  <input id="school-filter-nursery" name="nursery" type="checkbox" />
+                  <span>Nursery</span>
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset class="school-filter-field school-filter-field--religion">
+              <legend class="school-filter-label">Religion</legend>
+              <div class="school-filter-options">
+                {religionOptions.map((religion) => (
+                  <label class="school-filter-option">
+                    <input name="religion" type="checkbox" value={religion} />
+                    <span>{religion}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </div>
+
+          <div class="school-filter-actions">
+            <div>
+              <p class="school-filter-helper">Radius is used when a location is entered. Without a location, the other filters apply across the current school directory.</p>
+              <p aria-live="polite" class="school-filter-error" hidden id="homepage-school-filter-error"></p>
+            </div>
+
+            <div class="school-filter-button-row">
+              <button class="school-filter-submit" id="homepage-school-filter-submit" type="submit">Apply filters</button>
+              <button class="school-filter-reset" id="homepage-school-filter-reset" type="button">Clear filters</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </section>
+
     <section aria-labelledby="finder-title" class="home-finder shell">
       <h2 class="visually-hidden" id="finder-title">Find schools and locations</h2>
       <div class="finder-grid">
         <div class="finder-left-column">
           <div class="finder-left-inner">
             <div class="finder-panel finder-map-panel">
+              <div class="finder-results-head finder-results-head--map">
+                <div>
+                  <p class="finder-kicker">Map</p>
+                  <h3 class="finder-results-title">School locations</h3>
+                </div>
+              </div>
               <div aria-label="Private school map" class="homepage-map" id="homepage-map"></div>
               <p class="finder-note" id="homepage-map-empty" hidden>School locations are being updated.</p>
             </div>
 
             <div class="finder-panel finder-locations">
-              <label class="visually-hidden" for="location-search">Search locations</label>
-              <input autocomplete="off" class="location-search" id="location-search" placeholder="Search locations" type="search" />
-              <ul class="location-list" id="location-list">
+              <div class="finder-locations-head">
+                <div>
+                  <p class="finder-kicker">Live guides</p>
+                  <h3 class="finder-results-title">Browse locations</h3>
+                </div>
+              </div>
+              <label class="visually-hidden" for="guide-location-search">Search location guides</label>
+              <input autocomplete="off" class="location-search" id="guide-location-search" placeholder="Browse live guides" type="search" />
+              <ul class="location-list" id="guide-location-list">
                 {locations.map((location) => (
                   <li>
                     <a class="location-link is-live" data-location-item data-name={location.name} data-search={location.searchText} href={location.href}>
@@ -118,6 +243,13 @@ const homepageMapScript = `window.homepageMapData = ${JSON.stringify(mapSchools)
         </div>
 
         <div class="finder-panel finder-cards-panel">
+          <div class="finder-results-head">
+            <div>
+              <p class="finder-kicker">School results</p>
+              <h2 class="finder-results-title">Schools</h2>
+            </div>
+            <p aria-live="polite" class="finder-results-summary" id="homepage-results-summary">Showing all {initialSchoolCount} schools with map coordinates.</p>
+          </div>
           <div class="homepage-visible-school-grid" id="homepage-visible-school-grid"></div>
           <p class="finder-note" id="homepage-visible-school-empty" hidden>No schools are currently visible on the map.</p>
         </div>
@@ -127,7 +259,7 @@ const homepageMapScript = `window.homepageMapData = ${JSON.stringify(mapSchools)
 
   <SiteFooter full={true} />
 
-  <script is:inline set:html={homepageMapScript}></script>
+  <script is:inline set:html={homepageSchoolSearchScript}></script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script defer src="/assets/js/homepage.js?v=20260324-homepage-map-grid"></script>
+  <script defer src="/assets/js/homepage.js?v=20260325-homepage-school-filters"></script>
 </BaseLayout>

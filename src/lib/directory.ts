@@ -62,6 +62,13 @@ export type SchoolSummaryRecord = {
   pupil_numbers: number | null;
   description: string | null;
   inspection_rating: string | null;
+  official_sixth_form?: string | null;
+  nursery_provision?: string | null;
+  number_of_boys?: number | null;
+  number_of_girls?: number | null;
+  religion?: string | null;
+  religious_ethos?: string | null;
+  status?: string | null;
 };
 
 export type SchoolContentRecord = {
@@ -190,6 +197,32 @@ export type MapSchool = {
   note: string;
   addressLine1: string;
   address_line1: string;
+};
+
+export type HomepageSearchSchool = {
+  id: string;
+  slug: string;
+  name: string;
+  href: string | null;
+  lat: number;
+  lng: number;
+  latitude: number;
+  longitude: number;
+  type: string;
+  provisionCategory: 'mainstream' | 'sen_specialist';
+  note: string;
+  displayLocation: string;
+  ageLabel: string;
+  genderLabel: string;
+  genderFilter: 'boys' | 'girls' | 'mixed';
+  boardingLabel: string;
+  boardingFilter: 'day' | 'boarding' | 'both' | null;
+  hasSixthForm: boolean;
+  hasNursery: boolean;
+  religion: string | null;
+  town: string | null;
+  county: string | null;
+  postcode: string | null;
 };
 
 export type FeePane = {
@@ -324,19 +357,32 @@ export function getGenderLabel(gender: string | null): string {
   const value = (gender || '').toLowerCase();
   if (value.includes('girl')) return 'Girls';
   if (value.includes('boy')) return 'Boys';
-  return 'Co-ed';
+  return 'Mixed';
+}
+
+export function getGenderFilterValue(gender: string | null): 'boys' | 'girls' | 'mixed' {
+  const value = (gender || '').toLowerCase();
+  if (value.includes('girl')) return 'girls';
+  if (value.includes('boy')) return 'boys';
+  return 'mixed';
+}
+
+export function getBoardingFilterValue(dayBoarding: string | null): 'day' | 'boarding' | 'both' | null {
+  const value = String(dayBoarding || '').replace(/[_\s]+/g, ' ').trim().toLowerCase();
+  if (!value) return null;
+  if (value === 'day' || value === 'day only' || value === 'day school' || value === 'no boarders') return 'day';
+  if (value.includes('day') && value.includes('board')) return 'both';
+  if (value === 'boarding school') return 'both';
+  if (value.includes('boarding')) return 'boarding';
+  return null;
 }
 
 export function getFormatLabel(dayBoarding: string | null): string {
-  if (!dayBoarding) return 'Day';
-  return dayBoarding
-    .replace(/_/g, ' ')
-    .replace(/\bday boarding\b/i, 'Day & boarding')
-    .replace(/\bboarding and day\b/i, 'Day & boarding')
-    .replace(/\bday and boarding\b/i, 'Day & boarding')
-    .replace(/\bfull boarding\b/i, 'Full boarding')
-    .replace(/\bweekly boarding\b/i, 'Weekly boarding')
-    .replace(/\bday\b/i, 'Day');
+  const category = getBoardingFilterValue(dayBoarding);
+  if (category === 'day') return 'Day only';
+  if (category === 'both') return 'Day & boarding';
+  if (category === 'boarding') return 'Boarding only';
+  return 'Day only';
 }
 
 export function getAgeLabel(ageMin: number | null, ageMax: number | null): string {
@@ -346,10 +392,104 @@ export function getAgeLabel(ageMin: number | null, ageMax: number | null): strin
   return 'To be confirmed';
 }
 
+function firstNonEmptyText(...values: Array<string | null | undefined>): string | null {
+  for (const value of values) {
+    const cleaned = String(value || '').replace(/\s+/g, ' ').trim();
+    if (cleaned) return cleaned;
+  }
+  return null;
+}
+
+export function getSchoolReligionLabel(
+  school: Pick<SchoolSummaryRecord, 'religion' | 'religious_ethos'>
+): string | null {
+  const raw = firstNonEmptyText(school.religion, school.religious_ethos);
+  if (!raw) return null;
+
+  const value = raw.toLowerCase();
+  if (value === 'does not apply' || value === 'not applicable') return null;
+  if (/\b(orthodox jewish|charadi jewish|jewish)\b/.test(value)) return 'Jewish';
+  if (/\bchurch of england\b/.test(value) || /\banglican\b/.test(value)) return 'Church of England';
+  if (/\broman catholic\b/.test(value) || value === 'catholic') return 'Roman Catholic';
+  if (/\bplymouth brethren\b/.test(value)) return 'Plymouth Brethren Christian Church';
+  if (/\bseventh[ -]?day adventist\b/.test(value)) return 'Seventh-day Adventist';
+  if (/\bmethodist\b/.test(value)) return 'Methodist';
+  if (/\bquaker\b/.test(value)) return 'Quaker';
+  if (/\bunited reformed church\b/.test(value)) return 'United Reformed Church';
+  if (/\b(islam|muslim|sunni)\b/.test(value)) return 'Muslim';
+  if (/\bhindu\b/.test(value)) return 'Hindu';
+  if (/\bsikh\b/.test(value)) return 'Sikh';
+  if (/\b(multi-faith|all faiths)\b/.test(value)) return 'Multi-faith';
+  if (
+    value.includes('non-denominational') ||
+    value.includes('interdenominational') ||
+    value.includes('inter- / non- denominational') ||
+    value.includes('inter- / non-denominational') ||
+    value.includes('inter / non denominational') ||
+    value.includes('inter-/non-denominational')
+  ) {
+    return 'Non-denominational';
+  }
+  if (value.includes('christian science')) return 'Christian';
+  if (/\b(christian|evangelical|protestant|free church|unitarian|greek orthodox|orthodox)\b/.test(value)) return 'Christian';
+  return raw;
+}
+
+export function schoolHasSixthForm(
+  school: Pick<SchoolSummaryRecord, 'official_sixth_form' | 'age_max'>
+): boolean {
+  const value = String(school.official_sixth_form || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  if (value.includes('has a sixth form')) return true;
+  if (value.includes('does not have a sixth form')) return false;
+  return school.age_max !== null && school.age_max >= 17;
+}
+
+export function schoolHasNursery(
+  school: Pick<SchoolSummaryRecord, 'nursery_provision' | 'age_min'>
+): boolean {
+  const value = String(school.nursery_provision || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  if (value.includes('has nursery')) return true;
+  if (value.includes('no nursery')) return false;
+  return school.age_min !== null && school.age_min <= 3;
+}
+
+export function getStudentCount(
+  school: Pick<SchoolSummaryRecord, 'number_of_boys' | 'number_of_girls' | 'pupil_numbers'>
+): number | null {
+  const boys = toNumber(school.number_of_boys);
+  const girls = toNumber(school.number_of_girls);
+
+  if (boys !== null || girls !== null) {
+    return Math.max(0, boys || 0) + Math.max(0, girls || 0);
+  }
+
+  return toNumber(school.pupil_numbers);
+}
+
+export function getBoyGirlSplitLabel(
+  school: Pick<SchoolSummaryRecord, 'number_of_boys' | 'number_of_girls'>
+): string | null {
+  const boys = Math.max(0, toNumber(school.number_of_boys) || 0);
+  const girls = Math.max(0, toNumber(school.number_of_girls) || 0);
+  const total = boys + girls;
+
+  if (total <= 0) return null;
+
+  const boysPct = Math.round((boys / total) * 100);
+  const girlsPct = 100 - boysPct;
+  return `${boysPct}% boys / ${girlsPct}% girls`;
+}
+
 export function buildAddress(school: Pick<SchoolSummaryRecord, 'address_line1' | 'town' | 'postcode'>): string {
   return [school.address_line1, school.town, school.postcode].filter(Boolean).join(', ');
 }
 
+export function getSchoolLocationLabel(
+  school: Pick<SchoolSummaryRecord, 'town' | 'county' | 'postcode' | 'address_line1'>
+): string {
+  const parts = [school.town, school.county].filter((part, index, list) => part && list.indexOf(part) === index);
+  return parts.join(', ') || school.postcode || school.address_line1 || 'Location to be confirmed';
+}
 
 function getSchoolCoordinates(
   school: Pick<SchoolSummaryRecord, 'latitude' | 'longitude'>
@@ -796,7 +936,7 @@ async function getSchoolsByIds(schoolIds: Array<string | number>): Promise<Schoo
   for (const batch of chunkArray(uniqueSchoolIds, 500)) {
     const { data, error } = await supabase
       .from('schools')
-      .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating')
+      .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating, official_sixth_form, nursery_provision, number_of_boys, number_of_girls, religion, religious_ethos, status')
       .in('id', batch);
 
     if (error) fail('Could not load schools', error);
@@ -858,6 +998,103 @@ export async function getHomepageMapSchools(): Promise<MapSchool[]> {
   });
 
   return mapSchools;
+}
+
+
+async function getHomepageSearchSchoolRows(): Promise<SchoolSummaryRecord[]> {
+  const rows: SchoolSummaryRecord[] = [];
+  const pageSize = 500;
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from('schools')
+      .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating, official_sixth_form, nursery_provision, number_of_boys, number_of_girls, religion, religious_ethos, status')
+      .eq('provision_category', 'mainstream')
+      .in('status', ['active', 'open'])
+      .not('latitude', 'is', null)
+      .not('longitude', 'is', null)
+      .order('name', { ascending: true })
+      .range(from, from + pageSize - 1);
+
+    if (error) fail('Could not load homepage school search rows', error);
+
+    const page = (data || []) as SchoolSummaryRecord[];
+    rows.push(...page);
+
+    if (page.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return rows;
+}
+
+export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]> {
+  const liveLocations = await getLiveLocations();
+  const liveLocationIds = liveLocations.map((location) => location.id);
+  const locationSlugById = new Map(liveLocations.map((location) => [String(location.id), location.slug]));
+  const links = liveLocationIds.length ? await getLocationSchoolPathLinks(liveLocationIds) : [];
+  const locationSlugBySchoolId = new Map<string, string>();
+
+  links.forEach((link) => {
+    const schoolKey = String(link.school_id);
+    const locationSlug = locationSlugById.get(String(link.location_id));
+    if (!locationSlug || locationSlugBySchoolId.has(schoolKey)) return;
+    locationSlugBySchoolId.set(schoolKey, locationSlug);
+  });
+
+  const schools = await getHomepageSearchSchoolRows();
+
+  return schools
+    .map((school) => {
+      const coordinates = getSchoolCoordinates(school);
+      if (!coordinates) return null;
+
+      const locationSlug = locationSlugBySchoolId.get(String(school.id)) || null;
+      const href = locationSlug ? `/${locationSlug}/schools/${school.slug}/` : null;
+      const ageLabel = getAgeLabel(school.age_min, school.age_max);
+      const genderLabel = getGenderLabel(school.gender);
+      const boardingLabel = getFormatLabel(school.day_boarding);
+      const religion = getSchoolReligionLabel(school);
+      const hasSixthForm = schoolHasSixthForm(school);
+      const hasNursery = schoolHasNursery(school);
+      const provisionCategory = getProvisionCategory(school);
+      const noteParts = [
+        genderLabel,
+        boardingLabel,
+        `Ages ${ageLabel}`,
+        religion,
+        hasSixthForm ? 'Sixth form' : null,
+        hasNursery ? 'Nursery' : null
+      ].filter(Boolean);
+
+      return {
+        id: String(school.id),
+        slug: school.slug,
+        name: school.name,
+        href,
+        lat: coordinates.lat,
+        lng: coordinates.lng,
+        latitude: coordinates.lat,
+        longitude: coordinates.lng,
+        type: getMapType(school.phase, school.age_max),
+        provisionCategory,
+        note: noteParts.join(' · '),
+        displayLocation: getSchoolLocationLabel(school),
+        ageLabel,
+        genderLabel,
+        genderFilter: getGenderFilterValue(school.gender),
+        boardingLabel,
+        boardingFilter: getBoardingFilterValue(school.day_boarding),
+        hasSixthForm,
+        hasNursery,
+        religion,
+        town: school.town || null,
+        county: school.county || null,
+        postcode: school.postcode || null
+      } satisfies HomepageSearchSchool;
+    })
+    .filter((school): school is HomepageSearchSchool => Boolean(school));
 }
 
 export async function getLocationCompareData(locationSlug: string): Promise<{ location: LocationRecord; compareSchools: CompareSchoolRecord[] }> {
@@ -1172,7 +1409,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
 
   const { data: schoolData, error: schoolError } = await supabase
     .from('schools')
-    .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating')
+    .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating, official_sixth_form, nursery_provision, number_of_boys, number_of_girls, religion, religious_ethos, status')
     .eq('slug', schoolSlug)
     .single();
 
@@ -1316,11 +1553,19 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
       }
     : null;
 
+  const studentCount = getStudentCount(school);
+  const boyGirlSplit = getBoyGirlSplitLabel(school);
+  const religionLabel = getSchoolReligionLabel(school);
+  const hasNursery = schoolHasNursery(school);
+
   const rawAtGlanceRows = [
     { label: 'Ages', value: ageLabel },
+    studentCount !== null ? { label: 'Students', value: formatInteger(studentCount) } : null,
+    boyGirlSplit ? { label: 'Boy/girl split', value: boyGirlSplit } : null,
     { label: 'Gender', value: genderLabel },
     { label: 'Format', value: formatLabel },
-    school.pupil_numbers ? { label: 'Pupils', value: `${formatInteger(school.pupil_numbers)} pupils` } : null,
+    religionLabel ? { label: 'Religion', value: religionLabel } : null,
+    hasNursery ? { label: 'Nursery', value: 'Has a nursery' } : null,
     bursary?.status_label
       ? { label: 'Bursaries', value: bursary.status_label }
       : bursary?.has_bursaries === true
