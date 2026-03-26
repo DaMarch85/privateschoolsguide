@@ -1,9 +1,9 @@
 (function () {
-  const DEFAULT_RADIUS_MILES = 10;
-  const MAX_VISIBLE_CARDS = 120;
-  const UK_DEFAULT_CENTER = [54.25, -2.6];
-  const UK_DEFAULT_ZOOM = 6;
-  const POSTCODE_REGEX = /^([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})$/i;
+  const DEFAULT_RADIUS_MILES = 10
+  const MAX_VISIBLE_CARDS = 120
+  const UK_DEFAULT_CENTER = [54.25, -2.6]
+  const UK_DEFAULT_ZOOM = 6
+  const POSTCODE_REGEX = /^([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})$/i
 
   const state = {
     schools: [],
@@ -12,90 +12,113 @@
     markerLayer: null,
     searchLayer: null,
     activeRequestId: 0,
-    resolvedLocation: null
-  };
+    resolvedLocation: null,
+    currentFilters: null,
+    currentBaseResults: [],
+    currentResults: [],
+    mode: 'map',
+    ignoreMapMoveUntil: 0,
+    activePopup: null
+  }
 
   function escapeHtml(str) {
-    return String(str || '').replace(/[&<>"']/g, function (m) {
-      return ({
+    return String(str || '').replace(/[&<>"']/g, function (match) {
+      return {
         '&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
         '"': '&quot;',
         "'": '&#39;'
-      })[m];
-    });
+      }[match]
+    })
   }
 
   function formatCount(value) {
-    return new Intl.NumberFormat('en-GB').format(Number(value || 0));
+    return new Intl.NumberFormat('en-GB').format(Number(value || 0))
   }
 
   function pluralize(count, singular, plural) {
-    return count === 1 ? singular : (plural || singular + 's');
+    return count === 1 ? singular : (plural || singular + 's')
   }
 
   function normalizeSearchQuery(value) {
-    return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase()
   }
 
   function parsePositiveNumber(value, fallback) {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+    const parsed = Number(value)
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
   }
 
   function formatMiles(value) {
-    if (!Number.isFinite(value)) return '';
-    if (value < 10) return value.toFixed(1);
-    return String(Math.round(value));
+    if (!Number.isFinite(value)) return ''
+    if (value < 10) return value.toFixed(1)
+    return String(Math.round(value))
   }
 
   function formatDistanceLabel(value) {
-    if (!Number.isFinite(value)) return '';
-    return formatMiles(value) + ' miles away';
+    if (!Number.isFinite(value)) return ''
+    return formatMiles(value) + ' miles away'
   }
 
   function haversineMiles(lat1, lng1, lat2, lng2) {
-    const toRadians = Math.PI / 180;
-    const dLat = (lat2 - lat1) * toRadians;
-    const dLng = (lng2 - lng1) * toRadians;
+    const toRadians = Math.PI / 180
+    const dLat = (lat2 - lat1) * toRadians
+    const dLng = (lng2 - lng1) * toRadians
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * toRadians) * Math.cos(lat2 * toRadians) *
-      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      Math.sin(dLng / 2) * Math.sin(dLng / 2)
 
-    return 3958.8 * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+    return 3958.8 * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)))
   }
 
   function getGuideSearchInput() {
-    return document.getElementById('guide-location-search');
+    return document.getElementById('guide-location-search')
   }
 
   function getFilterForm() {
-    return document.getElementById('homepage-school-filters');
+    return document.getElementById('homepage-school-filters')
   }
 
   function getResultsSummary() {
-    return document.getElementById('homepage-results-summary');
+    return document.getElementById('homepage-results-summary')
   }
 
   function getErrorTarget() {
-    return document.getElementById('homepage-school-filter-error');
+    return document.getElementById('homepage-school-filter-error')
   }
 
   function getSubmitButton() {
-    return document.getElementById('homepage-school-filter-submit');
+    return document.getElementById('homepage-school-filter-submit')
+  }
+
+  function getSearchHereButton() {
+    return document.getElementById('homepage-map-search-here')
+  }
+
+  function getDefaultFilters() {
+    return {
+      locationQuery: '',
+      radiusMiles: DEFAULT_RADIUS_MILES,
+      genders: [],
+      boarding: [],
+      religions: [],
+      sixthFormOnly: false,
+      nurseryOnly: false,
+      sortBy: 'name-asc'
+    }
   }
 
   function getSchoolData() {
-    if (!Array.isArray(window.homepageSchoolSearchData)) return [];
+    if (!Array.isArray(window.homepageSchoolSearchData)) return []
 
     return window.homepageSchoolSearchData
       .map(function (item) {
-        const lat = Number(item && (item.lat ?? item.latitude));
-        const lng = Number(item && (item.lng ?? item.longitude));
+        const lat = Number(item && (item.lat ?? item.latitude))
+        const lng = Number(item && (item.lng ?? item.longitude))
 
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
 
         return {
           id: item.id ? String(item.id) : '',
@@ -116,60 +139,62 @@
           hasSixthForm: Boolean(item.hasSixthForm),
           hasNursery: Boolean(item.hasNursery),
           religion: item.religion || '',
+          religionFilter: item.religionFilter || item.religion || 'Non-denominational',
+          averageFee: Number.isFinite(Number(item.averageFee)) ? Number(item.averageFee) : null,
           town: item.town || '',
           county: item.county || '',
           postcode: item.postcode || ''
-        };
+        }
       })
-      .filter(Boolean);
+      .filter(Boolean)
   }
 
   function bindGuideLocationSearch() {
-    const searchInput = getGuideSearchInput();
-    const locationItems = Array.from(document.querySelectorAll('[data-location-item]'));
+    const searchInput = getGuideSearchInput()
+    const locationItems = Array.from(document.querySelectorAll('[data-location-item]'))
 
-    if (!searchInput || !locationItems.length) return;
+    if (!searchInput || !locationItems.length) return
 
     function filterLocations() {
-      const query = searchInput.value.trim().toLowerCase();
-      let firstVisibleHref = '';
+      const query = searchInput.value.trim().toLowerCase()
+      let firstVisibleHref = ''
 
       locationItems.forEach(function (item) {
-        const searchText = (item.dataset.search || item.dataset.name || '').toLowerCase();
-        const match = !query || searchText.includes(query);
-        const href = item.getAttribute('href') || '';
+        const searchText = (item.dataset.search || item.dataset.name || '').toLowerCase()
+        const match = !query || searchText.includes(query)
+        const href = item.getAttribute('href') || ''
 
         if (item.parentElement) {
-          item.parentElement.hidden = !match;
+          item.parentElement.hidden = !match
         }
 
         if (match && href && !firstVisibleHref) {
-          firstVisibleHref = href;
+          firstVisibleHref = href
         }
-      });
+      })
 
-      searchInput.dataset.firstVisibleHref = firstVisibleHref;
+      searchInput.dataset.firstVisibleHref = firstVisibleHref
     }
 
-    searchInput.addEventListener('input', filterLocations);
+    searchInput.addEventListener('input', filterLocations)
     searchInput.addEventListener('keydown', function (event) {
       if (event.key === 'Enter') {
-        const href = searchInput.dataset.firstVisibleHref;
+        const href = searchInput.dataset.firstVisibleHref
         if (href) {
-          event.preventDefault();
-          window.location.href = href;
+          event.preventDefault()
+          window.location.href = href
         }
       }
-    });
+    })
 
-    filterLocations();
+    filterLocations()
   }
 
   function fetchJson(url) {
-    const controller = new AbortController();
+    const controller = new AbortController()
     const timeout = window.setTimeout(function () {
-      controller.abort();
-    }, 8000);
+      controller.abort()
+    }, 8000)
 
     return fetch(url, {
       signal: controller.signal,
@@ -179,32 +204,32 @@
       }
     })
       .then(function (response) {
-        window.clearTimeout(timeout);
+        window.clearTimeout(timeout)
         if (!response.ok) {
-          throw new Error('Request failed with status ' + response.status);
+          throw new Error('Request failed with status ' + response.status)
         }
-        return response.json();
+        return response.json()
       })
       .catch(function (error) {
-        window.clearTimeout(timeout);
-        throw error;
-      });
+        window.clearTimeout(timeout)
+        throw error
+      })
   }
 
   function looksLikeUkPostcode(query) {
-    return POSTCODE_REGEX.test(String(query || '').trim());
+    return POSTCODE_REGEX.test(String(query || '').trim())
   }
 
   function formatPostcode(postcode) {
-    const compact = String(postcode || '').replace(/\s+/g, '').trim().toUpperCase();
-    if (compact.length < 5) return compact;
-    return compact.slice(0, -3) + ' ' + compact.slice(-3);
+    const compact = String(postcode || '').replace(/\s+/g, '').trim().toUpperCase()
+    if (compact.length < 5) return compact
+    return compact.slice(0, -3) + ' ' + compact.slice(-3)
   }
 
   function resolvePostcode(query) {
-    const cleanQuery = formatPostcode(query);
-    const exactUrl = 'https://api.postcodes.io/postcodes/' + encodeURIComponent(cleanQuery);
-    const searchUrl = 'https://api.postcodes.io/postcodes?q=' + encodeURIComponent(cleanQuery);
+    const cleanQuery = formatPostcode(query)
+    const exactUrl = 'https://api.postcodes.io/postcodes/' + encodeURIComponent(cleanQuery)
+    const searchUrl = 'https://api.postcodes.io/postcodes?q=' + encodeURIComponent(cleanQuery)
 
     return fetchJson(exactUrl)
       .then(function (payload) {
@@ -213,208 +238,251 @@
             lat: Number(payload.result.latitude),
             lng: Number(payload.result.longitude),
             label: payload.result.postcode || cleanQuery
-          };
+          }
         }
-        return null;
+        return null
       })
       .catch(function () {
         return fetchJson(searchUrl)
           .then(function (payload) {
-            const first = payload && Array.isArray(payload.result) ? payload.result[0] : null;
-            if (!first) return null;
+            const first = payload && Array.isArray(payload.result) ? payload.result[0] : null
+            if (!first) return null
             return {
               lat: Number(first.latitude),
               lng: Number(first.longitude),
               label: first.postcode || cleanQuery
-            };
+            }
           })
           .catch(function () {
-            return null;
-          });
-      });
+            return null
+          })
+      })
   }
 
   function resolvePlace(query) {
-    const url = new URL('https://nominatim.openstreetmap.org/search');
-    url.searchParams.set('format', 'jsonv2');
-    url.searchParams.set('limit', '1');
-    url.searchParams.set('countrycodes', 'gb');
-    url.searchParams.set('addressdetails', '1');
-    url.searchParams.set('q', String(query || '').trim());
+    const url = new URL('https://nominatim.openstreetmap.org/search')
+    url.searchParams.set('format', 'jsonv2')
+    url.searchParams.set('limit', '1')
+    url.searchParams.set('countrycodes', 'gb')
+    url.searchParams.set('addressdetails', '1')
+    url.searchParams.set('q', String(query || '').trim())
 
     return fetchJson(String(url))
       .then(function (payload) {
-        const first = Array.isArray(payload) ? payload[0] : null;
-        if (!first) return null;
+        const first = Array.isArray(payload) ? payload[0] : null
+        if (!first) return null
 
         const label = String(first.display_name || query)
           .split(',')
           .slice(0, 3)
-          .map(function (part) { return part.trim(); })
+          .map(function (part) { return part.trim() })
           .filter(Boolean)
-          .join(', ');
+          .join(', ')
 
         return {
           lat: Number(first.lat),
           lng: Number(first.lon),
           label: label || String(query || '').trim()
-        };
+        }
       })
       .catch(function () {
-        return null;
-      });
+        return null
+      })
   }
 
   function resolveSearchLocation(query) {
-    const trimmed = String(query || '').trim();
-    if (!trimmed) return Promise.resolve(null);
+    const trimmed = String(query || '').trim()
+    if (!trimmed) return Promise.resolve(null)
 
-    if (looksLikeUkPostcode(trimmed)) {
+    if (looksLikeUkPostcode(trimmed) || /\d/.test(trimmed)) {
       return resolvePostcode(trimmed).then(function (result) {
-        return result || resolvePlace(trimmed);
-      });
+        return result || resolvePlace(trimmed)
+      })
     }
 
-    if (/\d/.test(trimmed)) {
-      return resolvePostcode(trimmed).then(function (result) {
-        return result || resolvePlace(trimmed);
-      });
-    }
-
-    return resolvePlace(trimmed);
+    return resolvePlace(trimmed)
   }
 
   function readFilters() {
-    const form = getFilterForm();
-    if (!form) {
-      return {
-        locationQuery: '',
-        radiusMiles: DEFAULT_RADIUS_MILES,
-        genders: [],
-        boarding: [],
-        religions: [],
-        sixthFormOnly: false,
-        nurseryOnly: false
-      };
-    }
+    const form = getFilterForm()
+    if (!form) return getDefaultFilters()
 
-    const locationInput = form.querySelector('#school-filter-location');
-    const radiusInput = form.querySelector('#school-filter-radius');
+    const locationInput = form.querySelector('#school-filter-location')
+    const radiusInput = form.querySelector('#school-filter-radius')
+    const sortInput = form.querySelector('#school-filter-sort')
 
     return {
       locationQuery: locationInput ? locationInput.value.trim() : '',
       radiusMiles: parsePositiveNumber(radiusInput ? radiusInput.value : DEFAULT_RADIUS_MILES, DEFAULT_RADIUS_MILES),
-      genders: Array.from(form.querySelectorAll('input[name="gender"]:checked')).map(function (input) { return input.value; }),
-      boarding: Array.from(form.querySelectorAll('input[name="boarding"]:checked')).map(function (input) { return input.value; }),
-      religions: Array.from(form.querySelectorAll('input[name="religion"]:checked')).map(function (input) { return input.value; }),
+      genders: Array.from(form.querySelectorAll('input[name="gender"]:checked')).map(function (input) { return input.value }),
+      boarding: Array.from(form.querySelectorAll('input[name="boarding"]:checked')).map(function (input) { return input.value }),
+      religions: Array.from(form.querySelectorAll('input[name="religion"]:checked')).map(function (input) { return input.value }),
       sixthFormOnly: Boolean(form.querySelector('#school-filter-sixth-form:checked')),
-      nurseryOnly: Boolean(form.querySelector('#school-filter-nursery:checked'))
-    };
+      nurseryOnly: Boolean(form.querySelector('#school-filter-nursery:checked')),
+      sortBy: sortInput && sortInput.value ? sortInput.value : 'name-asc'
+    }
   }
 
   function getFilterDropdowns() {
-    return Array.from(document.querySelectorAll('[data-dropdown]'));
+    return Array.from(document.querySelectorAll('[data-dropdown]'))
   }
 
   function closeFilterDropdowns(exceptDropdown) {
     getFilterDropdowns().forEach(function (dropdown) {
       if (dropdown !== exceptDropdown) {
-        dropdown.open = false;
+        dropdown.open = false
       }
-    });
+    })
   }
 
   function getDropdownSelectionLabel(labels, fallback) {
-    if (!labels.length) return fallback || 'Any';
-    if (labels.length === 1) return labels[0];
+    if (!labels.length) return fallback || 'Any'
+    if (labels.length === 1) return labels[0]
     if (labels.length === 2) {
-      const joined = labels.join(', ');
-      if (joined.length <= 26) return joined;
+      const joined = labels.join(', ')
+      if (joined.length <= 26) return joined
     }
-    return labels.length + ' selected';
+    return labels.length + ' selected'
   }
 
   function updateFilterDropdownLabel(dropdown) {
-    if (!dropdown) return;
-    const valueTarget = dropdown.querySelector('[data-dropdown-value]');
-    if (!valueTarget) return;
+    if (!dropdown) return
+    const valueTarget = dropdown.querySelector('[data-dropdown-value]')
+    if (!valueTarget) return
 
-    const checkedLabels = Array.from(dropdown.querySelectorAll('input[type="checkbox"]:checked')).map(function (input) {
-      return input.dataset.optionLabel || '';
-    }).filter(Boolean);
+    const checkedLabels = Array.from(dropdown.querySelectorAll('input[type="checkbox"]:checked'))
+      .map(function (input) { return input.dataset.optionLabel || '' })
+      .filter(Boolean)
 
-    valueTarget.textContent = getDropdownSelectionLabel(checkedLabels, valueTarget.dataset.defaultLabel || 'Any');
+    valueTarget.textContent = getDropdownSelectionLabel(checkedLabels, valueTarget.dataset.defaultLabel || 'Any')
   }
 
   function refreshFilterDropdownLabels() {
-    getFilterDropdowns().forEach(updateFilterDropdownLabel);
+    getFilterDropdowns().forEach(updateFilterDropdownLabel)
   }
 
   function bindFilterDropdowns() {
-    const dropdowns = getFilterDropdowns();
-    if (!dropdowns.length) return;
+    const dropdowns = getFilterDropdowns()
+    if (!dropdowns.length) return
 
     dropdowns.forEach(function (dropdown) {
       dropdown.addEventListener('toggle', function () {
         if (dropdown.open) {
-          closeFilterDropdowns(dropdown);
+          closeFilterDropdowns(dropdown)
         }
-      });
+      })
 
       dropdown.addEventListener('change', function (event) {
         if (event.target && event.target.matches('input[type="checkbox"]')) {
-          updateFilterDropdownLabel(dropdown);
+          updateFilterDropdownLabel(dropdown)
         }
-      });
-    });
+      })
+    })
 
     document.addEventListener('click', function (event) {
-      const clickedInsideDropdown = event.target && event.target.closest('[data-dropdown]');
+      const clickedInsideDropdown = event.target && event.target.closest('[data-dropdown]')
       if (!clickedInsideDropdown) {
-        closeFilterDropdowns();
+        closeFilterDropdowns()
       }
-    });
+    })
 
     document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape') {
-        closeFilterDropdowns();
+        closeFilterDropdowns()
       }
-    });
+    })
 
-    refreshFilterDropdownLabels();
+    refreshFilterDropdownLabels()
   }
 
-  function filterSchools(filters, resolvedLocation) {
-    const genders = new Set(filters.genders || []);
-    const boarding = new Set(filters.boarding || []);
-    const religions = new Set(filters.religions || []);
+  function hasActiveNonLocationFilters(filters) {
+    return Boolean(
+      (filters.genders && filters.genders.length) ||
+      (filters.boarding && filters.boarding.length) ||
+      (filters.religions && filters.religions.length) ||
+      filters.sixthFormOnly ||
+      filters.nurseryOnly
+    )
+  }
+
+  function buildBaseResults(filters, resolvedLocation, mode) {
+    const genders = new Set(filters.genders || [])
+    const boarding = new Set(filters.boarding || [])
+    const religions = new Set(filters.religions || [])
 
     return state.schools
       .map(function (school) {
-        const distanceMiles = resolvedLocation
+        const distanceMiles = resolvedLocation && mode === 'radius'
           ? haversineMiles(resolvedLocation.lat, resolvedLocation.lng, school.lat, school.lng)
-          : null;
+          : null
 
-        return Object.assign({}, school, {
-          distanceMiles: distanceMiles
-        });
+        return Object.assign({}, school, { distanceMiles: distanceMiles })
       })
       .filter(function (school) {
-        if (genders.size && !genders.has(school.genderFilter)) return false;
-        if (boarding.size && !boarding.has(school.boardingFilter)) return false;
-        if (filters.sixthFormOnly && !school.hasSixthForm) return false;
-        if (filters.nurseryOnly && !school.hasNursery) return false;
-        if (religions.size && !religions.has(school.religion)) return false;
-        if (resolvedLocation && (!Number.isFinite(school.distanceMiles) || school.distanceMiles > filters.radiusMiles)) return false;
-        return true;
+        if (genders.size && !genders.has(school.genderFilter)) return false
+        if (boarding.size && !boarding.has(school.boardingFilter)) return false
+        if (filters.sixthFormOnly && !school.hasSixthForm) return false
+        if (filters.nurseryOnly && !school.hasNursery) return false
+        if (religions.size && !religions.has(school.religionFilter)) return false
+        if (resolvedLocation && mode === 'radius' && (!Number.isFinite(school.distanceMiles) || school.distanceMiles > filters.radiusMiles)) return false
+        return true
       })
-      .sort(function (a, b) {
-        if (resolvedLocation) {
-          const distanceDelta = (a.distanceMiles || 0) - (b.distanceMiles || 0);
-          if (distanceDelta !== 0) return distanceDelta;
-        }
-        return a.name.localeCompare(b.name, 'en');
-      });
+  }
+
+  function compareNumberWithNullsLast(a, b, direction) {
+    const aValid = Number.isFinite(a)
+    const bValid = Number.isFinite(b)
+    if (!aValid && !bValid) return 0
+    if (!aValid) return 1
+    if (!bValid) return -1
+    return direction === 'desc' ? b - a : a - b
+  }
+
+  function sortResults(results, sortBy) {
+    return results.slice().sort(function (a, b) {
+      if (sortBy === 'name-desc') {
+        return b.name.localeCompare(a.name, 'en')
+      }
+
+      if (sortBy === 'fee-asc') {
+        const feeDelta = compareNumberWithNullsLast(a.averageFee, b.averageFee, 'asc')
+        if (feeDelta !== 0) return feeDelta
+        return a.name.localeCompare(b.name, 'en')
+      }
+
+      if (sortBy === 'fee-desc') {
+        const feeDelta = compareNumberWithNullsLast(a.averageFee, b.averageFee, 'desc')
+        if (feeDelta !== 0) return feeDelta
+        return a.name.localeCompare(b.name, 'en')
+      }
+
+      return a.name.localeCompare(b.name, 'en')
+    })
+  }
+
+  function getCurrentMapBounds() {
+    return state.map ? state.map.getBounds() : null
+  }
+
+  function applyMapBounds(results) {
+    const bounds = getCurrentMapBounds()
+    if (!bounds) return results.slice()
+
+    return results.filter(function (school) {
+      return bounds.contains([school.lat, school.lng])
+    })
+  }
+
+  function usesCurrentMapView(mode) {
+    return mode === 'map' || mode === 'bounds'
+  }
+
+  function getVisibleResults(baseResults) {
+    const filtered = usesCurrentMapView(state.mode)
+      ? applyMapBounds(baseResults)
+      : baseResults.slice()
+
+    return sortResults(filtered, state.currentFilters ? state.currentFilters.sortBy : 'name-asc')
   }
 
   function buildIcon(type) {
@@ -422,37 +490,38 @@
       className: 'school-map-icon',
       html: '<span class="school-map-marker ' + escapeHtml(type) + '"></span>',
       iconSize: [16, 16],
-      iconAnchor: [8, 8],
-      popupAnchor: [0, -8]
-    });
+      iconAnchor: [8, 8]
+    })
   }
 
   function popupHtml(point) {
     return (
       '<div class="map-popup">' +
-      '<h3 class="map-popup-title">' + escapeHtml(point.name) + '</h3>' +
-      (point.displayLocation ? '<p class="map-popup-meta">' + escapeHtml(point.displayLocation) + '</p>' : '') +
-      (point.note ? '<p class="map-popup-meta">' + escapeHtml(point.note) + '</p>' : '') +
-      (point.href
-        ? '<a class="map-popup-link" href="' + escapeHtml(point.href) + '">View school</a>'
-        : '<p class="map-popup-link map-popup-link--muted">Profile coming soon</p>') +
+        '<h3 class="map-popup-title">' + escapeHtml(point.name) + '</h3>' +
+        (point.displayLocation ? '<p class="map-popup-meta">' + escapeHtml(point.displayLocation) + '</p>' : '') +
+        (point.note ? '<p class="map-popup-meta">' + escapeHtml(point.note) + '</p>' : '') +
+        (point.href
+          ? '<a class="map-popup-link" href="' + escapeHtml(point.href) + '">View school</a>'
+          : '<p class="map-popup-link map-popup-link--muted">Profile coming soon</p>') +
       '</div>'
-    );
+    )
   }
 
   function schoolCardHtml(point) {
     const extras = [
       point.religion || '',
-      point.hasSixthForm ? 'Sixth form' : '',
-      point.hasNursery ? 'Nursery' : ''
-    ].filter(Boolean);
+      point.hasSixthForm ? 'Has a sixth form' : '',
+      point.hasNursery ? 'Has an attached nursery' : ''
+    ].filter(Boolean)
+
     const eyebrow = point.distanceMiles !== null && Number.isFinite(point.distanceMiles)
       ? (point.displayLocation ? escapeHtml(point.displayLocation) + ' · ' : '') + escapeHtml(formatDistanceLabel(point.distanceMiles))
-      : escapeHtml(point.displayLocation || point.postcode || '');
+      : escapeHtml(point.displayLocation || point.postcode || '')
+
     const wrapperStart = point.href
       ? '<a class="homepage-school-card homepage-school-card--' + escapeHtml(point.type) + '" href="' + escapeHtml(point.href) + '">'
-      : '<article class="homepage-school-card homepage-school-card--' + escapeHtml(point.type) + ' homepage-school-card--static">';
-    const wrapperEnd = point.href ? '</a>' : '</article>';
+      : '<article class="homepage-school-card homepage-school-card--' + escapeHtml(point.type) + ' homepage-school-card--static">'
+    const wrapperEnd = point.href ? '</a>' : '</article>'
 
     return (
       wrapperStart +
@@ -464,91 +533,148 @@
           (!point.href ? '<p class="homepage-school-card__status">Profile coming soon</p>' : '') +
         '</div>' +
       wrapperEnd
-    );
+    )
   }
 
   function updateError(message) {
-    const errorTarget = getErrorTarget();
-    if (!errorTarget) return;
-    errorTarget.hidden = !message;
-    errorTarget.textContent = message || '';
+    const errorTarget = getErrorTarget()
+    if (!errorTarget) return
+    errorTarget.hidden = !message
+    errorTarget.textContent = message || ''
   }
 
-  function updateResultsSummary(results, filters, resolvedLocation) {
-    const target = getResultsSummary();
-    if (!target) return;
+  function updateResultsSummary(results, filters, resolvedLocation, mode) {
+    const target = getResultsSummary()
+    if (!target) return
 
-    const total = results.length;
-    const shown = Math.min(total, MAX_VISIBLE_CARDS);
-    const hasOtherFilters =
-      filters.genders.length ||
-      filters.boarding.length ||
-      filters.religions.length ||
-      filters.sixthFormOnly ||
-      filters.nurseryOnly;
+    const total = results.length
+    const shown = Math.min(total, MAX_VISIBLE_CARDS)
+    const hasOtherFilters = hasActiveNonLocationFilters(filters)
+    const usingMapView = usesCurrentMapView(mode)
 
     if (!total) {
-      if (resolvedLocation) {
-        target.textContent = 'No schools found within ' + formatMiles(filters.radiusMiles) + ' miles of ' + resolvedLocation.label + '.';
+      if (mode === 'radius' && resolvedLocation) {
+        target.textContent = 'No schools found within ' + formatMiles(filters.radiusMiles) + ' miles of ' + resolvedLocation.label + '.'
+      } else if (hasOtherFilters) {
+        target.textContent = 'No schools match these filters in the current map view.'
       } else {
-        target.textContent = 'No schools match these filters.';
+        target.textContent = 'No schools are visible in the current map view.'
       }
-      return;
+      return
     }
 
-    if (resolvedLocation) {
-      target.textContent =
-        (total > shown ? 'Showing first ' + formatCount(shown) + ' of ' + formatCount(total) : 'Showing ' + formatCount(total)) +
-        ' ' + pluralize(total, 'school') +
-        ' within ' + formatMiles(filters.radiusMiles) + ' miles of ' + resolvedLocation.label + '.';
-      return;
+    const lead = total > shown
+      ? 'Showing first ' + formatCount(shown) + ' of ' + formatCount(total)
+      : (usingMapView && !hasOtherFilters && mode === 'map'
+          ? 'Showing all ' + formatCount(total)
+          : 'Showing ' + formatCount(total))
+
+    if (mode === 'radius' && resolvedLocation) {
+      target.textContent = lead + ' ' + pluralize(total, 'school') + ' within ' + formatMiles(filters.radiusMiles) + ' miles of ' + resolvedLocation.label + '.'
+      return
     }
 
     if (hasOtherFilters) {
-      target.textContent =
-        (total > shown ? 'Showing first ' + formatCount(shown) + ' of ' + formatCount(total) : 'Showing ' + formatCount(total)) +
-        ' ' + pluralize(total, 'school') +
-        ' matching these filters nationwide.';
-      return;
+      target.textContent = lead + ' ' + pluralize(total, 'school') + ' matching these filters in the current map view.'
+      return
     }
 
-    target.textContent =
-      (total > shown ? 'Showing first ' + formatCount(shown) + ' of ' + formatCount(total) : 'Showing all ' + formatCount(total)) +
-      ' schools with map coordinates.';
+    target.textContent = lead + ' ' + pluralize(total, 'school') + ' in the current map view.'
   }
 
-  function renderSchoolCards(results, filters, resolvedLocation) {
-    const cardGrid = document.getElementById('homepage-visible-school-grid');
-    const cardEmpty = document.getElementById('homepage-visible-school-empty');
-    if (!cardGrid) return;
+  function renderSchoolCards(results, filters, resolvedLocation, mode) {
+    const cardGrid = document.getElementById('homepage-visible-school-grid')
+    const cardEmpty = document.getElementById('homepage-visible-school-empty')
+    if (!cardGrid) return
 
-    const shown = results.slice(0, MAX_VISIBLE_CARDS);
-    cardGrid.innerHTML = shown.map(schoolCardHtml).join('');
+    const shown = results.slice(0, MAX_VISIBLE_CARDS)
+    cardGrid.innerHTML = shown.map(schoolCardHtml).join('')
 
-    if (!cardEmpty) return;
+    if (!cardEmpty) return
 
     if (!shown.length) {
-      cardEmpty.hidden = false;
-      cardEmpty.textContent = resolvedLocation
-        ? 'No schools were found within ' + formatMiles(filters.radiusMiles) + ' miles of ' + resolvedLocation.label + '.'
-        : 'No schools match these filters.';
-      return;
+      cardEmpty.hidden = false
+      if (mode === 'radius' && resolvedLocation) {
+        cardEmpty.textContent = 'No schools were found within ' + formatMiles(filters.radiusMiles) + ' miles of ' + resolvedLocation.label + '.'
+      } else {
+        cardEmpty.textContent = 'No schools are visible in the current map view.'
+      }
+      return
     }
 
     if (results.length > shown.length) {
-      cardEmpty.hidden = false;
-      cardEmpty.textContent = 'Showing the first ' + formatCount(shown.length) + ' of ' + formatCount(results.length) + ' matching schools. Narrow the filters to see more.';
-      return;
+      cardEmpty.hidden = false
+      cardEmpty.textContent = 'Showing the first ' + formatCount(shown.length) + ' of ' + formatCount(results.length) + ' matching schools. Narrow the filters or zoom in to see more.'
+      return
     }
 
-    cardEmpty.hidden = true;
-    cardEmpty.textContent = '';
+    cardEmpty.hidden = true
+    cardEmpty.textContent = ''
+  }
+
+  function updateMapEmptyState(results, filters, resolvedLocation, mode) {
+    const emptyState = document.getElementById('homepage-map-empty')
+    if (!emptyState) return
+
+    if (results.length) {
+      emptyState.hidden = true
+      emptyState.textContent = ''
+      return
+    }
+
+    emptyState.hidden = false
+    if (mode === 'radius' && resolvedLocation) {
+      emptyState.textContent = 'No schools were found within ' + formatMiles(filters.radiusMiles) + ' miles of ' + resolvedLocation.label + '.'
+    } else if (hasActiveNonLocationFilters(filters)) {
+      emptyState.textContent = 'No schools match these filters in the current map view.'
+    } else {
+      emptyState.textContent = 'No schools are visible in the current map view.'
+    }
+  }
+
+  function hideSearchHereButton() {
+    const button = getSearchHereButton()
+    if (!button) return
+    button.hidden = true
+  }
+
+  function showSearchHereButton() {
+    const button = getSearchHereButton()
+    if (!button || !state.resolvedLocation) return
+    button.hidden = false
+  }
+
+  function closeActivePopup() {
+    if (!state.map || !state.activePopup) return
+    try {
+      state.map.closePopup(state.activePopup)
+    } catch (error) {}
+    state.activePopup = null
+  }
+
+  function invalidateMap() {
+    if (!state.map) return
+
+    window.requestAnimationFrame(function () {
+      try {
+        state.map.invalidateSize({ pan: false, animate: false })
+      } catch (error) {}
+      if (state.tileLayer && typeof state.tileLayer.redraw === 'function') {
+        try {
+          state.tileLayer.redraw()
+        } catch (error) {}
+      }
+    })
+  }
+
+  function markProgrammaticMapMove() {
+    state.ignoreMapMoveUntil = Date.now() + 400
   }
 
   function ensureMap() {
-    const mapTarget = document.getElementById('homepage-map');
-    if (!mapTarget || !window.L) return null;
-    if (state.map) return state.map;
+    const mapTarget = document.getElementById('homepage-map')
+    if (!mapTarget || !window.L) return null
+    if (state.map) return state.map
 
     state.map = window.L.map(mapTarget, {
       zoomControl: true,
@@ -557,39 +683,93 @@
       fadeAnimation: false,
       markerZoomAnimation: false,
       preferCanvas: true
-    });
+    })
 
     state.tileLayer = window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
       attribution: '© OpenStreetMap contributors',
       detectRetina: window.devicePixelRatio > 1
-    }).addTo(state.map);
+    }).addTo(state.map)
 
-    state.markerLayer = window.L.layerGroup().addTo(state.map);
-    state.searchLayer = window.L.layerGroup().addTo(state.map);
-    state.map.setView(UK_DEFAULT_CENTER, UK_DEFAULT_ZOOM);
+    state.markerLayer = window.L.layerGroup().addTo(state.map)
+    state.searchLayer = window.L.layerGroup().addTo(state.map)
 
-    return state.map;
+    markProgrammaticMapMove()
+    state.map.setView(UK_DEFAULT_CENTER, UK_DEFAULT_ZOOM, { animate: false })
+
+    state.map.on('moveend', function () {
+      if (Date.now() < state.ignoreMapMoveUntil) return
+
+      closeActivePopup()
+
+      if (state.resolvedLocation) {
+        showSearchHereButton()
+        return
+      }
+
+      state.mode = 'map'
+      hideSearchHereButton()
+      refreshViewportResults()
+    })
+
+    state.map.on('click', function () {
+      closeActivePopup()
+    })
+
+    state.map.on('popupclose', function () {
+      state.activePopup = null
+    })
+
+    return state.map
   }
 
-  function redrawMap(results, filters, resolvedLocation) {
-    const map = ensureMap();
-    const emptyState = document.getElementById('homepage-map-empty');
-    if (!map || !state.markerLayer || !state.searchLayer) return;
+  function openMarkerPreview(marker, point) {
+    if (!state.map || !window.L) return
 
-    state.markerLayer.clearLayers();
-    state.searchLayer.clearLayers();
+    const size = state.map.getSize()
+    const containerPoint = state.map.latLngToContainerPoint(marker.getLatLng())
+    const opensBelow = containerPoint.y < size.y / 2
 
-    const boundsLayers = [];
+    closeActivePopup()
 
-    if (resolvedLocation) {
+    const popup = window.L.popup({
+      autoPan: false,
+      closeButton: false,
+      autoClose: true,
+      closeOnEscapeKey: true,
+      closeOnClick: false,
+      className: 'map-preview-popup ' + (opensBelow ? 'map-preview-popup--below' : 'map-preview-popup--above'),
+      maxWidth: 250,
+      minWidth: 200,
+      offset: [0, opensBelow ? 16 : -16]
+    })
+      .setLatLng(marker.getLatLng())
+      .setContent(popupHtml(point))
+
+    popup.openOn(state.map)
+    state.activePopup = popup
+  }
+
+  function redrawMap(markerResults, filters, resolvedLocation, options) {
+    const map = ensureMap()
+    if (!map || !state.markerLayer || !state.searchLayer) return
+
+    const settings = options || {}
+
+    closeActivePopup()
+    state.markerLayer.clearLayers()
+    state.searchLayer.clearLayers()
+
+    const fitLayers = []
+
+    if (resolvedLocation && state.mode === 'radius') {
       const radiusCircle = window.L.circle([resolvedLocation.lat, resolvedLocation.lng], {
         radius: filters.radiusMiles * 1609.34,
         color: '#b35b2e',
         weight: 1.5,
         fillColor: '#b35b2e',
         fillOpacity: 0.08
-      }).addTo(state.searchLayer);
+      }).addTo(state.searchLayer)
 
       const centreMarker = window.L.circleMarker([resolvedLocation.lat, resolvedLocation.lng], {
         radius: 7,
@@ -597,78 +777,88 @@
         weight: 2,
         fillColor: '#ffffff',
         fillOpacity: 1
-      }).bindPopup('<div class="map-popup"><h3 class="map-popup-title">' + escapeHtml(resolvedLocation.label) + '</h3><p class="map-popup-meta">Search centre</p></div>').addTo(state.searchLayer);
+      }).addTo(state.searchLayer)
 
-      boundsLayers.push(radiusCircle, centreMarker);
+      fitLayers.push(radiusCircle, centreMarker)
     }
 
-    results.forEach(function (school) {
-      const marker = window.L.marker([school.lat, school.lng], { icon: buildIcon(school.type) });
-      marker.bindPopup(popupHtml(school));
-      state.markerLayer.addLayer(marker);
-      boundsLayers.push(marker);
-    });
+    markerResults.forEach(function (school) {
+      const marker = window.L.marker([school.lat, school.lng], { icon: buildIcon(school.type) })
+      marker.on('click', function () {
+        openMarkerPreview(marker, school)
+      })
+      state.markerLayer.addLayer(marker)
+      fitLayers.push(marker)
+    })
 
-    if (emptyState) {
-      emptyState.hidden = results.length > 0 || Boolean(resolvedLocation);
-      if (!emptyState.hidden) {
-        emptyState.textContent = 'No schools match these filters.';
-      } else if (resolvedLocation && results.length === 0) {
-        emptyState.hidden = false;
-        emptyState.textContent = 'No schools were found within ' + formatMiles(filters.radiusMiles) + ' miles of ' + resolvedLocation.label + '.';
+    if (settings.fitToResults) {
+      if (fitLayers.length) {
+        markProgrammaticMapMove()
+        map.fitBounds(window.L.featureGroup(fitLayers).getBounds(), { padding: [28, 28], maxZoom: 11, animate: false })
+      } else if (resolvedLocation && state.mode === 'radius') {
+        markProgrammaticMapMove()
+        map.setView([resolvedLocation.lat, resolvedLocation.lng], 10, { animate: false })
       }
     }
 
-    if (resolvedLocation && boundsLayers.length) {
-      const group = window.L.featureGroup(boundsLayers);
-      map.fitBounds(group.getBounds(), { padding: [28, 28], maxZoom: 11, animate: false });
-    } else {
-      map.setView(UK_DEFAULT_CENTER, UK_DEFAULT_ZOOM, { animate: false });
-    }
+    invalidateMap()
+  }
 
-    window.requestAnimationFrame(function () {
-      try {
-        map.invalidateSize({ pan: false, animate: false });
-      } catch (error) {}
-      if (state.tileLayer && typeof state.tileLayer.redraw === 'function') {
-        try {
-          state.tileLayer.redraw();
-        } catch (error) {}
-      }
-    });
+  function refreshViewportResults() {
+    if (!state.currentFilters) return
+
+    const visibleResults = getVisibleResults(state.currentBaseResults)
+    state.currentResults = visibleResults
+    renderSchoolCards(visibleResults, state.currentFilters, state.resolvedLocation, state.mode)
+    updateResultsSummary(visibleResults, state.currentFilters, state.resolvedLocation, state.mode)
+    updateMapEmptyState(visibleResults, state.currentFilters, state.resolvedLocation, state.mode)
+  }
+
+  function renderCurrentState(options) {
+    const filters = state.currentFilters || getDefaultFilters()
+    const baseResults = buildBaseResults(filters, state.resolvedLocation, state.mode)
+    state.currentBaseResults = baseResults
+    state.currentResults = getVisibleResults(baseResults)
+
+    renderSchoolCards(state.currentResults, filters, state.resolvedLocation, state.mode)
+    redrawMap(baseResults, filters, state.resolvedLocation, options)
+    updateResultsSummary(state.currentResults, filters, state.resolvedLocation, state.mode)
+    updateMapEmptyState(state.currentResults, filters, state.resolvedLocation, state.mode)
   }
 
   function setSubmitting(isSubmitting) {
-    const submitButton = getSubmitButton();
-    if (!submitButton) return;
-    submitButton.disabled = isSubmitting;
-    submitButton.textContent = isSubmitting ? 'Searching…' : 'Apply filters';
+    const submitButton = getSubmitButton()
+    if (!submitButton) return
+    submitButton.disabled = isSubmitting
+    submitButton.textContent = isSubmitting ? 'Searching…' : 'Apply filters'
   }
 
   async function applyFilters() {
-    const filters = readFilters();
-    const requestId = ++state.activeRequestId;
-    const searchKey = normalizeSearchQuery(filters.locationQuery);
+    const filters = readFilters()
+    const requestId = ++state.activeRequestId
+    const searchKey = normalizeSearchQuery(filters.locationQuery)
 
-    updateError('');
-    setSubmitting(Boolean(searchKey));
+    state.currentFilters = filters
+    updateError('')
+    hideSearchHereButton()
+    setSubmitting(Boolean(searchKey))
 
-    let resolvedLocation = null;
+    let resolvedLocation = null
 
     if (searchKey) {
       if (state.resolvedLocation && state.resolvedLocation.key === searchKey) {
-        resolvedLocation = state.resolvedLocation;
+        resolvedLocation = state.resolvedLocation
       } else {
-        resolvedLocation = await resolveSearchLocation(filters.locationQuery);
-        if (requestId !== state.activeRequestId) return;
+        resolvedLocation = await resolveSearchLocation(filters.locationQuery)
+        if (requestId !== state.activeRequestId) return
 
         if (!resolvedLocation) {
-          updateError('We could not find that UK location, so the other filters have still been applied.');
+          updateError('We could not find that UK location, so the map view and the other filters have still been applied.')
         }
       }
     }
 
-    if (requestId !== state.activeRequestId) return;
+    if (requestId !== state.activeRequestId) return
 
     state.resolvedLocation = resolvedLocation
       ? {
@@ -677,63 +867,82 @@
           lng: resolvedLocation.lng,
           label: resolvedLocation.label
         }
-      : null;
+      : null
 
-    const results = filterSchools(filters, state.resolvedLocation);
-    renderSchoolCards(results, filters, state.resolvedLocation);
-    redrawMap(results, filters, state.resolvedLocation);
-    updateResultsSummary(results, filters, state.resolvedLocation);
-    setSubmitting(false);
+    state.mode = state.resolvedLocation ? 'radius' : 'map'
+
+    renderCurrentState({ fitToResults: Boolean(state.resolvedLocation) })
+    setSubmitting(false)
   }
 
   function initHomepageMap() {
-    if (ensureMap()) return true;
-    return false;
+    return Boolean(ensureMap())
   }
 
   function bootHomepageMap(attempt) {
-    if (initHomepageMap()) return;
-    if (attempt >= 50) return;
-    window.setTimeout(function () { bootHomepageMap(attempt + 1); }, 100);
+    if (initHomepageMap()) return
+    if (attempt >= 50) return
+    window.setTimeout(function () { bootHomepageMap(attempt + 1) }, 100)
+  }
+
+  function bindSearchHereButton() {
+    const button = getSearchHereButton()
+    if (!button) return
+
+    button.addEventListener('click', function () {
+      if (!state.currentFilters || !state.resolvedLocation) return
+      closeFilterDropdowns()
+      state.mode = 'bounds'
+      hideSearchHereButton()
+      renderCurrentState({ fitToResults: false })
+    })
   }
 
   function bindFilterForm() {
-    const form = getFilterForm();
-    const resetButton = document.getElementById('homepage-school-filter-reset');
-    if (!form) return;
+    const form = getFilterForm()
+    const resetButton = document.getElementById('homepage-school-filter-reset')
+    if (!form) return
 
     form.addEventListener('submit', function (event) {
-      event.preventDefault();
-      closeFilterDropdowns();
-      applyFilters();
-    });
+      event.preventDefault()
+      closeFilterDropdowns()
+      applyFilters()
+    })
 
     if (resetButton) {
       resetButton.addEventListener('click', function () {
-        form.reset();
-        state.resolvedLocation = null;
-        closeFilterDropdowns();
-        refreshFilterDropdownLabels();
-        updateError('');
-        applyFilters();
-      });
+        form.reset()
+        state.resolvedLocation = null
+        state.mode = 'map'
+        closeFilterDropdowns()
+        hideSearchHereButton()
+        refreshFilterDropdownLabels()
+        updateError('')
+        state.currentFilters = readFilters()
+        renderCurrentState({ fitToResults: false })
+      })
     }
   }
 
   function initHomepage() {
-    state.schools = getSchoolData();
-    bindGuideLocationSearch();
-    bindFilterDropdowns();
-    bindFilterForm();
-    bootHomepageMap(0);
-    applyFilters();
+    state.schools = getSchoolData()
+    bindGuideLocationSearch()
+    bindFilterDropdowns()
+    bindFilterForm()
+    bindSearchHereButton()
+    bootHomepageMap(0)
+    state.currentFilters = readFilters()
+    renderCurrentState({ fitToResults: false })
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initHomepage, { once: true });
+    document.addEventListener('DOMContentLoaded', initHomepage, { once: true })
   } else {
-    initHomepage();
+    initHomepage()
   }
 
-  window.addEventListener('load', function () { bootHomepageMap(0); });
-})();
+  window.addEventListener('load', function () {
+    bootHomepageMap(0)
+    refreshViewportResults()
+  })
+})()

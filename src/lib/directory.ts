@@ -220,6 +220,8 @@ export type HomepageSearchSchool = {
   hasSixthForm: boolean;
   hasNursery: boolean;
   religion: string | null;
+  religionFilter: string;
+  averageFee: number | null;
   town: string | null;
   county: string | null;
   postcode: string | null;
@@ -744,6 +746,28 @@ function formatLocationLabel(school: SchoolSummaryRecord, fallbackLocationName: 
   return parts.length ? parts.join(', ') : fallbackLocationName;
 }
 
+function selectHomepageFeeRowsForAverage(rows: FeeRecord[]): FeeRecord[] {
+  if (!rows.length) return [];
+
+  const dayRows = rows.filter((row) => row.fee_type === 'day');
+  if (dayRows.length) return dayRows;
+
+  const boardingRows = rows.filter((row) => row.fee_type === 'weekly_boarding' || row.fee_type === 'full_boarding');
+  if (boardingRows.length) return boardingRows;
+
+  return rows;
+}
+
+function calculateAverageFee(rows: FeeRecord[]): number | null {
+  const amounts = rows
+    .map((row) => toNumber(row.amount_gbp))
+    .filter((value): value is number => value !== null);
+
+  if (!amounts.length) return null;
+
+  return amounts.reduce((sum, value) => sum + value, 0) / amounts.length;
+}
+
 function normalizeSubjectName(subjectName: string): string {
   return subjectName
     .toLowerCase()
@@ -1029,6 +1053,31 @@ async function getHomepageSearchSchoolRows(): Promise<SchoolSummaryRecord[]> {
   return rows;
 }
 
+
+async function getHomepageSearchAnnualFeeRows(): Promise<Array<AnnualFeeRecord & { school_id: string | number }>> {
+  const rows: Array<AnnualFeeRecord & { school_id: string | number }> = [];
+  const pageSize = 500;
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from('school_fee_profiles_annual')
+      .select(ANNUAL_FEE_SELECT_WITH_SCHOOL_ID)
+      .order('school_id', { ascending: true })
+      .range(from, from + pageSize - 1);
+
+    if (error) fail('Could not load homepage annual fee rows', error);
+
+    const page = (data || []) as Array<AnnualFeeRecord & { school_id: string | number }>;
+    rows.push(...page);
+
+    if (page.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return rows;
+}
+
 export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]> {
   const liveLocations = await getLiveLocations();
   const liveLocationIds = liveLocations.map((location) => location.id);
@@ -1043,33 +1092,58 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
     locationSlugBySchoolId.set(schoolKey, locationSlug);
   });
 
-  const schools = await getHomepageSearchSchoolRows();
+  const [schools, annualFeeRowsRaw] = await Promise.all([
+    getHomepageSearchSchoolRows(),
+    getHomepageSearchAnnualFeeRows()
+  ]);
+
+  const schoolIdSet = new Set(schools.map((school) => String(school.id)));
+  const annualFeeRows = expandAnnualFeeRows(
+    annualFeeRowsRaw.filter((row) => schoolIdSet.has(String(row.school_id)))
+  );
+  const feeRowsBySchoolId = new Map<string, FeeRecord[]>();
+
+  annualFeeRows.forEach((row) => {
+    const key = String(row.school_id || '');
+    if (!key) return;
+    const existing = feeRowsBySchoolId.get(key) || [];
+    existing.push(row);
+    feeRowsBySchoolId.set(key, existing);
+  });
 
   return schools
     .map((school) => {
       const coordinates = getSchoolCoordinates(school);
       if (!coordinates) return null;
 
-      const locationSlug = locationSlugBySchoolId.get(String(school.id)) || null;
+      const schoolId = String(school.id);
+      const locationSlug = locationSlugBySchoolId.get(schoolId) || null;
       const href = locationSlug ? `/${locationSlug}/schools/${school.slug}/` : null;
       const ageLabel = getAgeLabel(school.age_min, school.age_max);
       const genderLabel = getGenderLabel(school.gender);
       const boardingLabel = getFormatLabel(school.day_boarding);
       const religion = getSchoolReligionLabel(school);
+      const religionFilter = religion || 'Non-denominational';
       const hasSixthForm = schoolHasSixthForm(school);
       const hasNursery = schoolHasNursery(school);
       const provisionCategory = getProvisionCategory(school);
+      const schoolFeeRows = feeRowsBySchoolId.get(schoolId) || [];
+      const currentAcademicYear = Array.from(new Set(schoolFeeRows.map((row) => row.academic_year))).sort().at(-1) || null;
+      const currentFeeRows = currentAcademicYear
+        ? schoolFeeRows.filter((row) => row.academic_year === currentAcademicYear)
+        : [];
+      const averageFee = calculateAverageFee(selectHomepageFeeRowsForAverage(currentFeeRows));
       const noteParts = [
         genderLabel,
         boardingLabel,
         `Ages ${ageLabel}`,
         religion,
-        hasSixthForm ? 'Sixth form' : null,
-        hasNursery ? 'Nursery' : null
+        hasSixthForm ? 'Has a sixth form' : null,
+        hasNursery ? 'Has an attached nursery' : null
       ].filter(Boolean);
 
       return {
-        id: String(school.id),
+        id: schoolId,
         slug: school.slug,
         name: school.name,
         href,
@@ -1089,6 +1163,8 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
         hasSixthForm,
         hasNursery,
         religion,
+        religionFilter,
+        averageFee,
         town: school.town || null,
         county: school.county || null,
         postcode: school.postcode || null

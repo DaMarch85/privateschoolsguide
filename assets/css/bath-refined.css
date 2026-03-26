@@ -1543,3 +1543,11 @@
     border-top:1px solid var(--psg-line);
   }
 }
+
+.school-profile-page .school-profile-actions{
+  margin:0 0 18px;
+}
+
+.school-profile-page .school-profile-website-link{
+  min-width:210px;
+}

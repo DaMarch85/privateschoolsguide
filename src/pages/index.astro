@@ -55,7 +55,7 @@ const religionSortOrder = [
   'Sikh',
   'United Reformed Church'
 ];
-const religionOptions = Array.from(new Set(homepageSchools.map((school) => school.religion).filter(Boolean) as string[]))
+const religionOptions = Array.from(new Set(homepageSchools.map((school) => school.religionFilter || school.religion).filter(Boolean) as string[]))
   .sort((a, b) => {
     const aIndex = religionSortOrder.indexOf(a);
     const bIndex = religionSortOrder.indexOf(b);
@@ -75,6 +75,13 @@ const boardingOptions = [
   { value: 'day', label: 'Day only' },
   { value: 'boarding', label: 'Boarding only' },
   { value: 'both', label: 'Both' }
+];
+
+const sortOptions = [
+  { value: 'name-asc', label: 'A–Z' },
+  { value: 'name-desc', label: 'Z–A' },
+  { value: 'fee-asc', label: 'Average fees: low to high' },
+  { value: 'fee-desc', label: 'Average fees: high to low' }
 ];
 
 const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.stringify(homepageSchools)};`;
@@ -208,6 +215,15 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
                 </div>
               </details>
             </div>
+
+            <div class="school-filter-field school-filter-field--compact school-filter-field--sort">
+              <label class="school-filter-label" for="school-filter-sort">Sort</label>
+              <select class="school-filter-input school-filter-select" id="school-filter-sort" name="sort">
+                {sortOptions.map((option) => (
+                  <option value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div class="school-filter-actions">
@@ -234,7 +250,10 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
                   <h3 class="finder-results-title">School locations</h3>
                 </div>
               </div>
-              <div aria-label="Private school map" class="homepage-map" id="homepage-map"></div>
+              <div class="homepage-map-wrap">
+                <button class="homepage-map-search-here" hidden id="homepage-map-search-here" type="button">Search here</button>
+                <div aria-label="Private school map" class="homepage-map" id="homepage-map"></div>
+              </div>
               <p class="finder-note" id="homepage-map-empty" hidden>School locations are being updated.</p>
             </div>
 
@@ -280,5 +299,5 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
 
   <script is:inline set:html={homepageSchoolSearchScript}></script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script defer src="/assets/js/homepage.js?v=20260325-homepage-school-filters"></script>
+  <script defer src="/assets/js/homepage.js?v=20260326-homepage-map-sort"></script>
 </BaseLayout>
