@@ -1,24 +1,31 @@
 (function () {
   const DEFAULT_RADIUS_MILES = 10;
-  const MAX_VISIBLE_CARDS = 120;
+  const MAX_VISIBLE_TILES = 60;
   const UK_DEFAULT_CENTER = [54.25, -2.6];
   const UK_DEFAULT_ZOOM = 6;
   const POSTCODE_REGEX = /^([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})$/i;
+  const YEAR_LABELS = [
+    'Pre-Reception', 'Reception', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6',
+    'Year 7', 'Year 8', 'Year 9', 'Year 10', 'Year 11', 'Year 12', 'Year 13'
+  ];
 
   const state = {
     schools: [],
     filteredSchools: [],
+    visibleSchools: [],
     map: null,
     tileLayer: null,
     markerLayer: null,
     searchLayer: null,
     activeRequestId: 0,
     resolvedLocation: null,
+    currentFilters: null,
     viewMode: 'tiles',
     tableSection: 'glance',
     tablePage: 0,
     hiddenTableSchoolIds: new Set(),
-    debouncedApplyTimer: null
+    debouncedApplyTimer: null,
+    mapReady: false
   };
 
   function escapeHtml(str) {
@@ -67,7 +74,9 @@
     const dLng = (lng2 - lng1) * toRadians;
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * toRadians) * Math.cos(lat2 * toRadians) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      Math.cos(lat1 * toRadians) * Math.cos(lat2 * toRadians) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+
     return 3958.8 * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
   }
 
@@ -87,21 +96,26 @@
     return document.getElementById('guide-location-search');
   }
 
-  function getMapPoints() {
+  function getSchoolData() {
     if (!Array.isArray(window.homepageSchoolSearchData)) return [];
+
     return window.homepageSchoolSearchData
       .map(function (item) {
         const lat = Number(item && (item.lat ?? item.latitude));
         const lng = Number(item && (item.lng ?? item.longitude));
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
         return {
           id: item.id ? String(item.id) : '',
-          name: item.name || 'School',
           slug: item.slug || '',
+          name: item.name || 'School',
           href: item.href || '',
           hasProfile: Boolean(item.href),
+          locationSlug: item.locationSlug || '',
           lat: lat,
           lng: lng,
+          latitude: lat,
+          longitude: lng,
           type: item.type || 'senior',
           note: item.note || '',
           displayLocation: item.displayLocation || '',
@@ -115,18 +129,15 @@
           religion: item.religion || '',
           studentsLabel: item.studentsLabel || '',
           boyGirlSplit: item.boyGirlSplit || '',
-          dayFee: item.dayFee || 'Not listed',
-          boardingFee: item.boardingFee || 'Not listed',
-          totalExams: Number.isFinite(Number(item.totalExams)) ? Number(item.totalExams) : null,
-          pctAStarA: Number.isFinite(Number(item.pctAStarA)) ? Number(item.pctAStarA) : null,
-          pctAStarB: Number.isFinite(Number(item.pctAStarB)) ? Number(item.pctAStarB) : null,
-          uniqueSubjects: Number.isFinite(Number(item.uniqueSubjects)) ? Number(item.uniqueSubjects) : null
+          hasDayFees: Boolean(item.hasDayFees),
+          hasBoardingFees: Boolean(item.hasBoardingFees),
+          dayFeesByYear: item.dayFeesByYear || {},
+          boardingFeesByYear: item.boardingFeesByYear || {},
+          alevel: item.alevel || null,
+          distanceMiles: null
         };
       })
-      .filter(Boolean)
-      .filter(function (point) {
-        return point.provisionCategory !== 'sen_specialist';
-      });
+      .filter(Boolean);
   }
 
   function bindGuideLocationSearch() {
@@ -171,10 +182,7 @@
 
     return fetch(url, {
       signal: controller.signal,
-      headers: {
-        Accept: 'application/json',
-        'Accept-Language': 'en-GB'
-      }
+      headers: { Accept: 'application/json', 'Accept-Language': 'en-GB' }
     }).then(function (response) {
       window.clearTimeout(timeout);
       if (!response.ok) throw new Error('Request failed with status ' + response.status);
@@ -225,24 +233,6 @@
   }
 
   function resolvePlace(query) {
-    const mapboxToken = (window.PUBLIC_MAPBOX_TOKEN || '').trim();
-    if (mapboxToken) {
-      const url = new URL('https://api.mapbox.com/search/geocode/v6/forward');
-      url.searchParams.set('access_token', mapboxToken);
-      url.searchParams.set('q', String(query || '').trim());
-      url.searchParams.set('country', 'GB');
-      url.searchParams.set('limit', '1');
-      return fetchJson(String(url)).then(function (payload) {
-        const first = payload && Array.isArray(payload.features) ? payload.features[0] : null;
-        if (!first || !Array.isArray(first.geometry && first.geometry.coordinates)) return null;
-        return {
-          lat: Number(first.geometry.coordinates[1]),
-          lng: Number(first.geometry.coordinates[0]),
-          label: first.properties && first.properties.full_address ? first.properties.full_address : (first.properties && first.properties.name) || String(query || '').trim()
-        };
-      }).catch(function () { return null; });
-    }
-
     const url = new URL('https://nominatim.openstreetmap.org/search');
     url.searchParams.set('format', 'jsonv2');
     url.searchParams.set('limit', '1');
@@ -336,13 +326,7 @@
     const form = getFilterForm();
     if (!form) {
       return {
-        locationQuery: '',
-        radiusMiles: DEFAULT_RADIUS_MILES,
-        genders: [],
-        boarding: [],
-        religions: [],
-        sixthFormOnly: false,
-        nurseryOnly: false
+        locationQuery: '', radiusMiles: DEFAULT_RADIUS_MILES, genders: [], boarding: [], religions: [], sixthFormOnly: false, nurseryOnly: false
       };
     }
 
@@ -381,8 +365,8 @@
       })
       .sort(function (a, b) {
         if (resolvedLocation) {
-          const distanceDelta = (a.distanceMiles || 0) - (b.distanceMiles || 0);
-          if (distanceDelta !== 0) return distanceDelta;
+          const delta = (a.distanceMiles || 0) - (b.distanceMiles || 0);
+          if (delta !== 0) return delta;
         }
         return a.name.localeCompare(b.name, 'en');
       });
@@ -416,6 +400,7 @@
       ? '<a class="homepage-school-card homepage-school-card--' + escapeHtml(point.type) + '" href="' + escapeHtml(point.href) + '">'
       : '<article class="homepage-school-card homepage-school-card--' + escapeHtml(point.type) + ' homepage-school-card--static">';
     const wrapperEnd = point.href ? '</a>' : '</article>';
+
     return wrapperStart +
       '<div class="homepage-school-card__body">' +
       (eyebrow ? '<p class="homepage-school-card__eyebrow">' + eyebrow + '</p>' : '') +
@@ -431,66 +416,6 @@
     if (!errorTarget) return;
     errorTarget.hidden = !message;
     errorTarget.textContent = message || '';
-  }
-
-  function updateResultsSummary(results, filters, resolvedLocation) {
-    const target = getResultsSummary();
-    if (!target) return;
-    const total = results.length;
-    const shown = Math.min(total, MAX_VISIBLE_CARDS);
-    const hasOtherFilters = filters.genders.length || filters.boarding.length || filters.religions.length || filters.sixthFormOnly || filters.nurseryOnly;
-
-    if (!total) {
-      target.textContent = resolvedLocation
-        ? 'No schools found within ' + formatMiles(filters.radiusMiles) + ' miles of ' + resolvedLocation.label + '.'
-        : 'No schools match these filters.';
-      return;
-    }
-
-    if (resolvedLocation) {
-      target.textContent =
-        (total > shown ? 'Showing first ' + formatCount(shown) + ' of ' + formatCount(total) : 'Showing ' + formatCount(total)) +
-        ' ' + pluralize(total, 'school') +
-        ' within ' + formatMiles(filters.radiusMiles) + ' miles of ' + resolvedLocation.label + '.';
-      return;
-    }
-
-    if (hasOtherFilters) {
-      target.textContent =
-        (total > shown ? 'Showing first ' + formatCount(shown) + ' of ' + formatCount(total) : 'Showing ' + formatCount(total)) +
-        ' ' + pluralize(total, 'school') +
-        ' matching these filters nationwide.';
-      return;
-    }
-
-    target.textContent =
-      (total > shown ? 'Showing first ' + formatCount(shown) + ' of ' + formatCount(total) : 'Showing all ' + formatCount(total)) +
-      ' schools with map coordinates.';
-  }
-
-  function renderSchoolCards(results, filters, resolvedLocation) {
-    const cardGrid = document.getElementById('homepage-visible-school-grid');
-    const empty = document.getElementById('homepage-visible-school-empty');
-    if (!cardGrid || !empty) return;
-    const shown = results.slice(0, MAX_VISIBLE_CARDS);
-    cardGrid.innerHTML = shown.map(schoolCardHtml).join('');
-
-    if (!shown.length) {
-      empty.hidden = false;
-      empty.textContent = resolvedLocation
-        ? 'No schools were found within ' + formatMiles(filters.radiusMiles) + ' miles of ' + resolvedLocation.label + '.'
-        : 'No schools match these filters.';
-      return;
-    }
-
-    if (results.length > shown.length) {
-      empty.hidden = false;
-      empty.textContent = 'Showing the first ' + formatCount(shown.length) + ' of ' + formatCount(results.length) + ' matching schools. Narrow the filters to see more.';
-      return;
-    }
-
-    empty.hidden = true;
-    empty.textContent = '';
   }
 
   function ensureMap() {
@@ -516,7 +441,23 @@
     state.markerLayer = window.L.layerGroup().addTo(state.map);
     state.searchLayer = window.L.layerGroup().addTo(state.map);
     state.map.setView(UK_DEFAULT_CENTER, UK_DEFAULT_ZOOM);
+    state.map.on('moveend zoomend resize', updateVisibleSchoolsFromMap);
+    state.mapReady = true;
     return state.map;
+  }
+
+  function updateVisibleSchoolsFromMap() {
+    if (!state.map || !state.filteredSchools.length) {
+      state.visibleSchools = state.filteredSchools.slice();
+      renderResultsOnly();
+      return;
+    }
+
+    const bounds = state.map.getBounds();
+    state.visibleSchools = state.filteredSchools.filter(function (school) {
+      return bounds.contains([school.lat, school.lng]);
+    });
+    renderResultsOnly();
   }
 
   function redrawMap(results, filters, resolvedLocation) {
@@ -577,26 +518,64 @@
   }
 
   function getTableColumnCount() {
-    const width = window.innerWidth || 1200;
-    if (width <= 700) return 2;
-    if (width <= 1100) return 4;
+    const width = window.innerWidth || 1400;
+    if (width <= 900) return 2;
+    if (width <= 1220) return 4;
     return 6;
   }
 
+  function getSectionSchools() {
+    const base = state.visibleSchools.filter(function (school) {
+      return !state.hiddenTableSchoolIds.has(school.id);
+    });
+
+    if (state.tableSection === 'dayFees') {
+      return base.filter(function (school) { return school.hasDayFees; });
+    }
+    if (state.tableSection === 'boardingFees') {
+      return base.filter(function (school) { return school.hasBoardingFees; });
+    }
+    if (state.tableSection === 'alevel') {
+      return base.filter(function (school) { return school.alevel; });
+    }
+    return base;
+  }
+
   function getTableRowsForSection(section, schools) {
-    if (section === 'fees') {
-      return [
-        { label: 'Day fees', values: schools.map(function (school) { return school.dayFee || '—'; }) },
-        { label: 'Boarding fees', values: schools.map(function (school) { return school.boardingFee || '—'; }) }
-      ];
+    if (section === 'dayFees') {
+      return YEAR_LABELS.map(function (label) {
+        return {
+          label: label,
+          values: schools.map(function (school) { return school.dayFeesByYear[label] || '—'; })
+        };
+      });
+    }
+
+    if (section === 'boardingFees') {
+      return YEAR_LABELS.map(function (label) {
+        return {
+          label: label,
+          values: schools.map(function (school) { return school.boardingFeesByYear[label] || '—'; })
+        };
+      });
     }
 
     if (section === 'alevel') {
       return [
-        { label: '% A*–A', values: schools.map(function (school) { return formatPercent(school.pctAStarA); }) },
-        { label: '% A*–B', values: schools.map(function (school) { return formatPercent(school.pctAStarB); }) },
-        { label: 'Exams', values: schools.map(function (school) { return school.totalExams === null ? '—' : formatCount(school.totalExams); }) },
-        { label: 'Unique subjects', values: schools.map(function (school) { return school.uniqueSubjects === null ? '—' : formatCount(school.uniqueSubjects); }) }
+        { label: 'Total exams', values: schools.map(function (school) { return school.alevel && school.alevel.totalExams !== null ? formatCount(school.alevel.totalExams) : '—'; }) },
+        { label: '% A*–A', values: schools.map(function (school) { return school.alevel ? formatPercent(school.alevel.pctAStarA) : '—'; }) },
+        { label: '% A*–B', values: schools.map(function (school) { return school.alevel ? formatPercent(school.alevel.pctAStarB) : '—'; }) },
+        { label: 'Unique subjects', values: schools.map(function (school) { return school.alevel && school.alevel.uniqueSubjects !== null ? formatCount(school.alevel.uniqueSubjects) : '—'; }) },
+        { label: 'Core science', values: schools.map(function (school) { return school.alevel ? formatPercent(school.alevel.coreScience) : '—'; }) },
+        { label: 'Mathematics', values: schools.map(function (school) { return school.alevel ? formatPercent(school.alevel.mathematics) : '—'; }) },
+        { label: 'Art', values: schools.map(function (school) { return school.alevel ? formatPercent(school.alevel.art) : '—'; }) },
+        { label: 'Languages', values: schools.map(function (school) { return school.alevel ? formatPercent(school.alevel.languages) : '—'; }) },
+        { label: 'Economics', values: schools.map(function (school) { return school.alevel ? formatPercent(school.alevel.economics) : '—'; }) },
+        { label: 'English', values: schools.map(function (school) { return school.alevel ? formatPercent(school.alevel.english) : '—'; }) },
+        { label: 'History', values: schools.map(function (school) { return school.alevel ? formatPercent(school.alevel.history) : '—'; }) },
+        { label: 'Geography', values: schools.map(function (school) { return school.alevel ? formatPercent(school.alevel.geography) : '—'; }) },
+        { label: 'Psychology', values: schools.map(function (school) { return school.alevel ? formatPercent(school.alevel.psychology) : '—'; }) },
+        { label: 'Other', values: schools.map(function (school) { return school.alevel ? formatPercent(school.alevel.other) : '—'; }) }
       ];
     }
 
@@ -612,21 +591,16 @@
     ];
   }
 
-  function renderTableView() {
-    const wrap = document.getElementById('homepage-school-table-wrap');
+  function renderTable() {
     const table = document.getElementById('homepage-school-table');
-    const controls = document.getElementById('homepage-table-controls');
     const prevButton = document.getElementById('homepage-table-prev');
     const nextButton = document.getElementById('homepage-table-next');
     const pageLabel = document.getElementById('homepage-table-page-label');
     const showAllButton = document.getElementById('homepage-table-show-all');
-    if (!wrap || !table || !controls || !prevButton || !nextButton || !pageLabel || !showAllButton) return;
+    if (!table || !prevButton || !nextButton || !pageLabel || !showAllButton) return;
 
-    const availableSchools = state.filteredSchools.filter(function (school) {
-      return !state.hiddenTableSchoolIds.has(school.id);
-    });
-
-    if (!availableSchools.length) {
+    const sectionSchools = getSectionSchools();
+    if (!sectionSchools.length) {
       table.innerHTML = '';
       pageLabel.textContent = 'No schools';
       prevButton.disabled = true;
@@ -636,31 +610,28 @@
     }
 
     const columnCount = getTableColumnCount();
-    const maxPage = Math.max(0, Math.ceil(availableSchools.length / columnCount) - 1);
+    const maxPage = Math.max(0, Math.ceil(sectionSchools.length / columnCount) - 1);
     if (state.tablePage > maxPage) state.tablePage = maxPage;
     const start = state.tablePage * columnCount;
-    const visibleSchools = availableSchools.slice(start, start + columnCount);
-    const rows = getTableRowsForSection(state.tableSection, visibleSchools);
+    const schools = sectionSchools.slice(start, start + columnCount);
+    const rows = getTableRowsForSection(state.tableSection, schools);
 
-    const headCells = visibleSchools.map(function (school) {
+    const headCells = schools.map(function (school) {
       const link = school.href ? '<a href="' + escapeHtml(school.href) + '">' + escapeHtml(school.name) + '</a>' : escapeHtml(school.name);
-      return '<th>' +
-        '<div class="homepage-school-table__school">' +
+      return '<th><div class="homepage-school-table__school">' +
         '<span class="homepage-school-table__school-name">' + link + '</span>' +
         '<button class="homepage-school-table__hide" data-hide-school="' + escapeHtml(school.id) + '" type="button">Hide</button>' +
-        '</div>' +
-      '</th>';
+        '</div></th>';
     }).join('');
 
     const bodyRows = rows.map(function (row) {
-      const values = row.values.map(function (value) {
+      return '<tr><th scope="row">' + escapeHtml(row.label) + '</th>' + row.values.map(function (value) {
         return '<td>' + escapeHtml(value || '—') + '</td>';
-      }).join('');
-      return '<tr><th scope="row">' + escapeHtml(row.label) + '</th>' + values + '</tr>';
+      }).join('') + '</tr>';
     }).join('');
 
     table.innerHTML = '<thead><tr><th>School</th>' + headCells + '</tr></thead><tbody>' + bodyRows + '</tbody>';
-    pageLabel.textContent = 'Schools ' + formatCount(start + 1) + '–' + formatCount(Math.min(start + visibleSchools.length, availableSchools.length)) + ' of ' + formatCount(availableSchools.length);
+    pageLabel.textContent = 'Schools ' + formatCount(start + 1) + '–' + formatCount(Math.min(start + schools.length, sectionSchools.length)) + ' of ' + formatCount(sectionSchools.length);
     prevButton.disabled = state.tablePage === 0;
     nextButton.disabled = state.tablePage >= maxPage;
     showAllButton.hidden = state.hiddenTableSchoolIds.size === 0;
@@ -670,21 +641,94 @@
         const id = button.getAttribute('data-hide-school');
         if (!id) return;
         state.hiddenTableSchoolIds.add(id);
-        renderTableView();
+        renderResultsOnly();
       });
     });
   }
 
+  function renderSchoolCards() {
+    const cardGrid = document.getElementById('homepage-visible-school-grid');
+    if (!cardGrid) return;
+    const shown = state.visibleSchools.slice(0, MAX_VISIBLE_TILES);
+    cardGrid.innerHTML = shown.map(schoolCardHtml).join('');
+  }
+
+  function updateResultsSummary() {
+    const target = getResultsSummary();
+    if (!target) return;
+    const filteredCount = state.filteredSchools.length;
+    const visibleCount = state.visibleSchools.length;
+
+    if (!filteredCount) {
+      if (state.resolvedLocation && state.currentFilters) {
+        target.textContent = 'No schools found within ' + formatMiles(state.currentFilters.radiusMiles) + ' miles of ' + state.resolvedLocation.label + '.';
+      } else {
+        target.textContent = 'No schools match these filters.';
+      }
+      return;
+    }
+
+    if (visibleCount === filteredCount) {
+      target.textContent = 'Showing ' + formatCount(visibleCount) + ' ' + pluralize(visibleCount, 'school') + ' in the current map view.';
+      return;
+    }
+
+    target.textContent = 'Showing ' + formatCount(visibleCount) + ' of ' + formatCount(filteredCount) + ' matching schools in the current map view.';
+  }
+
+  function updateEmptyState() {
+    const empty = document.getElementById('homepage-visible-school-empty');
+    if (!empty) return;
+
+    if (state.viewMode === 'tiles') {
+      if (!state.visibleSchools.length) {
+        empty.hidden = false;
+        empty.textContent = 'No schools are currently visible on the map.';
+        return;
+      }
+
+      if (state.visibleSchools.length > MAX_VISIBLE_TILES) {
+        empty.hidden = false;
+        empty.textContent = 'Showing the first ' + formatCount(MAX_VISIBLE_TILES) + ' schools visible on the map.';
+        return;
+      }
+
+      empty.hidden = true;
+      empty.textContent = '';
+      return;
+    }
+
+    const sectionSchools = getSectionSchools();
+    if (!state.visibleSchools.length) {
+      empty.hidden = false;
+      empty.textContent = 'No schools are currently visible on the map.';
+      return;
+    }
+    if (!sectionSchools.length) {
+      const labels = {
+        glance: 'No visible schools are available for this view.',
+        dayFees: 'No visible schools currently show annual day fees.',
+        boardingFees: 'No visible schools currently show annual boarding fees.',
+        alevel: 'No visible schools currently show A-level data.'
+      };
+      empty.hidden = false;
+      empty.textContent = labels[state.tableSection] || labels.glance;
+      return;
+    }
+    empty.hidden = true;
+    empty.textContent = '';
+  }
+
   function syncViewControls() {
     document.querySelectorAll('[data-view-mode]').forEach(function (button) {
-      const isActive = button.getAttribute('data-view-mode') === state.viewMode;
-      button.classList.toggle('is-active', isActive);
-      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      const active = button.getAttribute('data-view-mode') === state.viewMode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
     document.querySelectorAll('[data-table-section]').forEach(function (button) {
-      const isActive = button.getAttribute('data-table-section') === state.tableSection;
-      button.classList.toggle('is-active', isActive);
-      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      const active = button.getAttribute('data-table-section') === state.tableSection;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
 
     const cards = document.getElementById('homepage-visible-school-grid');
@@ -695,13 +739,15 @@
     if (tableControls) tableControls.hidden = state.viewMode !== 'table';
   }
 
-  function renderAll(results, filters, resolvedLocation) {
-    state.filteredSchools = results;
-    updateResultsSummary(results, filters, resolvedLocation);
-    redrawMap(results, filters, resolvedLocation);
-    renderSchoolCards(results, filters, resolvedLocation);
+  function renderResultsOnly() {
     syncViewControls();
-    if (state.viewMode === 'table') renderTableView();
+    updateResultsSummary();
+    if (state.viewMode === 'tiles') {
+      renderSchoolCards();
+    } else {
+      renderTable();
+    }
+    updateEmptyState();
   }
 
   function scheduleApplyFilters(delayMs) {
@@ -715,6 +761,7 @@
     const filters = readFilters();
     const requestId = ++state.activeRequestId;
     const searchKey = normalizeSearchQuery(filters.locationQuery);
+    state.currentFilters = filters;
     updateError('');
 
     let resolvedLocation = null;
@@ -738,8 +785,10 @@
     } : null;
 
     state.tablePage = 0;
-    const results = filterSchools(filters, state.resolvedLocation);
-    renderAll(results, filters, state.resolvedLocation);
+    state.filteredSchools = filterSchools(filters, state.resolvedLocation);
+    state.visibleSchools = state.filteredSchools.slice();
+    renderResultsOnly();
+    redrawMap(state.filteredSchools, filters, state.resolvedLocation);
   }
 
   function bindFilterForm() {
@@ -794,8 +843,7 @@
     document.querySelectorAll('[data-view-mode]').forEach(function (button) {
       button.addEventListener('click', function () {
         state.viewMode = button.getAttribute('data-view-mode') || 'tiles';
-        syncViewControls();
-        if (state.viewMode === 'table') renderTableView();
+        renderResultsOnly();
       });
     });
 
@@ -803,8 +851,7 @@
       button.addEventListener('click', function () {
         state.tableSection = button.getAttribute('data-table-section') || 'glance';
         state.tablePage = 0;
-        syncViewControls();
-        renderTableView();
+        renderResultsOnly();
       });
     });
 
@@ -815,14 +862,14 @@
     if (prevButton) {
       prevButton.addEventListener('click', function () {
         state.tablePage = Math.max(0, state.tablePage - 1);
-        renderTableView();
+        renderResultsOnly();
       });
     }
 
     if (nextButton) {
       nextButton.addEventListener('click', function () {
         state.tablePage += 1;
-        renderTableView();
+        renderResultsOnly();
       });
     }
 
@@ -830,12 +877,12 @@
       showAllButton.addEventListener('click', function () {
         state.hiddenTableSchoolIds.clear();
         state.tablePage = 0;
-        renderTableView();
+        renderResultsOnly();
       });
     }
 
     window.addEventListener('resize', function () {
-      if (state.viewMode === 'table') renderTableView();
+      if (state.viewMode === 'table') renderResultsOnly();
     });
   }
 
@@ -846,7 +893,7 @@
   }
 
   function initHomepage() {
-    state.schools = getMapPoints();
+    state.schools = getSchoolData();
     bindGuideLocationSearch();
     bindFilterDropdowns();
     bindFilterForm();

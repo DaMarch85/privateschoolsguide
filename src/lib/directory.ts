@@ -69,6 +69,10 @@ export type SchoolSummaryRecord = {
   religion?: string | null;
   religious_ethos?: string | null;
   status?: string | null;
+  year_founded?: unknown;
+  founded?: unknown;
+  founded_year?: unknown;
+  established?: unknown;
 };
 
 export type SchoolContentRecord = {
@@ -204,6 +208,7 @@ export type HomepageSearchSchool = {
   slug: string;
   name: string;
   href: string | null;
+  locationSlug: string | null;
   lat: number;
   lng: number;
   latitude: number;
@@ -222,12 +227,11 @@ export type HomepageSearchSchool = {
   religion: string | null;
   studentsLabel: string | null;
   boyGirlSplit: string | null;
-  dayFee: string;
-  boardingFee: string;
-  totalExams: number | null;
-  pctAStarA: number | null;
-  pctAStarB: number | null;
-  uniqueSubjects: number | null;
+  hasDayFees: boolean;
+  hasBoardingFees: boolean;
+  dayFeesByYear: Record<string, string>;
+  boardingFeesByYear: Record<string, string>;
+  alevel: CompareAlevelMetrics | null;
 };
 
 export type FeePane = {
@@ -397,7 +401,7 @@ export function getAgeLabel(ageMin: number | null, ageMax: number | null): strin
   return 'To be confirmed';
 }
 
-function firstNonEmptyText(...values: Array<string | null | undefined>): string | null {
+function firstNonEmptyText(...values: Array<unknown>): string | null {
   for (const value of values) {
     const cleaned = String(value || '').replace(/\s+/g, ' ').trim();
     if (cleaned) return cleaned;
@@ -481,16 +485,12 @@ export function getSchoolLocationLabel(
   return parts.join(', ') || school.postcode || school.address_line1 || 'Location to be confirmed';
 }
 
-export function getYearFoundedLabel(content: SchoolContentRecord | null): string | null {
-  if (!content) return null;
+export function getYearFoundedLabel(...records: Array<Record<string, unknown> | null | undefined>): string | null {
   const raw = firstNonEmptyText(
-    String((content as Record<string, unknown>).year_founded || ''),
-    String((content as Record<string, unknown>).founded || ''),
-    String((content as Record<string, unknown>).founded_year || ''),
-    String((content as Record<string, unknown>).established || '')
+    ...records.flatMap((record) => record ? [record.year_founded, record.founded, record.founded_year, record.established] : [])
   );
   if (!raw) return null;
-  const match = raw.match(/\b(1[6-9]\d{2}|20\d{2})\b/);
+  const match = raw.match(/\b(1[5-9]\d{2}|20\d{2})\b/);
   return match ? match[1] : raw;
 }
 
@@ -987,6 +987,26 @@ export async function getLocationDirectoryData(locationSlug: string) {
 }
 
 
+export async function getHomepageMapSchools(): Promise<MapSchool[]> {
+  const liveLocations = await getLiveLocations();
+  const directoryEntries = await Promise.all(
+    liveLocations.map((location) => getLocationDirectoryData(location.slug))
+  );
+
+  const seen = new Set<string>();
+  const mapSchools: MapSchool[] = [];
+
+  directoryEntries.forEach((entry) => {
+    entry.mapSchools.forEach((school) => {
+      const key = school.href || school.slug;
+      if (seen.has(key)) return;
+      seen.add(key);
+      mapSchools.push(school);
+    });
+  });
+
+  return mapSchools;
+}
 
 let globalLinkedSchoolsPromise: Promise<Array<{ id: string; slug: string; name: string; locationSlug: string; latitude: number; longitude: number }>> | null = null;
 
@@ -1068,41 +1088,74 @@ async function getHomepageSearchSchoolRows(): Promise<SchoolSummaryRecord[]> {
   return rows;
 }
 
+function buildHomepageFeeMap(rows: AnnualFeeRecord[], feeTypes: string[]): Record<string, string> {
+  const academicYears = Array.from(new Set(rows.map((row) => row.academic_year))).sort();
+  const latestAcademicYear = academicYears.at(-1) || null;
+  const activeRows = latestAcademicYear
+    ? rows.filter((row) => row.academic_year === latestAcademicYear && feeTypes.includes(row.fee_type))
+    : [];
+
+  return Object.fromEntries(ANNUAL_FEE_COLUMNS.map(({ label, key }) => {
+    const values = activeRows
+      .map((row) => toNumber(row[key]))
+      .filter((value): value is number => value !== null);
+
+    if (!values.length) return [label, ''];
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    return [label, min === max ? formatCurrency(min) : `${formatCurrency(min)}–${formatCurrency(max)}`];
+  }));
+}
+
 export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]> {
   const linkedSchools = await getGlobalLinkedSchools();
   const locationSlugBySchoolId = new Map(linkedSchools.map((row) => [row.id, row.locationSlug]));
   const schools = await getHomepageSearchSchoolRows();
   const schoolIds = schools.map((school) => school.id);
 
-  const [{ data: feeRowsRaw, error: feeRowsError }, { data: examRowsRaw, error: examRowsError }] = await Promise.all([
-    supabase
-      .from('school_fee_profiles_annual')
-      .select(ANNUAL_FEE_SELECT_WITH_SCHOOL_ID)
-      .in('school_id', schoolIds),
-    supabase
-      .from('school_exam_results')
-      .select('school_id, result_year, entries_count, pct_a_star_a, pct_a_star_b, unique_subjects')
-      .in('school_id', schoolIds)
-      .eq('exam_type', 'alevel')
-      .order('result_year', { ascending: false })
-  ]);
+  const feeRowsRaw: Array<AnnualFeeRecord & { school_id: string | number }> = [];
+  const examRowsRaw: Array<ExamResultRecord & { school_id: string | number }> = [];
+  const subjectRowsRaw: Array<SubjectRecord & { school_id: string | number; result_year: number }> = [];
 
-  if (feeRowsError) fail('Could not load homepage fee rows', feeRowsError);
-  if (examRowsError) fail('Could not load homepage exam rows', examRowsError);
+  for (const batch of chunkArray(schoolIds, 400)) {
+    const [feeRes, examRes, subjectRes] = await Promise.all([
+      supabase
+        .from('school_fee_profiles_annual')
+        .select(ANNUAL_FEE_SELECT_WITH_SCHOOL_ID)
+        .in('school_id', batch),
+      supabase
+        .from('school_exam_results')
+        .select('school_id, result_year, entries_count, pct_a_star_a, pct_a_star_b, unique_subjects')
+        .in('school_id', batch)
+        .eq('exam_type', 'alevel')
+        .order('result_year', { ascending: false }),
+      supabase
+        .from('school_subject_popularity')
+        .select('school_id, result_year, subject_name, share_of_entries, sort_order')
+        .in('school_id', batch)
+        .eq('exam_type', 'alevel')
+        .order('sort_order', { ascending: true })
+    ]);
 
-  const feeRows = expandAnnualFeeRows(((feeRowsRaw || []) as Array<AnnualFeeRecord & { school_id: string | number }>));
-  const latestExamBySchool = new Map<string, ExamResultRecord>();
-  (((examRowsRaw || []) as Array<ExamResultRecord & { school_id: string | number }>)).forEach((row) => {
+    if (feeRes.error) fail('Could not load homepage fees', feeRes.error);
+    if (examRes.error) fail('Could not load homepage exam rows', examRes.error);
+    if (subjectRes.error) fail('Could not load homepage subject rows', subjectRes.error);
+
+    feeRowsRaw.push(...((feeRes.data || []) as Array<AnnualFeeRecord & { school_id: string | number }>));
+    examRowsRaw.push(...((examRes.data || []) as Array<ExamResultRecord & { school_id: string | number }>));
+    subjectRowsRaw.push(...((subjectRes.data || []) as Array<SubjectRecord & { school_id: string | number; result_year: number }>));
+  }
+
+  const latestExamBySchool = new Map<string, ExamResultRecord & { school_id: string | number }>();
+  examRowsRaw.forEach((row) => {
     const key = String(row.school_id);
     if (!latestExamBySchool.has(key)) latestExamBySchool.set(key, row);
   });
 
   return schools.map((school) => {
+    const schoolId = String(school.id);
     const lat = toNumber(school.latitude) || 0;
     const lng = toNumber(school.longitude) || 0;
-    const schoolId = String(school.id);
-    const linkedLocationSlug = locationSlugBySchoolId.get(schoolId) || null;
-    const href = linkedLocationSlug ? `/${linkedLocationSlug}/schools/${school.slug}/` : null;
     const ageLabel = getAgeLabel(school.age_min, school.age_max);
     const genderLabel = getGenderLabel(school.gender);
     const boardingLabel = getFormatLabel(school.day_boarding);
@@ -1112,23 +1165,30 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
     const studentCount = getStudentCount(school);
     const studentsLabel = studentCount !== null ? formatInteger(studentCount) : null;
     const boyGirlSplit = getBoyGirlSplitLabel(school);
-    const schoolFeeRows = feeRows.filter((row) => String(row.school_id) === schoolId);
-    const currentAcademicYear = Array.from(new Set(schoolFeeRows.map((row) => row.academic_year))).sort().at(-1) || null;
-    const currentFeeRows = currentAcademicYear ? schoolFeeRows.filter((row) => row.academic_year === currentAcademicYear) : [];
+    const linkedLocationSlug = locationSlugBySchoolId.get(schoolId) || null;
+    const href = linkedLocationSlug ? `/${linkedLocationSlug}/schools/${school.slug}/` : null;
+    const schoolFeeRows = feeRowsRaw.filter((row) => String(row.school_id) === schoolId);
+    const dayFeesByYear = buildHomepageFeeMap(schoolFeeRows, ['day']);
+    const boardingFeesByYear = buildHomepageFeeMap(schoolFeeRows, ['weekly_boarding', 'full_boarding']);
+    const hasDayFees = Object.values(dayFeesByYear).some(Boolean);
+    const hasBoardingFees = Object.values(boardingFeesByYear).some(Boolean);
     const latestExam = latestExamBySchool.get(schoolId) || null;
-    const provisionCategory = getProvisionCategory(school);
+    const subjectRows = latestExam
+      ? subjectRowsRaw.filter((row) => String(row.school_id) === schoolId && Number(row.result_year) === Number(latestExam.result_year))
+      : [];
 
     return {
       id: schoolId,
       slug: school.slug,
       name: school.name,
       href,
+      locationSlug: linkedLocationSlug,
       lat,
       lng,
       latitude: lat,
       longitude: lng,
       type: getMapType(school.phase, school.age_max),
-      provisionCategory,
+      provisionCategory: getProvisionCategory(school),
       note: `${genderLabel} · ${boardingLabel} · Ages ${ageLabel}`,
       displayLocation: getSchoolLocationLabel(school),
       ageLabel,
@@ -1141,35 +1201,13 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
       religion,
       studentsLabel,
       boyGirlSplit,
-      dayFee: formatFeeRange(currentFeeRows.filter((row) => row.fee_type === 'day')),
-      boardingFee: formatFeeRange(currentFeeRows.filter((row) => row.fee_type === 'weekly_boarding' || row.fee_type === 'full_boarding')),
-      totalExams: latestExam ? toNumber(latestExam.entries_count) : null,
-      pctAStarA: latestExam ? toNumber(latestExam.pct_a_star_a) : null,
-      pctAStarB: latestExam ? toNumber(latestExam.pct_a_star_b) : null,
-      uniqueSubjects: latestExam ? toNumber(latestExam.unique_subjects) : null
-    };
+      hasDayFees,
+      hasBoardingFees,
+      dayFeesByYear,
+      boardingFeesByYear,
+      alevel: aggregateAlevelMetrics(latestExam, subjectRows)
+    } satisfies HomepageSearchSchool;
   });
-}
-
-export async function getHomepageMapSchools(): Promise<MapSchool[]> {
-  const liveLocations = await getLiveLocations();
-  const directoryEntries = await Promise.all(
-    liveLocations.map((location) => getLocationDirectoryData(location.slug))
-  );
-
-  const seen = new Set<string>();
-  const mapSchools: MapSchool[] = [];
-
-  directoryEntries.forEach((entry) => {
-    entry.mapSchools.forEach((school) => {
-      const key = school.href || school.slug;
-      if (seen.has(key)) return;
-      seen.add(key);
-      mapSchools.push(school);
-    });
-  });
-
-  return mapSchools;
 }
 
 export async function getLocationCompareData(locationSlug: string): Promise<{ location: LocationRecord; compareSchools: CompareSchoolRecord[] }> {
@@ -1484,7 +1522,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
 
   const { data: schoolData, error: schoolError } = await supabase
     .from('schools')
-    .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating, official_sixth_form, nursery_provision, number_of_boys, number_of_girls, religion, religious_ethos, status')
+    .select('*')
     .eq('slug', schoolSlug)
     .single();
 
@@ -1566,7 +1604,8 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
     .map((row) => compareSchoolMap.get(String(row.school_id)))
     .filter((row): row is { id: string | number; slug: string; name: string } => Boolean(row))
     .filter((row) => row.slug !== school.slug)
-    .map((row) => ({ slug: row.slug, name: row.name }));
+    .slice(0, 8)
+    .map((row) => ({ slug: row.slug, name: row.name, locationSlug: location.slug }));
 
   const { data: subjectRowsRaw, error: subjectRowsError } = alevelResult
     ? await withRetry(() =>
@@ -1615,7 +1654,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const studentCount = getStudentCount(school);
   const boyGirlSplit = getBoyGirlSplitLabel(school);
   const religionLabel = getSchoolReligionLabel(school);
-  const yearFoundedLabel = getYearFoundedLabel(content);
+  const yearFoundedLabel = getYearFoundedLabel(school as Record<string, unknown>, content as Record<string, unknown> | null);
 
   const compareLinks = coordinates
     ? (await getGlobalLinkedSchools())
@@ -1629,7 +1668,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
         .sort((a, b) => a.distanceMiles - b.distanceMiles || a.name.localeCompare(b.name, 'en'))
         .slice(0, 8)
         .map((candidate) => ({ slug: candidate.slug, name: candidate.name, locationSlug: candidate.locationSlug }))
-    : fallbackCompareLinks.map((row) => ({ slug: row.slug, name: row.name, locationSlug: location.slug }));
+    : fallbackCompareLinks;
 
   const mapData = coordinates
     ? {

@@ -19,10 +19,7 @@ body.home-minimal{
   font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 
-body.home-minimal a{
-  color:inherit;
-  text-decoration:none;
-}
+body.home-minimal a{color:inherit;text-decoration:none}
 
 .visually-hidden{
   position:absolute!important;
@@ -97,9 +94,7 @@ body.home-minimal a{
   border-bottom:1px solid var(--home-border);
 }
 
-.school-filter-form{
-  padding:1rem 1.5rem 1.15rem;
-}
+.school-filter-form{padding:1rem 1.5rem 1.15rem}
 
 .school-filter-grid{
   display:grid;
@@ -159,11 +154,7 @@ body.home-minimal a{
   font-size:.9rem;
 }
 
-.school-filter-dropdown__value{
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
+.school-filter-dropdown__value{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .school-filter-dropdown__panel{
   position:absolute;
@@ -177,24 +168,12 @@ body.home-minimal a{
   box-shadow:0 18px 38px rgba(41,36,33,.12);
 }
 
-.school-filter-dropdown--wide .school-filter-dropdown__panel{
-  min-width:320px;
-  right:0;
-  left:auto;
-}
-
+.school-filter-dropdown--wide .school-filter-dropdown__panel{min-width:320px;right:0;left:auto}
 .school-filter-dropdown__panel--religion{width:min(560px, calc(100vw - 3rem))}
 
 .school-filter-options{display:flex;flex-wrap:wrap;gap:.6rem}
 .school-filter-options--stacked{flex-direction:column;gap:.35rem}
-
-.school-filter-options--grid{
-  display:grid;
-  grid-template-columns:repeat(2, minmax(0, 1fr));
-  gap:.35rem;
-  max-height:240px;
-  overflow:auto;
-}
+.school-filter-options--grid{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:.35rem;max-height:240px;overflow:auto}
 
 .school-filter-option{
   display:inline-flex;
@@ -210,14 +189,7 @@ body.home-minimal a{
   cursor:pointer;
 }
 
-.school-filter-option--dropdown{
-  width:100%;
-  min-height:40px;
-  padding:.55rem .7rem;
-  background:#fff;
-  font-size:.92rem;
-}
-
+.school-filter-option--dropdown{width:100%;min-height:40px;padding:.55rem .7rem;background:#fff;font-size:.92rem}
 .school-filter-option input{margin:0;accent-color:var(--home-accent)}
 
 .school-filter-actions{
@@ -230,14 +202,7 @@ body.home-minimal a{
   border-top:1px solid var(--home-border);
 }
 
-.school-filter-error{
-  margin:0;
-  color:#8c2b14;
-  font-size:.94rem;
-  line-height:1.45;
-  flex:1 1 auto;
-}
-
+.school-filter-error{margin:0;color:#8c2b14;font-size:.94rem;line-height:1.45;flex:1 1 auto}
 .school-filter-button-row{display:flex;flex-wrap:wrap;gap:.75rem;flex:0 0 auto}
 
 .school-filter-reset{
@@ -259,36 +224,12 @@ body.home-minimal a{
   align-items:start;
 }
 
-.finder-left-column{
-  position:relative;
-  border-right:1px solid var(--home-border);
-  background:#f6f0e8;
-}
-
-.finder-left-inner{
-  position:sticky;
-  top:0;
-  display:flex;
-  flex-direction:column;
-  max-height:100vh;
-}
-
+.finder-left-column{position:relative;border-right:1px solid var(--home-border);background:#f6f0e8}
+.finder-left-inner{position:sticky;top:0;display:flex;flex-direction:column;max-height:100vh}
 .finder-panel{padding:1.35rem 1.5rem}
+.finder-map-panel{background:#f2ece3;padding-top:1.5rem;padding-bottom:1rem}
 
-.finder-map-panel{
-  background:#f2ece3;
-  padding-top:1.5rem;
-  padding-bottom:1rem;
-}
-
-.finder-results-head{
-  display:flex;
-  align-items:flex-end;
-  justify-content:space-between;
-  gap:1rem 1.25rem;
-  margin-bottom:1rem;
-}
-
+.finder-results-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem 1.25rem;margin-bottom:1rem}
 .finder-results-head--map{margin-bottom:.8rem}
 
 .finder-kicker{
@@ -309,31 +250,11 @@ body.home-minimal a{
   font-size:1.7rem;
 }
 
-.finder-results-summary{
-  margin:0;
-  max-width:34ch;
-  color:var(--home-muted);
-  font-size:.95rem;
-  line-height:1.5;
-  text-align:right;
-}
+.finder-results-summary{margin:0;max-width:34ch;color:var(--home-muted);font-size:.95rem;line-height:1.5;text-align:right}
 
-.homepage-results-toolbar{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:1rem 1.25rem;
-  margin-bottom:1rem;
-  flex-wrap:wrap;
-}
-
-.homepage-view-toggle{
-  display:inline-flex;
-  border:1px solid var(--home-border);
-  background:#f8f4ee;
-}
-
-.homepage-view-toggle--sub{background:transparent}
+.homepage-results-toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem 1.25rem;margin-bottom:1rem;flex-wrap:wrap}
+.homepage-view-toggle{display:inline-flex;border:1px solid var(--home-border);background:#f8f4ee}
+.homepage-view-toggle--sub{background:transparent;flex-wrap:wrap}
 
 .homepage-view-button{
   border:0;
@@ -345,18 +266,10 @@ body.home-minimal a{
   text-transform:uppercase;
   cursor:pointer;
 }
-
 .homepage-view-button + .homepage-view-button{border-left:1px solid var(--home-border)}
 .homepage-view-button.is-active{background:var(--home-dark);color:#fff}
 
-.homepage-table-controls{
-  display:flex;
-  align-items:center;
-  gap:.8rem 1rem;
-  flex-wrap:wrap;
-  justify-content:flex-end;
-}
-
+.homepage-table-controls{display:flex;align-items:center;gap:.8rem 1rem;flex-wrap:wrap;justify-content:flex-end}
 .homepage-table-nav{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
 .homepage-table-nav__button,
 .homepage-table-show-all{
@@ -374,53 +287,23 @@ body.home-minimal a{
 .homepage-table-nav__label{margin:0;color:var(--home-muted);font-size:.92rem;line-height:1.35}
 
 .homepage-map{width:100%;height:var(--home-map-height);background:#ddd4c8;border:1px solid var(--home-border)}
-
 .finder-locations{flex:1 1 auto;min-height:0;overflow:auto;padding-top:1rem;padding-bottom:1.25rem}
 .finder-locations-head{margin-bottom:.35rem}
 
-.location-search{
-  width:100%;
-  padding:1rem 0;
-  border:none;
-  border-bottom:1px solid var(--home-border);
-  background:transparent;
-  color:var(--home-ink);
-  font:500 1rem/1.4 "Inter",system-ui,sans-serif;
-  outline:none;
-}
+.location-search{width:100%;padding:1rem 0;border:none;border-bottom:1px solid var(--home-border);background:transparent;color:var(--home-ink);font:500 1rem/1.4 "Inter",system-ui,sans-serif;outline:none}
 .location-search::placeholder{color:#8a7f75}
 
 .location-list{list-style:none;margin:1.1rem 0 0;padding:0}
-.location-link{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-  gap:.22rem;
-  padding:1rem 0;
-  border-bottom:1px solid var(--home-border);
-  transition:color .18s ease,padding-left .18s ease;
-}
+.location-link{display:flex;flex-direction:column;align-items:flex-start;gap:.22rem;padding:1rem 0;border-bottom:1px solid var(--home-border);transition:color .18s ease,padding-left .18s ease}
 .location-link:hover,.location-link:focus-visible{color:var(--home-accent);padding-left:.4rem}
 .location-name{font-family:"EB Garamond", ui-serif, Georgia, serif;font-size:1.9rem;letter-spacing:.04em}
 .location-state{color:var(--home-muted);font-size:.88rem;text-transform:uppercase;letter-spacing:.12em;line-height:1.3}
 .location-link.is-live .location-state{color:var(--home-accent)}
 
 .finder-cards-panel{padding:1.5rem;background:var(--home-bg);min-height:calc(var(--home-map-height) + 3rem)}
+.homepage-visible-school-grid{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:1rem;align-content:start}
 
-.homepage-visible-school-grid{
-  display:grid;
-  grid-template-columns:repeat(3, minmax(0, 1fr));
-  gap:1rem;
-  align-content:start;
-}
-
-.homepage-school-card{
-  display:block;
-  min-height:170px;
-  border:1px solid var(--home-border);
-  background:#f7f1e9;
-  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
-}
+.homepage-school-card{display:block;min-height:170px;border:1px solid var(--home-border);background:#f7f1e9;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
 .homepage-school-card:hover,.homepage-school-card:focus-visible{transform:translateY(-2px);border-color:rgba(179,91,46,.45);box-shadow:0 14px 30px rgba(41,36,33,.08)}
 .homepage-school-card__body{display:flex;flex-direction:column;gap:.8rem;padding:1.15rem 1rem 1rem}
 .homepage-school-card__eyebrow{margin:0;color:var(--home-accent);font-size:.78rem;font-weight:600;letter-spacing:.08em;line-height:1.4;text-transform:uppercase}
@@ -449,7 +332,7 @@ body.home-minimal a{
 .homepage-school-table tbody th{background:rgba(179,91,46,.07);color:var(--home-dark);font:600 .78rem/1.2 "Inter",system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;position:sticky;left:0;z-index:1}
 .homepage-school-table td{color:var(--home-ink);font-size:.95rem;line-height:1.4}
 .homepage-school-table__school{display:flex;flex-direction:column;align-items:center;gap:.55rem;min-width:120px}
-.homepage-school-table__school-name{display:block;font-family:"EB Garamond", ui-serif, Georgia, serif;font-size:1.25rem;letter-spacing:.03em;line-height:1.1;text-transform:none}
+.homepage-school-table__school-name{display:block;font-family:"EB Garamond", ui-serif, Georgia, serif;font-size:1.25rem;letter-spacing:.03em;line-height:1.1;text-transform:none;text-align:center}
 .homepage-school-table__school-name a{color:var(--home-ink)}
 .homepage-school-table__hide{border:1px solid var(--home-border);background:#fff;padding:.45rem .6rem;font:600 .75rem/1 "Inter",system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
 
@@ -471,11 +354,7 @@ body.home-minimal a{
 .site-footer h2,.site-footer h3{margin:0 0 .85rem;color:#fbf6ef;font-family:"EB Garamond", Georgia, serif;font-weight:600;text-transform:uppercase;letter-spacing:.08em}
 .site-footer p{margin:0;color:#d9c9b6;line-height:1.5}
 .footer-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:2rem}
-.footer-links{list-style:none;padding:0;margin:0}
-.footer-links li+li{margin-top:.35rem}
-.footer-links a{color:#f3c6ab}
-.footer-links a:hover{color:#ffe0cc}
-.footer-bottom{margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.12)}
+.footer-links{list-style:none;padding:0;margin:0}.footer-links li+li{margin-top:.35rem}.footer-links a{color:#f3c6ab}.footer-links a:hover{color:#ffe0cc}.footer-bottom{margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.12)}
 
 @media (max-width: 1220px){
   .school-filter-grid{grid-template-columns:repeat(3, minmax(0, 1fr))}
