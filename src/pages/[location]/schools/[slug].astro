@@ -20,10 +20,6 @@ if (!locationSlug || !slug) throw new Error('Missing location or school slug');
 
 const profile = await getLocationSchoolProfile(locationSlug, slug);
 const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(profile.mapData)};`;
-const schoolWebsite = String(profile.school.website || '').trim();
-const schoolWebsiteHref = schoolWebsite
-  ? (/^https?:\/\//i.test(schoolWebsite) ? schoolWebsite : `https://${schoolWebsite}`)
-  : null;
 ---
 <BaseLayout
   title={`${profile.school.name} | ${profile.location.name} school profile`}
@@ -68,7 +64,7 @@ const schoolWebsiteHref = schoolWebsite
           <ul class="school-compare-links">
             {profile.compareLinks.map((link) => (
               <li>
-                <a data-compare-school={link.slug} href={`?compare=${link.slug}`}>{link.name}</a>
+                <a data-compare-school={link.slug} href={`/${link.locationSlug}/schools/${link.slug}/`}>{link.name}</a>
               </li>
             ))}
           </ul>
@@ -76,11 +72,6 @@ const schoolWebsiteHref = schoolWebsite
       </aside>
 
       <section class="school-profile-main">
-        {schoolWebsiteHref && (
-          <div class="compare-actions school-profile-actions">
-            <a class="compare-link-button school-profile-website-link" href={schoolWebsiteHref} rel="noopener noreferrer" target="_blank">Visit school website</a>
-          </div>
-        )}
         <div class="school-feature-grid">
           {profile.alevelResult && (
             <article class="school-feature-tile">

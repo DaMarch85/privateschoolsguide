@@ -220,11 +220,14 @@ export type HomepageSearchSchool = {
   hasSixthForm: boolean;
   hasNursery: boolean;
   religion: string | null;
-  religionFilter: string;
-  averageFee: number | null;
-  town: string | null;
-  county: string | null;
-  postcode: string | null;
+  studentsLabel: string | null;
+  boyGirlSplit: string | null;
+  dayFee: string;
+  boardingFee: string;
+  totalExams: number | null;
+  pctAStarA: number | null;
+  pctAStarB: number | null;
+  uniqueSubjects: number | null;
 };
 
 export type FeePane = {
@@ -382,8 +385,8 @@ export function getBoardingFilterValue(dayBoarding: string | null): 'day' | 'boa
 export function getFormatLabel(dayBoarding: string | null): string {
   const category = getBoardingFilterValue(dayBoarding);
   if (category === 'day') return 'Day only';
-  if (category === 'both') return 'Day & boarding';
   if (category === 'boarding') return 'Boarding only';
+  if (category === 'both') return 'Day & boarding';
   return 'Day only';
 }
 
@@ -422,16 +425,7 @@ export function getSchoolReligionLabel(
   if (/\bhindu\b/.test(value)) return 'Hindu';
   if (/\bsikh\b/.test(value)) return 'Sikh';
   if (/\b(multi-faith|all faiths)\b/.test(value)) return 'Multi-faith';
-  if (
-    value.includes('non-denominational') ||
-    value.includes('interdenominational') ||
-    value.includes('inter- / non- denominational') ||
-    value.includes('inter- / non-denominational') ||
-    value.includes('inter / non denominational') ||
-    value.includes('inter-/non-denominational')
-  ) {
-    return 'Non-denominational';
-  }
+  if (value.includes('non-denominational') || value.includes('interdenominational')) return 'Non-denominational';
   if (value.includes('christian science')) return 'Christian';
   if (/\b(christian|evangelical|protestant|free church|unitarian|greek orthodox|orthodox)\b/.test(value)) return 'Christian';
   return raw;
@@ -474,24 +468,36 @@ export function getBoyGirlSplitLabel(
   const boys = Math.max(0, toNumber(school.number_of_boys) || 0);
   const girls = Math.max(0, toNumber(school.number_of_girls) || 0);
   const total = boys + girls;
-
   if (total <= 0) return null;
-
   const boysPct = Math.round((boys / total) * 100);
   const girlsPct = 100 - boysPct;
   return `${boysPct}% boys / ${girlsPct}% girls`;
+}
+
+export function getSchoolLocationLabel(
+  school: Pick<SchoolSummaryRecord, 'town' | 'county' | 'postcode' | 'address_line1'>
+): string {
+  const parts = [school.town, school.county].filter((part, index, list) => Boolean(part) && list.indexOf(part) === index) as string[];
+  return parts.join(', ') || school.postcode || school.address_line1 || 'Location to be confirmed';
+}
+
+export function getYearFoundedLabel(content: SchoolContentRecord | null): string | null {
+  if (!content) return null;
+  const raw = firstNonEmptyText(
+    String((content as Record<string, unknown>).year_founded || ''),
+    String((content as Record<string, unknown>).founded || ''),
+    String((content as Record<string, unknown>).founded_year || ''),
+    String((content as Record<string, unknown>).established || '')
+  );
+  if (!raw) return null;
+  const match = raw.match(/\b(1[6-9]\d{2}|20\d{2})\b/);
+  return match ? match[1] : raw;
 }
 
 export function buildAddress(school: Pick<SchoolSummaryRecord, 'address_line1' | 'town' | 'postcode'>): string {
   return [school.address_line1, school.town, school.postcode].filter(Boolean).join(', ');
 }
 
-export function getSchoolLocationLabel(
-  school: Pick<SchoolSummaryRecord, 'town' | 'county' | 'postcode' | 'address_line1'>
-): string {
-  const parts = [school.town, school.county].filter((part, index, list) => part && list.indexOf(part) === index);
-  return parts.join(', ') || school.postcode || school.address_line1 || 'Location to be confirmed';
-}
 
 function getSchoolCoordinates(
   school: Pick<SchoolSummaryRecord, 'latitude' | 'longitude'>
@@ -746,28 +752,6 @@ function formatLocationLabel(school: SchoolSummaryRecord, fallbackLocationName: 
   return parts.length ? parts.join(', ') : fallbackLocationName;
 }
 
-function selectHomepageFeeRowsForAverage(rows: FeeRecord[]): FeeRecord[] {
-  if (!rows.length) return [];
-
-  const dayRows = rows.filter((row) => row.fee_type === 'day');
-  if (dayRows.length) return dayRows;
-
-  const boardingRows = rows.filter((row) => row.fee_type === 'weekly_boarding' || row.fee_type === 'full_boarding');
-  if (boardingRows.length) return boardingRows;
-
-  return rows;
-}
-
-function calculateAverageFee(rows: FeeRecord[]): number | null {
-  const amounts = rows
-    .map((row) => toNumber(row.amount_gbp))
-    .filter((value): value is number => value !== null);
-
-  if (!amounts.length) return null;
-
-  return amounts.reduce((sum, value) => sum + value, 0) / amounts.length;
-}
-
 function normalizeSubjectName(subjectName: string): string {
   return subjectName
     .toLowerCase()
@@ -1003,27 +987,58 @@ export async function getLocationDirectoryData(locationSlug: string) {
 }
 
 
-export async function getHomepageMapSchools(): Promise<MapSchool[]> {
-  const liveLocations = await getLiveLocations();
-  const directoryEntries = await Promise.all(
-    liveLocations.map((location) => getLocationDirectoryData(location.slug))
-  );
 
-  const seen = new Set<string>();
-  const mapSchools: MapSchool[] = [];
+let globalLinkedSchoolsPromise: Promise<Array<{ id: string; slug: string; name: string; locationSlug: string; latitude: number; longitude: number }>> | null = null;
 
-  directoryEntries.forEach((entry) => {
-    entry.mapSchools.forEach((school) => {
-      const key = school.href || school.slug;
-      if (seen.has(key)) return;
-      seen.add(key);
-      mapSchools.push(school);
-    });
-  });
+async function getGlobalLinkedSchools() {
+  if (!globalLinkedSchoolsPromise) {
+    globalLinkedSchoolsPromise = (async () => {
+      const liveLocations = await getLiveLocations();
+      const locationSlugById = new Map(liveLocations.map((location) => [String(location.id), location.slug]));
+      const links = await getLocationSchoolPathLinks(liveLocations.map((location) => location.id));
+      const firstLocationBySchoolId = new Map<string, string>();
 
-  return mapSchools;
+      links.forEach((link) => {
+        const schoolKey = String(link.school_id);
+        const locationSlug = locationSlugById.get(String(link.location_id));
+        if (!locationSlug || firstLocationBySchoolId.has(schoolKey)) return;
+        firstLocationBySchoolId.set(schoolKey, locationSlug);
+      });
+
+      const schools = await getSchoolsByIds(Array.from(firstLocationBySchoolId.keys()));
+      return schools
+        .map((school) => {
+          const lat = toNumber(school.latitude);
+          const lng = toNumber(school.longitude);
+          const locationSlug = firstLocationBySchoolId.get(String(school.id));
+          if (lat === null || lng === null || !locationSlug) return null;
+          return {
+            id: String(school.id),
+            slug: school.slug,
+            name: school.name,
+            locationSlug,
+            latitude: lat,
+            longitude: lng
+          };
+        })
+        .filter((row): row is { id: string; slug: string; name: string; locationSlug: string; latitude: number; longitude: number } => Boolean(row));
+    })();
+  }
+
+  return globalLinkedSchoolsPromise;
 }
 
+function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const radians = Math.PI / 180;
+  const dLat = (lat2 - lat1) * radians;
+  const dLng = (lng2 - lng1) * radians;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * radians) * Math.cos(lat2 * radians) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+
+  return 3958.8 * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
 
 async function getHomepageSearchSchoolRows(): Promise<SchoolSummaryRecord[]> {
   const rows: SchoolSummaryRecord[] = [];
@@ -1053,124 +1068,108 @@ async function getHomepageSearchSchoolRows(): Promise<SchoolSummaryRecord[]> {
   return rows;
 }
 
+export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]> {
+  const linkedSchools = await getGlobalLinkedSchools();
+  const locationSlugBySchoolId = new Map(linkedSchools.map((row) => [row.id, row.locationSlug]));
+  const schools = await getHomepageSearchSchoolRows();
+  const schoolIds = schools.map((school) => school.id);
 
-async function getHomepageSearchAnnualFeeRows(): Promise<Array<AnnualFeeRecord & { school_id: string | number }>> {
-  const rows: Array<AnnualFeeRecord & { school_id: string | number }> = [];
-  const pageSize = 500;
-  let from = 0;
-
-  while (true) {
-    const { data, error } = await supabase
+  const [{ data: feeRowsRaw, error: feeRowsError }, { data: examRowsRaw, error: examRowsError }] = await Promise.all([
+    supabase
       .from('school_fee_profiles_annual')
       .select(ANNUAL_FEE_SELECT_WITH_SCHOOL_ID)
-      .order('school_id', { ascending: true })
-      .range(from, from + pageSize - 1);
-
-    if (error) fail('Could not load homepage annual fee rows', error);
-
-    const page = (data || []) as Array<AnnualFeeRecord & { school_id: string | number }>;
-    rows.push(...page);
-
-    if (page.length < pageSize) break;
-    from += pageSize;
-  }
-
-  return rows;
-}
-
-export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]> {
-  const liveLocations = await getLiveLocations();
-  const liveLocationIds = liveLocations.map((location) => location.id);
-  const locationSlugById = new Map(liveLocations.map((location) => [String(location.id), location.slug]));
-  const links = liveLocationIds.length ? await getLocationSchoolPathLinks(liveLocationIds) : [];
-  const locationSlugBySchoolId = new Map<string, string>();
-
-  links.forEach((link) => {
-    const schoolKey = String(link.school_id);
-    const locationSlug = locationSlugById.get(String(link.location_id));
-    if (!locationSlug || locationSlugBySchoolId.has(schoolKey)) return;
-    locationSlugBySchoolId.set(schoolKey, locationSlug);
-  });
-
-  const [schools, annualFeeRowsRaw] = await Promise.all([
-    getHomepageSearchSchoolRows(),
-    getHomepageSearchAnnualFeeRows()
+      .in('school_id', schoolIds),
+    supabase
+      .from('school_exam_results')
+      .select('school_id, result_year, entries_count, pct_a_star_a, pct_a_star_b, unique_subjects')
+      .in('school_id', schoolIds)
+      .eq('exam_type', 'alevel')
+      .order('result_year', { ascending: false })
   ]);
 
-  const schoolIdSet = new Set(schools.map((school) => String(school.id)));
-  const annualFeeRows = expandAnnualFeeRows(
-    annualFeeRowsRaw.filter((row) => schoolIdSet.has(String(row.school_id)))
-  );
-  const feeRowsBySchoolId = new Map<string, FeeRecord[]>();
+  if (feeRowsError) fail('Could not load homepage fee rows', feeRowsError);
+  if (examRowsError) fail('Could not load homepage exam rows', examRowsError);
 
-  annualFeeRows.forEach((row) => {
-    const key = String(row.school_id || '');
-    if (!key) return;
-    const existing = feeRowsBySchoolId.get(key) || [];
-    existing.push(row);
-    feeRowsBySchoolId.set(key, existing);
+  const feeRows = expandAnnualFeeRows(((feeRowsRaw || []) as Array<AnnualFeeRecord & { school_id: string | number }>));
+  const latestExamBySchool = new Map<string, ExamResultRecord>();
+  (((examRowsRaw || []) as Array<ExamResultRecord & { school_id: string | number }>)).forEach((row) => {
+    const key = String(row.school_id);
+    if (!latestExamBySchool.has(key)) latestExamBySchool.set(key, row);
   });
 
-  return schools
-    .map((school) => {
-      const coordinates = getSchoolCoordinates(school);
-      if (!coordinates) return null;
+  return schools.map((school) => {
+    const lat = toNumber(school.latitude) || 0;
+    const lng = toNumber(school.longitude) || 0;
+    const schoolId = String(school.id);
+    const linkedLocationSlug = locationSlugBySchoolId.get(schoolId) || null;
+    const href = linkedLocationSlug ? `/${linkedLocationSlug}/schools/${school.slug}/` : null;
+    const ageLabel = getAgeLabel(school.age_min, school.age_max);
+    const genderLabel = getGenderLabel(school.gender);
+    const boardingLabel = getFormatLabel(school.day_boarding);
+    const religion = getSchoolReligionLabel(school);
+    const hasSixthForm = schoolHasSixthForm(school);
+    const hasNursery = schoolHasNursery(school);
+    const studentCount = getStudentCount(school);
+    const studentsLabel = studentCount !== null ? formatInteger(studentCount) : null;
+    const boyGirlSplit = getBoyGirlSplitLabel(school);
+    const schoolFeeRows = feeRows.filter((row) => String(row.school_id) === schoolId);
+    const currentAcademicYear = Array.from(new Set(schoolFeeRows.map((row) => row.academic_year))).sort().at(-1) || null;
+    const currentFeeRows = currentAcademicYear ? schoolFeeRows.filter((row) => row.academic_year === currentAcademicYear) : [];
+    const latestExam = latestExamBySchool.get(schoolId) || null;
+    const provisionCategory = getProvisionCategory(school);
 
-      const schoolId = String(school.id);
-      const locationSlug = locationSlugBySchoolId.get(schoolId) || null;
-      const href = locationSlug ? `/${locationSlug}/schools/${school.slug}/` : null;
-      const ageLabel = getAgeLabel(school.age_min, school.age_max);
-      const genderLabel = getGenderLabel(school.gender);
-      const boardingLabel = getFormatLabel(school.day_boarding);
-      const religion = getSchoolReligionLabel(school);
-      const religionFilter = religion || 'Non-denominational';
-      const hasSixthForm = schoolHasSixthForm(school);
-      const hasNursery = schoolHasNursery(school);
-      const provisionCategory = getProvisionCategory(school);
-      const schoolFeeRows = feeRowsBySchoolId.get(schoolId) || [];
-      const currentAcademicYear = Array.from(new Set(schoolFeeRows.map((row) => row.academic_year))).sort().at(-1) || null;
-      const currentFeeRows = currentAcademicYear
-        ? schoolFeeRows.filter((row) => row.academic_year === currentAcademicYear)
-        : [];
-      const averageFee = calculateAverageFee(selectHomepageFeeRowsForAverage(currentFeeRows));
-      const noteParts = [
-        genderLabel,
-        boardingLabel,
-        `Ages ${ageLabel}`,
-        religion,
-        hasSixthForm ? 'Has a sixth form' : null,
-        hasNursery ? 'Has an attached nursery' : null
-      ].filter(Boolean);
+    return {
+      id: schoolId,
+      slug: school.slug,
+      name: school.name,
+      href,
+      lat,
+      lng,
+      latitude: lat,
+      longitude: lng,
+      type: getMapType(school.phase, school.age_max),
+      provisionCategory,
+      note: `${genderLabel} · ${boardingLabel} · Ages ${ageLabel}`,
+      displayLocation: getSchoolLocationLabel(school),
+      ageLabel,
+      genderLabel,
+      genderFilter: getGenderFilterValue(school.gender),
+      boardingLabel,
+      boardingFilter: getBoardingFilterValue(school.day_boarding),
+      hasSixthForm,
+      hasNursery,
+      religion,
+      studentsLabel,
+      boyGirlSplit,
+      dayFee: formatFeeRange(currentFeeRows.filter((row) => row.fee_type === 'day')),
+      boardingFee: formatFeeRange(currentFeeRows.filter((row) => row.fee_type === 'weekly_boarding' || row.fee_type === 'full_boarding')),
+      totalExams: latestExam ? toNumber(latestExam.entries_count) : null,
+      pctAStarA: latestExam ? toNumber(latestExam.pct_a_star_a) : null,
+      pctAStarB: latestExam ? toNumber(latestExam.pct_a_star_b) : null,
+      uniqueSubjects: latestExam ? toNumber(latestExam.unique_subjects) : null
+    };
+  });
+}
 
-      return {
-        id: schoolId,
-        slug: school.slug,
-        name: school.name,
-        href,
-        lat: coordinates.lat,
-        lng: coordinates.lng,
-        latitude: coordinates.lat,
-        longitude: coordinates.lng,
-        type: getMapType(school.phase, school.age_max),
-        provisionCategory,
-        note: noteParts.join(' · '),
-        displayLocation: getSchoolLocationLabel(school),
-        ageLabel,
-        genderLabel,
-        genderFilter: getGenderFilterValue(school.gender),
-        boardingLabel,
-        boardingFilter: getBoardingFilterValue(school.day_boarding),
-        hasSixthForm,
-        hasNursery,
-        religion,
-        religionFilter,
-        averageFee,
-        town: school.town || null,
-        county: school.county || null,
-        postcode: school.postcode || null
-      } satisfies HomepageSearchSchool;
-    })
-    .filter((school): school is HomepageSearchSchool => Boolean(school));
+export async function getHomepageMapSchools(): Promise<MapSchool[]> {
+  const liveLocations = await getLiveLocations();
+  const directoryEntries = await Promise.all(
+    liveLocations.map((location) => getLocationDirectoryData(location.slug))
+  );
+
+  const seen = new Set<string>();
+  const mapSchools: MapSchool[] = [];
+
+  directoryEntries.forEach((entry) => {
+    entry.mapSchools.forEach((school) => {
+      const key = school.href || school.slug;
+      if (seen.has(key)) return;
+      seen.add(key);
+      mapSchools.push(school);
+    });
+  });
+
+  return mapSchools;
 }
 
 export async function getLocationCompareData(locationSlug: string): Promise<{ location: LocationRecord; compareSchools: CompareSchoolRecord[] }> {
@@ -1563,7 +1562,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
 
   const compareRows = ((compareSchoolsRes.data || []) as Array<{ id: string | number; slug: string; name: string }>);
   const compareSchoolMap = new Map(compareRows.map((row) => [String(row.id), row]));
-  const compareLinks = locationLinks
+  const fallbackCompareLinks = locationLinks
     .map((row) => compareSchoolMap.get(String(row.school_id)))
     .filter((row): row is { id: string | number; slug: string; name: string } => Boolean(row))
     .filter((row) => row.slug !== school.slug)
@@ -1613,6 +1612,24 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const coordinates = getSchoolCoordinates(school);
 
   const provisionCategory = getProvisionCategory(school);
+  const studentCount = getStudentCount(school);
+  const boyGirlSplit = getBoyGirlSplitLabel(school);
+  const religionLabel = getSchoolReligionLabel(school);
+  const yearFoundedLabel = getYearFoundedLabel(content);
+
+  const compareLinks = coordinates
+    ? (await getGlobalLinkedSchools())
+        .filter((candidate) => candidate.slug !== school.slug)
+        .map((candidate) => ({
+          slug: candidate.slug,
+          name: candidate.name,
+          locationSlug: candidate.locationSlug,
+          distanceMiles: haversineMiles(coordinates.lat, coordinates.lng, candidate.latitude, candidate.longitude)
+        }))
+        .sort((a, b) => a.distanceMiles - b.distanceMiles || a.name.localeCompare(b.name, 'en'))
+        .slice(0, 8)
+        .map((candidate) => ({ slug: candidate.slug, name: candidate.name, locationSlug: candidate.locationSlug }))
+    : fallbackCompareLinks.map((row) => ({ slug: row.slug, name: row.name, locationSlug: location.slug }));
 
   const mapData = coordinates
     ? {
@@ -1629,11 +1646,6 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
       }
     : null;
 
-  const studentCount = getStudentCount(school);
-  const boyGirlSplit = getBoyGirlSplitLabel(school);
-  const religionLabel = getSchoolReligionLabel(school);
-  const hasNursery = schoolHasNursery(school);
-
   const rawAtGlanceRows = [
     { label: 'Ages', value: ageLabel },
     studentCount !== null ? { label: 'Students', value: formatInteger(studentCount) } : null,
@@ -1641,7 +1653,8 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
     { label: 'Gender', value: genderLabel },
     { label: 'Format', value: formatLabel },
     religionLabel ? { label: 'Religion', value: religionLabel } : null,
-    hasNursery ? { label: 'Nursery', value: 'Has a nursery' } : null,
+    schoolHasNursery(school) ? { label: 'Nursery', value: 'Has a nursery' } : null,
+    yearFoundedLabel ? { label: 'Founded', value: yearFoundedLabel } : null,
     bursary?.status_label
       ? { label: 'Bursaries', value: bursary.status_label }
       : bursary?.has_bursaries === true

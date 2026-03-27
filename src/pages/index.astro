@@ -55,7 +55,7 @@ const religionSortOrder = [
   'Sikh',
   'United Reformed Church'
 ];
-const religionOptions = Array.from(new Set(homepageSchools.map((school) => school.religionFilter || school.religion).filter(Boolean) as string[]))
+const religionOptions = Array.from(new Set(homepageSchools.map((school) => school.religion).filter(Boolean) as string[]))
   .sort((a, b) => {
     const aIndex = religionSortOrder.indexOf(a);
     const bIndex = religionSortOrder.indexOf(b);
@@ -75,13 +75,6 @@ const boardingOptions = [
   { value: 'day', label: 'Day only' },
   { value: 'boarding', label: 'Boarding only' },
   { value: 'both', label: 'Both' }
-];
-
-const sortOptions = [
-  { value: 'name-asc', label: 'A–Z' },
-  { value: 'name-desc', label: 'Z–A' },
-  { value: 'fee-asc', label: 'Average fees: low to high' },
-  { value: 'fee-desc', label: 'Average fees: high to low' }
 ];
 
 const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.stringify(homepageSchools)};`;
@@ -215,22 +208,11 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
                 </div>
               </details>
             </div>
-
-            <div class="school-filter-field school-filter-field--compact school-filter-field--sort">
-              <label class="school-filter-label" for="school-filter-sort">Sort</label>
-              <select class="school-filter-input school-filter-select" id="school-filter-sort" name="sort">
-                {sortOptions.map((option) => (
-                  <option value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </div>
           </div>
 
           <div class="school-filter-actions">
             <p aria-live="polite" class="school-filter-error" hidden id="homepage-school-filter-error"></p>
-
             <div class="school-filter-button-row">
-              <button class="school-filter-submit" id="homepage-school-filter-submit" type="submit">Apply filters</button>
               <button class="school-filter-reset" id="homepage-school-filter-reset" type="button">Clear filters</button>
             </div>
           </div>
@@ -250,10 +232,7 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
                   <h3 class="finder-results-title">School locations</h3>
                 </div>
               </div>
-              <div class="homepage-map-wrap">
-                <button class="homepage-map-search-here" hidden id="homepage-map-search-here" type="button">Search here</button>
-                <div aria-label="Private school map" class="homepage-map" id="homepage-map"></div>
-              </div>
+              <div aria-label="Private school map" class="homepage-map" id="homepage-map"></div>
               <p class="finder-note" id="homepage-map-empty" hidden>School locations are being updated.</p>
             </div>
 
@@ -281,14 +260,42 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
         </div>
 
         <div class="finder-panel finder-cards-panel">
-          <div class="finder-results-head">
+          <div class="finder-results-head finder-results-head--results">
             <div>
               <p class="finder-kicker">School results</p>
               <h2 class="finder-results-title">Schools</h2>
             </div>
             <p aria-live="polite" class="finder-results-summary" id="homepage-results-summary">Showing all {initialSchoolCount} schools with map coordinates.</p>
           </div>
+
+          <div class="homepage-results-toolbar">
+            <div class="homepage-view-toggle" role="tablist" aria-label="Homepage result view">
+              <button class="homepage-view-button is-active" id="homepage-view-tiles" data-view-mode="tiles" type="button">Tiles</button>
+              <button class="homepage-view-button" id="homepage-view-table" data-view-mode="table" type="button">Table</button>
+            </div>
+
+            <div class="homepage-table-controls" id="homepage-table-controls" hidden>
+              <div class="homepage-view-toggle homepage-view-toggle--sub" role="tablist" aria-label="Homepage table data view">
+                <button class="homepage-view-button is-active" data-table-section="glance" type="button">At a glance</button>
+                <button class="homepage-view-button" data-table-section="fees" type="button">Annual fees</button>
+                <button class="homepage-view-button" data-table-section="alevel" type="button">A-levels</button>
+              </div>
+
+              <div class="homepage-table-nav">
+                <button class="homepage-table-nav__button" id="homepage-table-prev" type="button" aria-label="Previous schools">←</button>
+                <p class="homepage-table-nav__label" id="homepage-table-page-label">Schools 1–6</p>
+                <button class="homepage-table-nav__button" id="homepage-table-next" type="button" aria-label="Next schools">→</button>
+                <button class="homepage-table-show-all" id="homepage-table-show-all" type="button">Show all</button>
+              </div>
+            </div>
+          </div>
+
           <div class="homepage-visible-school-grid" id="homepage-visible-school-grid"></div>
+          <div class="homepage-school-table-wrap" id="homepage-school-table-wrap" hidden>
+            <div class="homepage-school-table-scroll">
+              <table class="homepage-school-table" id="homepage-school-table"></table>
+            </div>
+          </div>
           <p class="finder-note" id="homepage-visible-school-empty" hidden>No schools are currently visible on the map.</p>
         </div>
       </div>
@@ -299,5 +306,5 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
 
   <script is:inline set:html={homepageSchoolSearchScript}></script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script defer src="/assets/js/homepage.js?v=20260326-homepage-map-sort"></script>
+  <script defer src="/assets/js/homepage.js?v=20260327-homepage-filters-table"></script>
 </BaseLayout>
