@@ -14,7 +14,6 @@ const copyTargets = [
   { from: '404.html', to: '404.html' },
   { from: 'about', to: 'about' },
   { from: 'advertise', to: 'advertise' },
-  { from: 'claim-your-profile', to: 'claim-your-profile' },
   { from: 'contact', to: 'contact' },
   { from: 'cookies', to: 'cookies' },
   { from: 'image-credits', to: 'image-credits' },
