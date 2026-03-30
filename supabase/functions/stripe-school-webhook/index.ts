@@ -142,11 +142,12 @@ Deno.serve(async (request) => {
         }
 
         const nextUpdatedAt = new Date().toISOString();
+        const wasPublished = claim.claim_status === 'published' || Boolean(claim.published_at);
         const { error: updateError } = await supabase
           .from('school_profile_claims')
           .update({
             payment_status: 'cancelled',
-            claim_status: 'cancelled',
+            claim_status: wasPublished ? 'published' : 'cancelled',
             updated_at: nextUpdatedAt
           })
           .eq('id', claim.id);
@@ -155,16 +156,18 @@ Deno.serve(async (request) => {
           throw new Error(`Could not mark cancelled Stripe subscription on school claim: ${updateError.message}`);
         }
 
-        await publishClaim({
-          supabase,
-          claim: {
-            ...claim,
-            payment_status: 'free'
-          },
-          packageSlug: 'claimed'
-        });
+        if (wasPublished) {
+          await publishClaim({
+            supabase,
+            claim: {
+              ...claim,
+              payment_status: 'free'
+            },
+            packageSlug: 'claimed'
+          });
+        }
 
-        return jsonResponse({ ok: true });
+        return jsonResponse({ ok: true, downgradedToClaimed: wasPublished });
       }
 
       default:
