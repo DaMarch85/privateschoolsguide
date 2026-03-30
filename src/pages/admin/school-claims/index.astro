@@ -1,0 +1,568 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SiteHeader from '../../../components/SiteHeader.astro';
+
+const functionsBase = String(import.meta.env.PUBLIC_SUPABASE_FUNCTIONS_BASE_URL || 'https://rmxsymdoprmgjgmwwaop.supabase.co/functions/v1').replace(/\/$/, '');
+---
+<BaseLayout
+  title="School claims admin | The Private School Guide"
+  description="Internal review queue for school profile claims, paid packages and moderation decisions."
+  canonicalPath="/admin/school-claims/"
+  robots="noindex, nofollow, noarchive"
+  bodyClass="school-claims-admin-page"
+>
+  <Fragment slot="head">
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+    <link rel="stylesheet" href="/assets/css/admin-school-claims.css" />
+  </Fragment>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+  <SiteHeader minimal={true} />
+
+  <main id="main" class="page-shell">
+    <div class="shell admin-claims-shell">
+      <section class="admin-claims-intro" aria-labelledby="admin-claims-title">
+        <div>
+          <p class="claim-kicker">Internal admin</p>
+          <h1 id="admin-claims-title">School claims review queue</h1>
+          <p>
+            Review claimed, founding and paid school submissions before they change live profile content. This route is not linked publicly and the data layer is protected by an admin review token.
+          </p>
+        </div>
+        <div class="admin-intro-callout">
+          <strong>Best launch setting</strong>
+          <p>Set <code>AUTO_APPROVE_SCHOOL_CLAIMS=false</code>, then use this console to approve free claims, founding programme requests and paid submissions after Stripe confirms payment.</p>
+        </div>
+      </section>
+
+      <section class="admin-auth-card" aria-labelledby="admin-auth-title">
+        <div>
+          <p class="claim-kicker">Access</p>
+          <h2 id="admin-auth-title">Connect to the queue</h2>
+          <p>Enter the shared admin review token from your environment and the name you want attached to review actions.</p>
+        </div>
+        <form class="admin-auth-form" id="admin-auth-form">
+          <label class="admin-field">
+            <span>Admin review token</span>
+            <input id="admin-token" autocomplete="off" placeholder="Paste ADMIN_REVIEW_TOKEN" type="password" />
+          </label>
+          <label class="admin-field">
+            <span>Reviewer name or email</span>
+            <input id="admin-reviewer" autocomplete="name" placeholder="Douglas" type="text" />
+          </label>
+          <div class="admin-auth-actions">
+            <button class="button" type="submit">Connect</button>
+            <button class="button-outline" id="admin-clear-access" type="button">Clear stored access</button>
+          </div>
+        </form>
+        <p class="admin-auth-status" hidden id="admin-auth-status"></p>
+      </section>
+
+      <section class="admin-summary-grid" aria-label="Queue summary" id="admin-summary-grid">
+        <article class="admin-summary-card"><span>Actionable</span><strong>—</strong><p>Claims ready for editorial review.</p></article>
+        <article class="admin-summary-card"><span>Awaiting payment</span><strong>—</strong><p>Paid packages that have not completed Stripe checkout yet.</p></article>
+        <article class="admin-summary-card"><span>Live</span><strong>—</strong><p>Claims already published to school pages.</p></article>
+        <article class="admin-summary-card"><span>Rejected</span><strong>—</strong><p>Claims that were declined and can be reopened later.</p></article>
+      </section>
+
+      <section class="admin-toolbar" aria-label="Queue filters">
+        <div class="admin-toolbar__controls">
+          <label class="admin-field admin-field--compact">
+            <span>View</span>
+            <select id="admin-filter">
+              <option value="actionable">Actionable</option>
+              <option value="awaiting_payment">Awaiting payment</option>
+              <option value="live">Live</option>
+              <option value="rejected">Rejected</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="all">All claims</option>
+            </select>
+          </label>
+          <label class="admin-field admin-field--compact admin-field--grow">
+            <span>Search</span>
+            <input id="admin-search" placeholder="School, contact, status…" type="search" />
+          </label>
+        </div>
+        <div class="admin-toolbar__actions">
+          <button class="button-outline" id="admin-refresh" type="button">Refresh</button>
+        </div>
+      </section>
+
+      <p class="admin-global-status" hidden id="admin-global-status"></p>
+
+      <section class="admin-claims-layout" aria-label="Claims queue layout">
+        <aside class="admin-list-panel" aria-labelledby="admin-list-title">
+          <div class="admin-panel-heading">
+            <h2 id="admin-list-title">Claims</h2>
+            <p id="admin-list-meta">Connect above to load the queue.</p>
+          </div>
+          <div class="admin-claims-list" id="admin-claims-list">
+            <div class="admin-empty-state">No claim selected yet.</div>
+          </div>
+        </aside>
+
+        <section class="admin-detail-panel" aria-labelledby="admin-detail-title">
+          <div class="admin-panel-heading">
+            <h2 id="admin-detail-title">Claim detail</h2>
+            <p>Choose a claim from the left to review its submitted content and live school profile.</p>
+          </div>
+          <div class="admin-detail-body" id="admin-claim-detail">
+            <div class="admin-empty-state">Connect and select a claim to see the full moderation view.</div>
+          </div>
+        </section>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" define:vars={{ functionsBase }}>
+    const queueEndpoint = `${functionsBase}/school-claims-admin-queue`;
+    const actionEndpoint = `${functionsBase}/school-claims-admin-action`;
+    const STORAGE_KEYS = {
+      token: 'psg-admin-review-token',
+      reviewer: 'psg-admin-reviewer'
+    };
+
+    const authForm = document.getElementById('admin-auth-form');
+    const tokenInput = document.getElementById('admin-token');
+    const reviewerInput = document.getElementById('admin-reviewer');
+    const clearAccessButton = document.getElementById('admin-clear-access');
+    const authStatus = document.getElementById('admin-auth-status');
+    const summaryGrid = document.getElementById('admin-summary-grid');
+    const filterSelect = document.getElementById('admin-filter');
+    const searchInput = document.getElementById('admin-search');
+    const refreshButton = document.getElementById('admin-refresh');
+    const globalStatus = document.getElementById('admin-global-status');
+    const listMeta = document.getElementById('admin-list-meta');
+    const claimsList = document.getElementById('admin-claims-list');
+    const claimDetail = document.getElementById('admin-claim-detail');
+
+    const state = {
+      token: sessionStorage.getItem(STORAGE_KEYS.token) || '',
+      reviewer: sessionStorage.getItem(STORAGE_KEYS.reviewer) || '',
+      filter: 'actionable',
+      search: '',
+      selectedClaimId: null,
+      loading: false
+    };
+
+    let searchDebounce = null;
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, (character) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[character] || character));
+    }
+
+    function formatDate(value) {
+      if (!value) return '—';
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) return escapeHtml(value);
+      return new Intl.DateTimeFormat('en-GB', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      }).format(parsed);
+    }
+
+    function setGlobalStatus(message = '', tone = '') {
+      if (!globalStatus) return;
+      globalStatus.hidden = !message;
+      globalStatus.className = `admin-global-status${tone ? ` is-${tone}` : ''}`;
+      globalStatus.textContent = message;
+    }
+
+    function setAuthStatus(message = '', tone = '') {
+      if (!authStatus) return;
+      authStatus.hidden = !message;
+      authStatus.className = `admin-auth-status${tone ? ` is-${tone}` : ''}`;
+      authStatus.textContent = message;
+    }
+
+    function syncUrlState() {
+      const params = new URLSearchParams();
+      if (state.filter && state.filter !== 'actionable') params.set('filter', state.filter);
+      if (state.search) params.set('q', state.search);
+      if (state.selectedClaimId) params.set('claim', state.selectedClaimId);
+      const next = params.toString() ? `?${params.toString()}` : window.location.pathname;
+      history.replaceState({}, '', next);
+    }
+
+    function readUrlState() {
+      const params = new URLSearchParams(window.location.search);
+      const filter = params.get('filter');
+      const search = params.get('q');
+      const claim = params.get('claim');
+      if (filter) state.filter = filter;
+      if (search) state.search = search;
+      if (claim) state.selectedClaimId = claim;
+    }
+
+    function authHeaders(contentType = false) {
+      const headers = {
+        'x-admin-review-token': state.token
+      };
+      if (contentType) headers['Content-Type'] = 'application/json';
+      return headers;
+    }
+
+    function updateAccessUi() {
+      if (tokenInput) tokenInput.value = state.token;
+      if (reviewerInput) reviewerInput.value = state.reviewer;
+      if (state.token) {
+        setAuthStatus('Connected. Queue data will only load for requests signed with the current admin token.', 'success');
+      } else {
+        setAuthStatus('Add the admin review token to load any claim data.', 'muted');
+      }
+    }
+
+    function renderSummary(summary) {
+      if (!summaryGrid) return;
+      summaryGrid.innerHTML = `
+        <article class="admin-summary-card"><span>Actionable</span><strong>${summary ? escapeHtml(summary.actionable) : '—'}</strong><p>Claims ready for editorial review.</p></article>
+        <article class="admin-summary-card"><span>Awaiting payment</span><strong>${summary ? escapeHtml(summary.awaitingPayment) : '—'}</strong><p>Paid packages that have not completed Stripe checkout yet.</p></article>
+        <article class="admin-summary-card"><span>Live</span><strong>${summary ? escapeHtml(summary.live) : '—'}</strong><p>Claims already published to school pages.</p></article>
+        <article class="admin-summary-card"><span>Rejected</span><strong>${summary ? escapeHtml(summary.rejected) : '—'}</strong><p>Claims that were declined and can be reopened later.</p></article>
+      `;
+    }
+
+    function renderClaims(claims) {
+      if (!claimsList) return;
+      if (!claims?.length) {
+        claimsList.innerHTML = '<div class="admin-empty-state">No claims match this filter yet.</div>';
+        if (listMeta) listMeta.textContent = '0 claims';
+        return;
+      }
+      if (listMeta) listMeta.textContent = `${claims.length} claim${claims.length === 1 ? '' : 's'}`;
+      claimsList.innerHTML = claims.map((claim) => `
+        <button class="admin-claim-card${state.selectedClaimId === claim.id ? ' is-selected' : ''}" data-claim-id="${escapeHtml(claim.id)}" type="button">
+          <div class="admin-claim-card__top">
+            <strong>${escapeHtml(claim.schoolName)}</strong>
+            <span class="admin-chip admin-chip--status">${escapeHtml(claim.claimStatus)}</span>
+          </div>
+          <div class="admin-claim-card__meta">
+            <span class="admin-chip admin-chip--plan">${escapeHtml(claim.planName)}</span>
+            <span class="admin-chip admin-chip--payment">${escapeHtml(claim.paymentLabel)}</span>
+            ${claim.foundingProgramme ? '<span class="admin-chip admin-chip--accent">Founding programme</span>' : ''}
+          </div>
+          <p>${escapeHtml(claim.locationName || 'Unknown location')}</p>
+          <p class="admin-claim-card__contact">${escapeHtml(claim.contactName || 'No contact name')} · ${escapeHtml(claim.contactEmail || 'No email')}</p>
+          <p class="admin-claim-card__time">Submitted ${formatDate(claim.createdAt)}</p>
+        </button>
+      `).join('');
+    }
+
+    function renderLink(label, href) {
+      if (!href) return '<span class="admin-muted">—</span>';
+      return `<a href="${escapeHtml(href)}" target="_blank" rel="noreferrer">${escapeHtml(label)}</a>`;
+    }
+
+    function renderImages(urls) {
+      if (!urls?.length) return '<div class="admin-empty-inline">No images submitted.</div>';
+      return `<div class="admin-image-grid">${urls.map((url, index) => `
+        <figure class="admin-image-card">
+          <img src="${escapeHtml(url.url || url)}" alt="${escapeHtml(url.alt || `School image ${index + 1}`)}" loading="lazy" />
+          <figcaption>${escapeHtml(url.imageType || url.alt || `Image ${index + 1}`)}</figcaption>
+        </figure>
+      `).join('')}</div>`;
+    }
+
+    function renderOpenDay(detail) {
+      const bits = [];
+      if (detail.openDayTitle) bits.push(`<strong>${escapeHtml(detail.openDayTitle)}</strong>`);
+      if (detail.openDayStartAt) bits.push(`<span>${escapeHtml(formatDate(detail.openDayStartAt))}</span>`);
+      if (detail.openDayBookingUrl) bits.push(`<span>${renderLink('Booking link', detail.openDayBookingUrl)}</span>`);
+      if (detail.openDayNotes) bits.push(`<p>${escapeHtml(detail.openDayNotes)}</p>`);
+      return bits.length ? `<div class="admin-callout admin-callout--soft">${bits.join('')}</div>` : '<div class="admin-empty-inline">No open day submitted.</div>';
+    }
+
+    function approveLabel(detail) {
+      if (detail.foundingProgramme) return 'Approve and publish Founding programme';
+      if (detail.planSlug === 'claimed') return 'Approve and publish claimed profile';
+      return `Approve and publish ${detail.planName}`;
+    }
+
+    function renderDetail(detail) {
+      if (!claimDetail) return;
+      if (!detail) {
+        claimDetail.innerHTML = '<div class="admin-empty-state">Select a claim from the left to review its content.</div>';
+        return;
+      }
+
+      claimDetail.innerHTML = `
+        <article class="admin-detail-card">
+          <div class="admin-detail-card__header">
+            <div>
+              <p class="claim-kicker">${escapeHtml(detail.planName)}</p>
+              <h3>${escapeHtml(detail.schoolName)}</h3>
+              <p>${escapeHtml(detail.queueRecommendation)}</p>
+            </div>
+            <div class="admin-detail-card__links">
+              ${detail.schoolPageUrl ? `<a class="button-outline" href="${escapeHtml(detail.schoolPageUrl)}" target="_blank" rel="noreferrer">Preview live page</a>` : ''}
+            </div>
+          </div>
+
+          <div class="admin-chip-row">
+            <span class="admin-chip admin-chip--status">${escapeHtml(detail.claimStatus)}</span>
+            <span class="admin-chip admin-chip--plan">${escapeHtml(detail.planName)}</span>
+            <span class="admin-chip admin-chip--payment">${escapeHtml(detail.paymentLabel)}</span>
+            ${detail.foundingProgramme ? '<span class="admin-chip admin-chip--accent">Founding programme</span>' : ''}
+            ${detail.liveProfile?.profileManagedBySchool ? '<span class="admin-chip">Live profile managed</span>' : ''}
+          </div>
+
+          <div class="admin-detail-grid">
+            <section>
+              <h4>Claim overview</h4>
+              <dl class="admin-definition-list">
+                <div><dt>Location</dt><dd>${escapeHtml(detail.locationName || '—')}</dd></div>
+                <div><dt>Submitted</dt><dd>${escapeHtml(formatDate(detail.createdAt))}</dd></div>
+                <div><dt>Last updated</dt><dd>${escapeHtml(formatDate(detail.updatedAt))}</dd></div>
+                <div><dt>Reviewed</dt><dd>${escapeHtml(detail.reviewedAt ? `${formatDate(detail.reviewedAt)} by ${detail.reviewedBy || 'Admin'}` : 'Not reviewed yet')}</dd></div>
+                <div><dt>Stripe checkout</dt><dd>${escapeHtml(detail.stripeCheckoutSessionId || '—')}</dd></div>
+                <div><dt>Stripe subscription</dt><dd>${escapeHtml(detail.stripeSubscriptionId || '—')}</dd></div>
+              </dl>
+            </section>
+            <section>
+              <h4>Contact</h4>
+              <dl class="admin-definition-list">
+                <div><dt>Name</dt><dd>${escapeHtml(detail.contactName || '—')}</dd></div>
+                <div><dt>Role</dt><dd>${escapeHtml(detail.contactRole || '—')}</dd></div>
+                <div><dt>Email</dt><dd>${escapeHtml(detail.contactEmail || '—')}</dd></div>
+                <div><dt>Phone</dt><dd>${escapeHtml(detail.contactPhone || '—')}</dd></div>
+              </dl>
+            </section>
+          </div>
+        </article>
+
+        <article class="admin-detail-card">
+          <h3>Submitted content</h3>
+          <div class="admin-detail-grid">
+            <section>
+              <h4>Links and notes</h4>
+              <dl class="admin-definition-list">
+                <div><dt>Website</dt><dd>${renderLink(detail.submittedWebsiteUrl || 'Website', detail.submittedWebsiteUrl)}</dd></div>
+                <div><dt>Admissions/contact</dt><dd>${renderLink(detail.submittedContactFormUrl || 'Admissions/contact', detail.submittedContactFormUrl)}</dd></div>
+              </dl>
+              <div class="admin-copy-block"><strong>School-submitted notes</strong><p>${escapeHtml(detail.schoolSubmittedNotes || 'No school note was submitted.')}</p></div>
+              <div class="admin-copy-block"><strong>Open day submission</strong>${renderOpenDay(detail)}</div>
+            </section>
+            <section>
+              <h4>Images</h4>
+              ${renderImages(detail.submittedImageUrls)}
+            </section>
+          </div>
+        </article>
+
+        <article class="admin-detail-card">
+          <h3>Current live profile</h3>
+          ${detail.liveProfile ? `
+            <div class="admin-detail-grid">
+              <section>
+                <dl class="admin-definition-list">
+                  <div><dt>Package</dt><dd>${escapeHtml(detail.liveProfile.profilePackage || 'organic')}</dd></div>
+                  <div><dt>Managed by school</dt><dd>${escapeHtml(detail.liveProfile.profileManagedBySchool ? 'Yes' : 'No')}</dd></div>
+                  <div><dt>Claimed at</dt><dd>${escapeHtml(detail.liveProfile.claimedAt ? formatDate(detail.liveProfile.claimedAt) : '—')}</dd></div>
+                  <div><dt>Website</dt><dd>${renderLink(detail.liveProfile.websiteUrl || 'Website', detail.liveProfile.websiteUrl)}</dd></div>
+                  <div><dt>Admissions/contact</dt><dd>${renderLink(detail.liveProfile.contactFormUrl || 'Admissions/contact', detail.liveProfile.contactFormUrl)}</dd></div>
+                </dl>
+              </section>
+              <section>
+                <h4>Live school-claim images</h4>
+                ${renderImages(detail.liveProfile.schoolClaimImages)}
+                <h4>Live school-claim open days</h4>
+                ${detail.liveProfile.schoolClaimOpenDays?.length ? detail.liveProfile.schoolClaimOpenDays.map((openDay) => `
+                  <div class="admin-callout admin-callout--soft">
+                    <strong>${escapeHtml(openDay.title || 'Open day')}</strong>
+                    <span>${escapeHtml(openDay.startAt ? formatDate(openDay.startAt) : 'No date')}</span>
+                    <span>${renderLink('Booking link', openDay.bookingUrl)}</span>
+                    <p>${escapeHtml(openDay.notes || '')}</p>
+                  </div>
+                `).join('') : '<div class="admin-empty-inline">No live school-claim open day.</div>'}
+              </section>
+            </div>
+          ` : '<div class="admin-empty-inline">This school does not currently have a live school-managed profile.</div>'}
+        </article>
+
+        <article class="admin-detail-card">
+          <h3>Internal review</h3>
+          <label class="admin-field">
+            <span>Add a private note or decision rationale</span>
+            <textarea id="admin-note-entry" placeholder="Notes here are stored on the claim record and are not shown to schools."></textarea>
+          </label>
+          ${detail.canCancelBilling ? `
+            <label class="admin-checkbox">
+              <input id="admin-cancel-billing" type="checkbox" />
+              <span>Also cancel the Stripe subscription when rejecting this claim</span>
+            </label>
+          ` : ''}
+          <div class="admin-action-row">
+            <button class="button" ${detail.canApprove ? '' : 'disabled'} data-admin-action="approve" type="button">${escapeHtml(approveLabel(detail))}</button>
+            <button class="button-outline" data-admin-action="save_note" type="button">Save internal note</button>
+            ${detail.canReject ? '<button class="button-outline button-outline--danger" data-admin-action="reject" type="button">Reject claim</button>' : ''}
+            ${detail.canReopen ? '<button class="button-outline" data-admin-action="reopen" type="button">Reopen claim</button>' : ''}
+          </div>
+          <div class="admin-copy-block admin-copy-block--history">
+            <strong>Internal notes history</strong>
+            <pre>${escapeHtml(detail.internalNotes || 'No internal notes yet.')}</pre>
+          </div>
+        </article>
+      `;
+    }
+
+    async function fetchQueue() {
+      if (!state.token) {
+        renderSummary(null);
+        renderClaims([]);
+        renderDetail(null);
+        return;
+      }
+
+      state.loading = true;
+      if (refreshButton) refreshButton.disabled = true;
+      setGlobalStatus('Loading the school claims queue…');
+      syncUrlState();
+
+      try {
+        const url = new URL(queueEndpoint);
+        url.searchParams.set('filter', state.filter);
+        url.searchParams.set('limit', '80');
+        if (state.search) url.searchParams.set('q', state.search);
+        if (state.selectedClaimId) url.searchParams.set('claim', state.selectedClaimId);
+
+        const response = await fetch(url, {
+          headers: authHeaders()
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.error || 'Could not load the review queue.');
+        }
+
+        renderSummary(payload.summary || null);
+        renderClaims(payload.claims || []);
+
+        if (!state.selectedClaimId && payload.claims?.length) {
+          state.selectedClaimId = payload.claims[0].id;
+          return await fetchQueue();
+        }
+
+        const selectedStillVisible = payload.claims?.some((claim) => claim.id === state.selectedClaimId);
+        if (!selectedStillVisible && payload.claims?.length) {
+          state.selectedClaimId = payload.claims[0].id;
+          return await fetchQueue();
+        }
+
+        renderDetail(payload.selectedClaim || null);
+        setGlobalStatus('Queue updated.', 'success');
+      } catch (error) {
+        console.error(error);
+        setGlobalStatus(error instanceof Error ? error.message : 'Could not load the queue.', 'error');
+      } finally {
+        state.loading = false;
+        if (refreshButton) refreshButton.disabled = false;
+      }
+    }
+
+    async function sendAction(action) {
+      if (!state.selectedClaimId || !state.token) return;
+      const noteField = document.getElementById('admin-note-entry');
+      const cancelBillingField = document.getElementById('admin-cancel-billing');
+      const note = noteField ? noteField.value.trim() : '';
+      const cancelBilling = Boolean(cancelBillingField?.checked);
+      const reviewer = reviewerInput?.value.trim() || state.reviewer;
+
+      setGlobalStatus('Saving review decision…');
+      try {
+        const response = await fetch(actionEndpoint, {
+          method: 'POST',
+          headers: authHeaders(true),
+          body: JSON.stringify({
+            claimId: state.selectedClaimId,
+            action,
+            reviewer,
+            note,
+            cancelBilling
+          })
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.error || 'The review action could not be completed.');
+        }
+
+        if (noteField) noteField.value = '';
+        if (cancelBillingField) cancelBillingField.checked = false;
+        setGlobalStatus(payload.message || 'Action completed.', 'success');
+        await fetchQueue();
+      } catch (error) {
+        console.error(error);
+        setGlobalStatus(error instanceof Error ? error.message : 'The review action failed.', 'error');
+      }
+    }
+
+    authForm?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      state.token = tokenInput?.value.trim() || '';
+      state.reviewer = reviewerInput?.value.trim() || '';
+      sessionStorage.setItem(STORAGE_KEYS.token, state.token);
+      sessionStorage.setItem(STORAGE_KEYS.reviewer, state.reviewer);
+      updateAccessUi();
+      await fetchQueue();
+    });
+
+    clearAccessButton?.addEventListener('click', () => {
+      sessionStorage.removeItem(STORAGE_KEYS.token);
+      sessionStorage.removeItem(STORAGE_KEYS.reviewer);
+      state.token = '';
+      state.reviewer = '';
+      state.selectedClaimId = null;
+      updateAccessUi();
+      renderSummary(null);
+      renderClaims([]);
+      renderDetail(null);
+      setGlobalStatus('Stored admin access cleared.', 'muted');
+    });
+
+    filterSelect?.addEventListener('change', async () => {
+      state.filter = filterSelect.value || 'actionable';
+      state.selectedClaimId = null;
+      await fetchQueue();
+    });
+
+    searchInput?.addEventListener('input', () => {
+      window.clearTimeout(searchDebounce);
+      searchDebounce = window.setTimeout(async () => {
+        state.search = searchInput.value.trim();
+        state.selectedClaimId = null;
+        await fetchQueue();
+      }, 250);
+    });
+
+    refreshButton?.addEventListener('click', async () => {
+      await fetchQueue();
+    });
+
+    claimsList?.addEventListener('click', async (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const card = target ? target.closest('[data-claim-id]') : null;
+      if (!card) return;
+      state.selectedClaimId = card.dataset.claimId;
+      await fetchQueue();
+    });
+
+    claimDetail?.addEventListener('click', async (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const button = target ? target.closest('[data-admin-action]') : null;
+      if (!button) return;
+      await sendAction(button.dataset.adminAction);
+    });
+
+    readUrlState();
+    if (filterSelect) filterSelect.value = state.filter;
+    if (searchInput) searchInput.value = state.search;
+    updateAccessUi();
+    if (state.token) {
+      fetchQueue();
+    }
+  </script>
+</BaseLayout>
