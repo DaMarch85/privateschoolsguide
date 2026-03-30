@@ -3,3 +3,9 @@ verify_jwt = false
 
 [functions.stripe-school-webhook]
 verify_jwt = false
+
+[functions.school-claims-admin-queue]
+verify_jwt = false
+
+[functions.school-claims-admin-action]
+verify_jwt = false
