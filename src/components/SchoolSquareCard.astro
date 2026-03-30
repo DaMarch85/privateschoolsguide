@@ -5,12 +5,14 @@ interface Props {
   cardClass: string;
   texts: string[];
   provisionCategory?: string;
+  badgeLabel?: string | null;
 }
 
-const { href, name, cardClass, texts } = Astro.props;
+const { href, name, cardClass, texts, badgeLabel = null } = Astro.props;
 ---
 <a class={cardClass} href={href}>
   <div class="school-square-body">
+    {badgeLabel ? <p class="school-square-badge">{badgeLabel}</p> : null}
     <h2>{name}</h2>
     {texts.map((text) => <p class="school-square-text">{text}</p>)}
   </div>

@@ -41,8 +41,20 @@ const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(profile.
   <section aria-labelledby="school-page-title" class="school-profile-hero">
     <img alt={profile.heroImageAlt} src={profile.heroImageUrl} />
     <div class="school-profile-hero-copy">
+      {(profile.profileBadgeLabel || profile.profileManagedLabel) ? (
+        <div class="school-profile-status-row">
+          {profile.profileBadgeLabel ? <p class="school-profile-status school-profile-status--featured">{profile.profileBadgeLabel}</p> : null}
+          {profile.profileManagedLabel ? <p class="school-profile-status">{profile.profileManagedLabel}</p> : null}
+        </div>
+      ) : null}
       <h1 class="school-profile-title" id="school-page-title">{profile.school.name}</h1>
       <p class="school-profile-subhead">{profile.subhead}</p>
+      {(profile.officialWebsiteUrl || profile.contactFormUrl) ? (
+        <div class="school-profile-actions">
+          {profile.officialWebsiteUrl ? <a class="button school-profile-website-link" href={profile.officialWebsiteUrl} rel="noopener noreferrer" target="_blank">Visit school website</a> : null}
+          {profile.contactFormUrl ? <a class="button-outline school-profile-contact-link" href={profile.contactFormUrl} rel="noopener noreferrer" target="_blank">Admissions / contact form</a> : null}
+        </div>
+      ) : null}
     </div>
   </section>
   <div class="school-back-strip"><div class="shell"><a class="school-back-link" href={`/${profile.location.slug}/`}>← Back to {profile.location.name}</a></div></div>
@@ -276,6 +288,29 @@ const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(profile.
             </article>
           ) : null}
         </div>
+
+        {profile.galleryImages.length > 0 && (
+          <section class="school-gallery-section" aria-labelledby="school-gallery-title">
+            <div class="school-section-heading">
+              <p class="nav-kicker">Gallery</p>
+              <h2 id="school-gallery-title">School images</h2>
+            </div>
+            <div class="school-gallery-grid">
+              {profile.galleryImages.map((image, index) => (
+                <figure class="school-gallery-figure">
+                  <img alt={image.alt || `${profile.school.name} image ${index + 1}`} loading="lazy" src={image.url} />
+                </figure>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section class="school-claim-cta" aria-labelledby="school-claim-cta-title">
+          <p class="nav-kicker">For schools</p>
+          <h2 id="school-claim-cta-title">School staff? Claim or improve this profile</h2>
+          <p>Upload official imagery, add your website and admissions links, and choose a managed profile package.</p>
+          <a class="button-outline" href={`/claim-your-profile/?school=${profile.school.id}`}>Go to the school portal</a>
+        </section>
       </section>
 
       <aside class="location-map-panel school-map-panel">

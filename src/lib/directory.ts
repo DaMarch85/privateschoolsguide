@@ -1,5 +1,11 @@
 import { getLocationPresentation } from './location-config';
 import { supabase } from './supabase';
+import {
+  getSchoolManagedLabel,
+  getSchoolPackageBadge,
+  getSchoolPackagePriority,
+  normalizeSchoolProfilePackage
+} from './school-commercial';
 
 export type LocationRecord = {
   id: string;
@@ -34,6 +40,15 @@ export type HomepageLocationItem = {
   isLive: boolean;
 };
 
+export type ClaimableSchoolOption = {
+  id: string;
+  slug: string;
+  name: string;
+  locationSlug: string;
+  locationName: string;
+  label: string;
+};
+
 export type LocationSchoolLink = {
   location_id: string;
   school_id: string | number;
@@ -59,6 +74,11 @@ export type SchoolSummaryRecord = {
   latitude: number | null;
   longitude: number | null;
   website: string | null;
+  website_override_url?: string | null;
+  contact_form_url?: string | null;
+  profile_package?: string | null;
+  profile_managed_by_school?: boolean | null;
+  claimed_at?: string | null;
   pupil_numbers: number | null;
   description: string | null;
   inspection_rating: string | null;
@@ -178,6 +198,12 @@ export type BursaryRecord = {
   application_and_review: string | null;
 };
 
+export type SchoolGalleryImage = {
+  url: string;
+  alt: string;
+  imageType: 'hero' | 'gallery';
+};
+
 export type SchoolCard = {
   slug: string;
   name: string;
@@ -185,6 +211,7 @@ export type SchoolCard = {
   cardClass: string;
   provisionCategory: 'mainstream' | 'sen_specialist';
   texts: string[];
+  badgeLabel?: string | null;
 };
 
 export type MapSchool = {
@@ -231,6 +258,10 @@ export type HomepageSearchSchool = {
   hasBoardingFees: boolean;
   dayFeesByYear: Record<string, string>;
   boardingFeesByYear: Record<string, string>;
+  packageSlug: string;
+  packagePriority: number;
+  badgeLabel: string | null;
+  isManaged: boolean;
   alevel: CompareAlevelMetrics | null;
 };
 
@@ -298,7 +329,7 @@ function isTransientSupabaseError(error?: { message?: string } | null): boolean 
 }
 
 async function withRetry<T extends { error: { message?: string } | null }>(
-  run: () => Promise<T>,
+  run: () => Promise<T> | PromiseLike<T>,
   attempts = 3,
   baseDelayMs = 300
 ): Promise<T> {
@@ -399,6 +430,14 @@ export function getAgeLabel(ageMin: number | null, ageMax: number | null): strin
   if (ageMin !== null) return `${ageMin}+`;
   if (ageMax !== null) return `Up to ${ageMax}`;
   return 'To be confirmed';
+}
+
+export function getSchoolWebsiteUrl(school: Pick<SchoolSummaryRecord, 'website' | 'website_override_url'>): string | null {
+  const preferred = String(school.website_override_url || '').trim();
+  if (preferred) return preferred;
+
+  const fallback = String(school.website || '').trim();
+  return fallback || null;
 }
 
 function firstNonEmptyText(...values: Array<unknown>): string | null {
@@ -888,6 +927,40 @@ function chunkArray<T>(values: T[], size: number): T[][] {
   return chunks;
 }
 
+
+type OrderedLinkedSchoolRow = {
+  link: LocationSchoolLink;
+  school: SchoolSummaryRecord;
+};
+
+function getOrderedLinkedSchoolRows(
+  locationLinks: LocationSchoolLink[],
+  schoolMap: Map<string, SchoolSummaryRecord>
+): OrderedLinkedSchoolRow[] {
+  return locationLinks
+    .map((link) => ({ link, school: schoolMap.get(String(link.school_id)) || null }))
+    .filter((row): row is { link: LocationSchoolLink; school: SchoolSummaryRecord } => Boolean(row.school))
+    .sort((a, b) => {
+      const packageDelta = getSchoolPackagePriority(b.school.profile_package) - getSchoolPackagePriority(a.school.profile_package);
+      if (packageDelta !== 0) return packageDelta;
+
+      const featuredDelta = Number(Boolean(b.link.is_featured)) - Number(Boolean(a.link.is_featured));
+      if (featuredDelta !== 0) return featuredDelta;
+
+      const sortDelta = a.link.sort_order - b.link.sort_order;
+      if (sortDelta !== 0) return sortDelta;
+
+      return a.school.name.localeCompare(b.school.name, 'en');
+    });
+}
+
+function getOrderedSchoolsFromLinks(
+  locationLinks: LocationSchoolLink[],
+  schoolMap: Map<string, SchoolSummaryRecord>
+): SchoolSummaryRecord[] {
+  return getOrderedLinkedSchoolRows(locationLinks, schoolMap).map((row) => row.school);
+}
+
 async function getSchoolSlugMapByIds(schoolIds: Array<string | number>): Promise<Map<string, string>> {
   const uniqueSchoolIds = dedupeIds(schoolIds);
   if (!uniqueSchoolIds.length) return new Map();
@@ -944,7 +1017,7 @@ async function getSchoolsByIds(schoolIds: Array<string | number>): Promise<Schoo
   for (const batch of chunkArray(uniqueSchoolIds, 500)) {
     const { data, error } = await supabase
       .from('schools')
-      .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating, official_sixth_form, nursery_provision, number_of_boys, number_of_girls, religion, religious_ethos, status')
+      .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, website_override_url, contact_form_url, profile_package, profile_managed_by_school, claimed_at, pupil_numbers, description, inspection_rating, official_sixth_form, nursery_provision, number_of_boys, number_of_girls, religion, religious_ethos, status')
       .in('id', batch);
 
     if (error) fail('Could not load schools', error);
@@ -961,9 +1034,7 @@ export async function getLocationDirectoryData(locationSlug: string) {
   const schoolsRaw = await getSchoolsByIds(schoolIds);
   const schoolMap = new Map(schoolsRaw.map((school) => [String(school.id), school]));
 
-  const schools = locationLinks
-    .map((link) => schoolMap.get(String(link.school_id)))
-    .filter(Boolean)
+  const schools = getOrderedSchoolsFromLinks(locationLinks, schoolMap)
     .filter((school): school is SchoolSummaryRecord => getProvisionCategory(school) === 'mainstream');
 
   const schoolCards: SchoolCard[] = schools.map((school) => ({
@@ -972,6 +1043,7 @@ export async function getLocationDirectoryData(locationSlug: string) {
     href: `/${location.slug}/schools/${school.slug}/`,
     cardClass: `school-square-card school-square-card--${getMapType(school.phase, school.age_max)}`,
     provisionCategory: getProvisionCategory(school),
+    badgeLabel: getSchoolPackageBadge(school.profile_package),
     texts: [
       getPhaseLabel(school.phase, school.age_max),
       `${getGenderLabel(school.gender)} · ${getFormatLabel(school.day_boarding)}`,
@@ -1068,7 +1140,7 @@ async function getHomepageSearchSchoolRows(): Promise<SchoolSummaryRecord[]> {
   while (true) {
     const { data, error } = await supabase
       .from('schools')
-      .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, pupil_numbers, description, inspection_rating, official_sixth_form, nursery_provision, number_of_boys, number_of_girls, religion, religious_ethos, status')
+      .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, website_override_url, contact_form_url, profile_package, profile_managed_by_school, claimed_at, pupil_numbers, description, inspection_rating, official_sixth_form, nursery_provision, number_of_boys, number_of_girls, religion, religious_ethos, status')
       .eq('provision_category', 'mainstream')
       .in('status', ['active', 'open'])
       .not('latitude', 'is', null)
@@ -1141,7 +1213,7 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
     if (examRes.error) fail('Could not load homepage exam rows', examRes.error);
     if (subjectRes.error) fail('Could not load homepage subject rows', subjectRes.error);
 
-    feeRowsRaw.push(...((feeRes.data || []) as Array<AnnualFeeRecord & { school_id: string | number }>));
+    feeRowsRaw.push(...((feeRes.data || []) as unknown as Array<AnnualFeeRecord & { school_id: string | number }>));
     examRowsRaw.push(...((examRes.data || []) as Array<ExamResultRecord & { school_id: string | number }>));
     subjectRowsRaw.push(...((subjectRes.data || []) as Array<SubjectRecord & { school_id: string | number; result_year: number }>));
   }
@@ -1205,6 +1277,10 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
       hasBoardingFees,
       dayFeesByYear,
       boardingFeesByYear,
+      packageSlug: normalizeSchoolProfilePackage(school.profile_package),
+      packagePriority: getSchoolPackagePriority(school.profile_package),
+      badgeLabel: getSchoolPackageBadge(school.profile_package),
+      isManaged: Boolean(school.profile_managed_by_school),
       alevel: aggregateAlevelMetrics(latestExam, subjectRows)
     } satisfies HomepageSearchSchool;
   });
@@ -1216,9 +1292,7 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
   const schoolIds = locationLinks.map((row) => row.school_id);
   const schoolsRaw = await getSchoolsByIds(schoolIds);
   const schoolMap = new Map(schoolsRaw.map((school) => [String(school.id), school]));
-  const orderedSchools = locationLinks
-    .map((link) => schoolMap.get(String(link.school_id)))
-    .filter(Boolean) as SchoolSummaryRecord[];
+  const orderedSchools = getOrderedSchoolsFromLinks(locationLinks, schoolMap);
 
   if (!orderedSchools.length) {
     return { location, compareSchools: [] };
@@ -1257,7 +1331,7 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
   if (subjectRowsError) fail(`Could not load compare subjects for ${locationSlug}`, subjectRowsError);
 
   const feeRows = expandAnnualFeeRows(
-    ((feeRowsRaw || []) as Array<AnnualFeeRecord & { school_id: string | number }>)
+    ((feeRowsRaw || []) as unknown as Array<AnnualFeeRecord & { school_id: string | number }>)
   );
   const bursaryRows = (bursaryRowsRaw || []) as Array<BursaryRecord & { school_id: string | number }>;
   const examRows = (examRowsRaw || []) as Array<ExamResultRecord & { school_id: string | number }>;
@@ -1322,9 +1396,7 @@ async function getOrderedLocationSchools(locationSlug: string) {
   const schoolsRaw = await getSchoolsByIds(schoolIds);
   const schoolMap = new Map(schoolsRaw.map((school) => [String(school.id), school]));
 
-  const schools = locationLinks
-    .map((link) => schoolMap.get(String(link.school_id)))
-    .filter(Boolean) as SchoolSummaryRecord[];
+  const schools = getOrderedSchoolsFromLinks(locationLinks, schoolMap);
 
   return { location, locationLinks, schoolIds, schools, schoolMap };
 }
@@ -1342,7 +1414,7 @@ export async function getLocationFeesData(locationSlug: string) {
   if (error) fail(`Could not load fees for ${locationSlug}`, error);
 
   const feeRows = expandAnnualFeeRows(
-    ((data || []) as Array<AnnualFeeRecord & { school_id: string | number }>)
+    ((data || []) as unknown as Array<AnnualFeeRecord & { school_id: string | number }>)
   );
   const currentAcademicYear = Array.from(new Set(feeRows.map((row) => row.academic_year))).sort().at(-1) || null;
   const filtered = feeRows
@@ -1446,6 +1518,7 @@ export async function getLocationOpenDaysData(locationSlug: string) {
     ? await supabase
         .from('school_open_days')
         .select('school_id, title, start_at, end_at, booking_url, notes, is_verified, last_verified_at')
+        .eq('is_active', true)
         .in('school_id', schoolIds)
         .order('start_at', { ascending: true })
     : { data: [], error: null };
@@ -1515,6 +1588,41 @@ export async function getAllLocationSchoolPaths() {
     .filter(Boolean);
 }
 
+export async function getClaimableSchoolOptions(): Promise<ClaimableSchoolOption[]> {
+  const locations = await getLiveLocations();
+  if (!locations.length) return [];
+
+  const locationById = new Map(locations.map((location) => [String(location.id), location]));
+  const links = await getLocationSchoolPathLinks(locations.map((location) => location.id));
+  const firstLocationBySchoolId = new Map<string, LocationRecord>();
+
+  links.forEach((link) => {
+    const schoolKey = String(link.school_id);
+    if (firstLocationBySchoolId.has(schoolKey)) return;
+    const location = locationById.get(String(link.location_id));
+    if (location) firstLocationBySchoolId.set(schoolKey, location);
+  });
+
+  const schools = await getSchoolsByIds(Array.from(firstLocationBySchoolId.keys()));
+
+  return schools
+    .map((school) => {
+      const location = firstLocationBySchoolId.get(String(school.id));
+      if (!location) return null;
+
+      return {
+        id: String(school.id),
+        slug: school.slug,
+        name: school.name,
+        locationSlug: location.slug,
+        locationName: location.name,
+        label: `${school.name} — ${location.name}`
+      } satisfies ClaimableSchoolOption;
+    })
+    .filter((row): row is ClaimableSchoolOption => Boolean(row))
+    .sort((a, b) => a.locationName.localeCompare(b.locationName, 'en') || a.name.localeCompare(b.name, 'en'));
+}
+
 export async function getLocationSchoolProfile(locationSlug: string, schoolSlug: string) {
   const location = await getLocationBySlug(locationSlug);
   const locationLinks = await getLocationSchoolLinks(location.id);
@@ -1534,7 +1642,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
     throw new Error(`${schoolSlug} is not linked to ${locationSlug}`);
   }
 
-  const [contentRes, heroImageRes, examRes, feeRes, bursaryRes, compareSchoolsRes] = await Promise.all([
+  const [contentRes, imageRowsRes, examRes, feeRes, bursaryRes, compareSchoolsRes] = (await Promise.all([
     withRetry(() =>
       supabase
         .from('school_content')
@@ -1545,12 +1653,11 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
     withRetry(() =>
       supabase
         .from('school_images')
-        .select('image_url, alt_text')
+        .select('image_url, alt_text, image_type, sort_order')
         .eq('school_id', school.id)
-        .eq('image_type', 'hero')
+        .eq('is_active', true)
+        .in('image_type', ['hero', 'gallery'])
         .order('sort_order', { ascending: true })
-        .limit(1)
-        .maybeSingle()
     ),
     withRetry(() =>
       supabase
@@ -1579,12 +1686,19 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
     schoolIds.length
       ? withRetry(() => supabase.from('schools').select('id, slug, name').in('id', schoolIds))
       : Promise.resolve({ data: [], error: null })
-  ]);
+  ])) as [
+    { data: RawSchoolContentRecord | null; error: { message?: string } | null },
+    { data: Array<{ image_url: string; alt_text: string | null; image_type: 'hero' | 'gallery'; sort_order: number | null }> | null; error: { message?: string } | null },
+    { data: ExamResultRecord | null; error: { message?: string } | null },
+    { data: AnnualFeeRecord[] | null; error: { message?: string } | null },
+    { data: BursaryRecord | null; error: { message?: string } | null },
+    { data: Array<{ id: string | number; slug: string; name: string }> | null; error: { message?: string } | null }
+  ];
 
   if (contentRes.error && !isTransientSupabaseError(contentRes.error)) {
     fail(`Could not load school content for ${schoolSlug}`, contentRes.error);
   }
-  if (heroImageRes.error) fail(`Could not load school image for ${schoolSlug}`, heroImageRes.error);
+  if (imageRowsRes.error) fail(`Could not load school image for ${schoolSlug}`, imageRowsRes.error);
   if (examRes.error) fail(`Could not load exam results for ${schoolSlug}`, examRes.error);
   if (feeRes.error) fail(`Could not load fees for ${schoolSlug}`, feeRes.error);
   if (bursaryRes.error) fail(`Could not load bursary data for ${schoolSlug}`, bursaryRes.error);
@@ -1592,8 +1706,17 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
 
   const content = normalizeSchoolContent((contentRes.data || null) as RawSchoolContentRecord | null);
   const locationPresentation = getLocationPresentation(location.slug, location.name);
-  const heroImageUrl = heroImageRes.data?.image_url || locationPresentation.defaultSchoolHeroImage;
-  const heroImageAlt = heroImageRes.data?.alt_text || '';
+  const imageRows = ((imageRowsRes.data || []) as Array<{ image_url: string; alt_text: string | null; image_type: 'hero' | 'gallery'; sort_order: number | null }>);
+  const primaryImage = imageRows.find((row) => row.image_type === 'hero') || imageRows[0] || null;
+  const heroImageUrl = primaryImage?.image_url || locationPresentation.defaultSchoolHeroImage;
+  const heroImageAlt = primaryImage?.alt_text || '';
+  const galleryImages: SchoolGalleryImage[] = imageRows
+    .filter((row, index) => !(primaryImage && row.image_url === primaryImage.image_url && index === imageRows.indexOf(primaryImage)))
+    .map((row) => ({
+      url: row.image_url,
+      alt: row.alt_text || '',
+      imageType: row.image_type
+    }));
   const alevelResult = (examRes.data || null) as ExamResultRecord | null;
   const feeRowsAll = expandAnnualFeeRows((feeRes.data || []) as AnnualFeeRecord[]) as FeeRecord[];
   const bursary = (bursaryRes.data || null) as BursaryRecord | null;
@@ -1607,7 +1730,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
     .slice(0, 8)
     .map((row) => ({ slug: row.slug, name: row.name, locationSlug: location.slug }));
 
-  const { data: subjectRowsRaw, error: subjectRowsError } = alevelResult
+  const subjectRowsResponse: { data: SubjectRecord[]; error: { message?: string } | null } = alevelResult
     ? await withRetry(() =>
         supabase
           .from('school_subject_popularity')
@@ -1616,8 +1739,10 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
           .eq('exam_type', 'alevel')
           .eq('result_year', alevelResult.result_year)
           .order('sort_order', { ascending: true })
-      )
+      ) as { data: SubjectRecord[]; error: { message?: string } | null }
     : { data: [], error: null };
+
+  const { data: subjectRowsRaw, error: subjectRowsError } = subjectRowsResponse;
 
   if (subjectRowsError) fail(`Could not load subject popularity for ${schoolSlug}`, subjectRowsError);
 
@@ -1649,6 +1774,11 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const subhead = school.description || `${phaseLabel} in ${school.town || location.name}.`;
   const canonicalPath = `/${location.slug}/schools/${school.slug}/`;
   const coordinates = getSchoolCoordinates(school);
+  const officialWebsiteUrl = getSchoolWebsiteUrl(school);
+  const contactFormUrl = String(school.contact_form_url || '').trim() || null;
+  const profilePackage = normalizeSchoolProfilePackage(school.profile_package);
+  const profileBadgeLabel = getSchoolPackageBadge(profilePackage);
+  const profileManagedLabel = school.profile_managed_by_school ? getSchoolManagedLabel(profilePackage) : null;
 
   const provisionCategory = getProvisionCategory(school);
   const studentCount = getStudentCount(school);
@@ -1722,6 +1852,12 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
     content,
     heroImageUrl,
     heroImageAlt,
+    galleryImages,
+    officialWebsiteUrl,
+    contactFormUrl,
+    profilePackage,
+    profileBadgeLabel,
+    profileManagedLabel,
     alevelResult,
     subjectRows,
     subjectTopRows: subjectRows.slice(0, 5),

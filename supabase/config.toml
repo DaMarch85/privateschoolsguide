@@ -1,0 +1,5 @@
+[functions.school-claim-submit]
+verify_jwt = false
+
+[functions.stripe-school-webhook]
+verify_jwt = false

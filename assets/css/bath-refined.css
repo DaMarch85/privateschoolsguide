@@ -1551,3 +1551,107 @@
 .school-profile-page .school-profile-website-link{
   min-width:210px;
 }
+
+/* --- 2026-03-29 school-managed profile and claim portal additions --- */
+.school-square-badge{
+  margin:0 0 10px;
+  color:var(--psg-accent);
+  font:700 .74rem/1.2 "Inter",sans-serif;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.school-profile-page .school-profile-status-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin:0 0 14px;
+}
+.school-profile-page .school-profile-status{
+  margin:0;
+  display:inline-flex;
+  align-items:center;
+  padding:8px 12px;
+  border:1px solid rgba(250,247,242,.34);
+  background:rgba(31,26,23,.22);
+  color:var(--psg-white);
+  font:600 .76rem/1.2 "Inter",sans-serif;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.school-profile-page .school-profile-status--featured{
+  background:rgba(179,91,46,.3);
+  border-color:rgba(250,247,242,.42);
+}
+.school-profile-page .school-profile-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  margin-top:22px;
+}
+.school-profile-page .school-profile-contact-link,
+.school-profile-page .school-profile-website-link{
+  min-width:210px;
+  justify-content:center;
+}
+.school-profile-page .school-gallery-section,
+.school-profile-page .school-claim-cta{
+  margin-top:26px;
+  background:var(--psg-paper);
+  border:1px solid var(--psg-line);
+  padding:22px;
+}
+.school-profile-page .school-section-heading{
+  margin-bottom:16px;
+}
+.school-profile-page .school-section-heading h2,
+.school-profile-page .school-claim-cta h2{
+  margin:0;
+  font-family:"EB Garamond",ui-serif,Georgia,"Times New Roman",serif;
+  font-size:1.7rem;
+  font-weight:500;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--psg-dark);
+}
+.school-profile-page .school-claim-cta p{
+  margin:12px 0 0;
+}
+.school-profile-page .school-claim-cta .button-outline{
+  display:inline-flex;
+  margin-top:18px;
+}
+.school-profile-page .school-gallery-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+.school-profile-page .school-gallery-figure{
+  margin:0;
+  min-height:210px;
+  overflow:hidden;
+  background:#ddd;
+}
+.school-profile-page .school-gallery-figure img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+@media (max-width:900px){
+  .school-profile-page .school-gallery-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media (max-width:640px){
+  .school-profile-page .school-profile-actions{
+    flex-direction:column;
+  }
+  .school-profile-page .school-profile-contact-link,
+  .school-profile-page .school-profile-website-link,
+  .school-profile-page .school-claim-cta .button-outline{
+    width:100%;
+    min-width:0;
+  }
+  .school-profile-page .school-gallery-grid{
+    grid-template-columns:1fr;
+  }
+}

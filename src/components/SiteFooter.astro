@@ -13,12 +13,21 @@ const { full = false } = Astro.props;
         <ul class="footer-links">
           <li><a href="/about/">About</a></li>
           <li><a href="/methodology/">Methodology</a></li>
+          <li><a href="/claim-your-profile/">For schools</a></li>
           <li><a href="/privacy/">Privacy</a></li>
           <li><a href="/cookies/">Cookies</a></li>
           <li><a href="/terms/">Terms</a></li>
         </ul>
       </div>
-    ) : <div />}
+    ) : (
+      <div>
+        <h3>Explore</h3>
+        <ul class="footer-links">
+          <li><a href="/about/">About</a></li>
+          <li><a href="/claim-your-profile/">For schools</a></li>
+        </ul>
+      </div>
+    )}
     <div class="footer-contact">
       <h3>Contact</h3>
       <p><a href="mailto:hello@privateschoolguide.co.uk">hello@privateschoolguide.co.uk</a></p>

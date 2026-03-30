@@ -133,6 +133,10 @@
           hasBoardingFees: Boolean(item.hasBoardingFees),
           dayFeesByYear: item.dayFeesByYear || {},
           boardingFeesByYear: item.boardingFeesByYear || {},
+          packageSlug: item.packageSlug || 'organic',
+          packagePriority: Number.isFinite(Number(item.packagePriority)) ? Number(item.packagePriority) : 0,
+          badgeLabel: item.badgeLabel || '',
+          isManaged: Boolean(item.isManaged),
           alevel: item.alevel || null,
           distanceMiles: null
         };
@@ -368,6 +372,8 @@
           const delta = (a.distanceMiles || 0) - (b.distanceMiles || 0);
           if (delta !== 0) return delta;
         }
+        const packageDelta = (b.packagePriority || 0) - (a.packagePriority || 0);
+        if (packageDelta !== 0) return packageDelta;
         return a.name.localeCompare(b.name, 'en');
       });
   }
@@ -404,6 +410,7 @@
     return wrapperStart +
       '<div class="homepage-school-card__body">' +
       (eyebrow ? '<p class="homepage-school-card__eyebrow">' + eyebrow + '</p>' : '') +
+      (point.badgeLabel ? '<p class="homepage-school-card__badge">' + escapeHtml(point.badgeLabel) + '</p>' : '') +
       '<h3 class="homepage-school-card__title">' + escapeHtml(point.name) + '</h3>' +
       '<p class="homepage-school-card__meta">' + escapeHtml(point.genderLabel + ' · ' + point.boardingLabel + ' · Ages ' + point.ageLabel) + '</p>' +
       (extras.length ? '<p class="homepage-school-card__meta homepage-school-card__meta--secondary">' + escapeHtml(extras.join(' · ')) + '</p>' : '') +

@@ -1,0 +1,266 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import { getClaimableSchoolOptions } from '../lib/directory';
+import { SCHOOL_PACKAGE_DEFINITIONS } from '../lib/school-commercial';
+
+const claimableSchools = await getClaimableSchoolOptions();
+const functionsBase = String(import.meta.env.PUBLIC_SUPABASE_FUNCTIONS_BASE_URL || 'https://rmxsymdoprmgjgmwwaop.supabase.co/functions/v1').replace(/\/$/, '');
+---
+<BaseLayout
+  title="For schools | The Private School Guide"
+  description="Claim your school profile, upload official imagery, add website and admissions links, and choose a managed listing package."
+  canonicalPath="/claim-your-profile/"
+  bodyClass="claim-profile-page"
+>
+  <Fragment slot="head">
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+    <link rel="stylesheet" href="/assets/css/claim-profile.css" />
+  </Fragment>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+  <SiteHeader minimal={true} />
+
+  <main id="main" class="page-shell">
+    <section class="claim-hero shell" aria-labelledby="claim-hero-title">
+      <div class="claim-hero__copy">
+        <p class="claim-kicker">For schools</p>
+        <h1 id="claim-hero-title">Claim or improve your school profile</h1>
+        <p class="claim-hero__lede">
+          Add official imagery, direct parents to your website and admissions page, and choose a managed profile package that fits how visible you want to be in the directory.
+        </p>
+        <div class="claim-hero__actions">
+          <a class="button" href="#claim-form">Start your school profile</a>
+          <a class="button-outline" href="#packages">View packages</a>
+        </div>
+      </div>
+      <div class="claim-hero__panel">
+        <h2>What schools can do here</h2>
+        <ul>
+          <li>Claim the official school page</li>
+          <li>Upload a hero image and gallery images</li>
+          <li>Add your website and admissions/contact links</li>
+          <li>Submit an open day for the profile</li>
+          <li>Choose Free, Enhanced or Featured visibility</li>
+        </ul>
+        <p class="claim-note">Featured placements are clearly labelled on directory pages.</p>
+      </div>
+    </section>
+
+    <section class="claim-section shell" id="packages" aria-labelledby="packages-title">
+      <div class="claim-section__heading">
+        <p class="claim-kicker">Packages</p>
+        <h2 id="packages-title">Managed school profile packages</h2>
+        <p>Start with a free claimed profile or choose a visibility package with stronger placement and richer content.</p>
+      </div>
+
+      <div class="claim-package-grid">
+        {SCHOOL_PACKAGE_DEFINITIONS.map((pkg) => (
+          <article class="claim-package-card claim-package-card--static">
+            <p class="claim-package-card__price">{pkg.monthlyPriceLabel}</p>
+            <h3>{pkg.name}</h3>
+            <p class="claim-package-card__headline">{pkg.headline}</p>
+            <p class="claim-package-card__summary">{pkg.visibilitySummary}</p>
+            <ul>
+              {pkg.features.map((feature) => <li>{feature}</li>)}
+            </ul>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="claim-section shell" aria-labelledby="founding-title">
+      <div class="claim-founders-callout">
+        <div>
+          <p class="claim-kicker">Founding School Programme</p>
+          <h2 id="founding-title">Offer six months of Enhanced visibility to early partners</h2>
+          <p>
+            This is set up for the first wave of launch schools: six months of the Enhanced profile at no charge in return for claiming the page, checking the data, and supplying school-approved imagery and links.
+          </p>
+        </div>
+        <div class="claim-founders-callout__meta">
+          <strong>Best for:</strong>
+          <p>Early partner schools helping you build a stronger, more complete directory before broader paid rollout.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="claim-section shell" id="claim-form" aria-labelledby="claim-form-title">
+      <div class="claim-section__heading">
+        <p class="claim-kicker">School portal</p>
+        <h2 id="claim-form-title">Tell us which school you represent</h2>
+        <p>Submit the details below. Free claims can be reviewed or auto-published, while paid plans continue to Stripe for subscription setup.</p>
+      </div>
+
+      <form class="claim-form-grid" data-functions-base={functionsBase} enctype="multipart/form-data" id="school-claim-form" novalidate>
+        <div class="claim-form-card">
+          <fieldset>
+            <legend>School and contact details</legend>
+
+            <label class="claim-field">
+              <span>School</span>
+              <select id="school-id" name="school_id" required>
+                <option value="">Select your school</option>
+                {claimableSchools.map((school) => (
+                  <option data-school-label={school.label} data-school-slug={school.slug} value={school.id}>{school.label}</option>
+                ))}
+              </select>
+            </label>
+
+            <div class="claim-field-grid claim-field-grid--two">
+              <label class="claim-field">
+                <span>Your name</span>
+                <input autocomplete="name" name="contact_name" required type="text" />
+              </label>
+              <label class="claim-field">
+                <span>Your role</span>
+                <input autocomplete="organization-title" name="contact_role" placeholder="Admissions, marketing, registrar…" type="text" />
+              </label>
+            </div>
+
+            <div class="claim-field-grid claim-field-grid--two">
+              <label class="claim-field">
+                <span>Email</span>
+                <input autocomplete="email" name="contact_email" required type="email" />
+              </label>
+              <label class="claim-field">
+                <span>Phone</span>
+                <input autocomplete="tel" name="contact_phone" type="tel" />
+              </label>
+            </div>
+
+            <label class="claim-field claim-field--hidden">
+              <span>Company</span>
+              <input autocomplete="off" name="company_name" tabindex="-1" type="text" />
+            </label>
+          </fieldset>
+        </div>
+
+        <div class="claim-form-card">
+          <fieldset>
+            <legend>Choose a package</legend>
+            <div class="claim-package-grid claim-package-grid--selectable">
+              {SCHOOL_PACKAGE_DEFINITIONS.map((pkg, index) => (
+                <label class:list={["claim-package-card", index === 0 && "is-selected"]} data-plan-card={pkg.slug}>
+                  <input checked={index === 0} name="plan_slug" type="radio" value={pkg.slug} />
+                  <div class="claim-package-card__body">
+                    <p class="claim-package-card__price">{pkg.monthlyPriceLabel}</p>
+                    <h3>{pkg.name}</h3>
+                    <p class="claim-package-card__headline">{pkg.headline}</p>
+                    <ul>
+                      {pkg.features.map((feature) => <li>{feature}</li>)}
+                    </ul>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            <label class="claim-checkbox" id="founding-programme-wrap">
+              <input id="founding-programme" name="founding_programme" type="checkbox" value="true" />
+              <span>Apply the Founding School Programme (6 months of Enhanced profile at no charge, if approved).</span>
+            </label>
+            <p class="claim-note" id="founding-programme-note">Available when Enhanced is selected.</p>
+          </fieldset>
+        </div>
+
+        <div class="claim-form-card">
+          <fieldset>
+            <legend>Profile content</legend>
+
+            <div class="claim-field-grid claim-field-grid--two">
+              <label class="claim-field">
+                <span>Official website URL</span>
+                <input name="website_url" placeholder="https://www.schoolname.co.uk" type="url" />
+              </label>
+              <label class="claim-field">
+                <span>Admissions or contact form URL</span>
+                <input name="contact_form_url" placeholder="https://www.schoolname.co.uk/admissions" type="url" />
+              </label>
+            </div>
+
+            <label class="claim-field">
+              <span>School images</span>
+              <input accept="image/jpeg,image/png,image/webp" id="school-images" multiple name="images" type="file" />
+              <small id="school-images-help">Claimed profiles can upload 1 image. Enhanced and Featured can upload up to 5.</small>
+            </label>
+
+            <div class="claim-field-grid claim-field-grid--two">
+              <label class="claim-field">
+                <span>Open day title</span>
+                <input name="open_day_title" placeholder="Whole school open morning" type="text" />
+              </label>
+              <label class="claim-field">
+                <span>Open day start</span>
+                <input name="open_day_start_at" type="datetime-local" />
+              </label>
+            </div>
+
+            <label class="claim-field">
+              <span>Open day booking URL</span>
+              <input name="open_day_booking_url" placeholder="https://www.schoolname.co.uk/open-day" type="url" />
+            </label>
+
+            <label class="claim-field">
+              <span>Anything else we should know?</span>
+              <textarea name="notes" placeholder="Profile requests, preferred hero image notes, campaign timing, or anything else helpful." rows="5"></textarea>
+            </label>
+          </fieldset>
+        </div>
+
+        <aside class="claim-form-card claim-form-card--sidebar">
+          <h3>What happens next</h3>
+          <ol class="claim-steps">
+            <li>Choose the school and package.</li>
+            <li>Upload your content and links.</li>
+            <li>Free claims submit immediately. Paid plans continue to Stripe.</li>
+            <li>Your claim can be reviewed or auto-published, depending on how you configure the workflow.</li>
+          </ol>
+
+          <div class="claim-summary-box">
+            <p class="claim-kicker">Selected package</p>
+            <h4 data-selected-plan-name>Claimed profile</h4>
+            <p data-selected-plan-price>Free</p>
+            <p data-selected-plan-summary>Keeps the profile accurate and clearly school-managed.</p>
+          </div>
+
+          <p class="claim-note">
+            By submitting this form you confirm that you represent the school or have authority to act on its behalf.
+          </p>
+        </aside>
+
+        <div class="claim-form-actions">
+          <p class="claim-status" aria-live="polite" hidden id="school-claim-status"></p>
+          <button class="button claim-submit-button" type="submit">Submit school profile</button>
+          <p class="claim-note claim-note--tight">Paid plans redirect to Stripe Checkout for subscription setup.</p>
+        </div>
+      </form>
+    </section>
+
+    <section class="claim-section shell" aria-labelledby="claim-faq-title">
+      <div class="claim-section__heading">
+        <p class="claim-kicker">Questions</p>
+        <h2 id="claim-faq-title">Helpful notes for launch</h2>
+      </div>
+      <div class="claim-faq-grid">
+        <article class="claim-faq-card">
+          <h3>Where should the link live on the site?</h3>
+          <p>Keep the entry point discreet: a footer link sitewide, plus a small “School staff?” panel near the bottom of each school profile.</p>
+        </article>
+        <article class="claim-faq-card">
+          <h3>Should schools be able to update the public profile directly?</h3>
+          <p>Yes, but through a server-side claim workflow rather than direct browser writes. That lets you moderate, auto-publish, or move to fuller account-based tooling later.</p>
+        </article>
+        <article class="claim-faq-card">
+          <h3>Can this support future banner ads and campaigns?</h3>
+          <p>Yes. The data model leaves room for additional paid media products later without turning the core directory into an intrusive advertising surface.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter full={true} />
+
+  <script defer src="/assets/js/site.js"></script>
+  <script defer src="/assets/js/claim-profile.js"></script>
+</BaseLayout>
