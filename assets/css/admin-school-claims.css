@@ -1,0 +1,430 @@
+.school-claims-admin-page {
+  background: #f5f0e7;
+}
+
+.admin-claims-shell {
+  padding-block: 2rem 4rem;
+}
+
+.admin-claims-intro,
+.admin-auth-card,
+.admin-summary-card,
+.admin-toolbar,
+.admin-list-panel,
+.admin-detail-card {
+  background: #fff;
+  border: 1px solid rgba(42, 37, 32, 0.12);
+  border-radius: 24px;
+  box-shadow: 0 12px 30px rgba(42, 37, 32, 0.06);
+}
+
+.admin-claims-intro,
+.admin-auth-card,
+.admin-toolbar,
+.admin-list-panel,
+.admin-detail-card {
+  padding: 1.5rem;
+}
+
+.admin-claims-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-intro-callout {
+  padding: 1.25rem;
+  border-radius: 18px;
+  background: rgba(159, 117, 71, 0.08);
+  border: 1px solid rgba(159, 117, 71, 0.18);
+}
+
+.admin-intro-callout code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+}
+
+.admin-auth-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-auth-form,
+.admin-toolbar__controls {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.admin-field span {
+  font-weight: 600;
+  color: #2a2520;
+}
+
+.admin-field input,
+.admin-field select,
+.admin-field textarea {
+  width: 100%;
+  border: 1px solid rgba(42, 37, 32, 0.18);
+  border-radius: 14px;
+  background: #fcfaf6;
+  color: #2a2520;
+  font: inherit;
+  padding: 0.85rem 1rem;
+}
+
+.admin-field textarea {
+  min-height: 9rem;
+  resize: vertical;
+}
+
+.admin-auth-actions,
+.admin-toolbar,
+.admin-action-row,
+.admin-detail-card__header,
+.admin-toolbar__actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.admin-auth-status,
+.admin-global-status {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: rgba(42, 37, 32, 0.06);
+  color: #2a2520;
+}
+
+.admin-auth-status.is-success,
+.admin-global-status.is-success {
+  background: rgba(52, 112, 71, 0.12);
+  color: #194a27;
+}
+
+.admin-auth-status.is-error,
+.admin-global-status.is-error {
+  background: rgba(133, 46, 46, 0.14);
+  color: #7b1f1f;
+}
+
+.admin-auth-status.is-muted,
+.admin-global-status.is-muted {
+  background: rgba(42, 37, 32, 0.06);
+  color: rgba(42, 37, 32, 0.78);
+}
+
+.admin-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-summary-card {
+  padding: 1.2rem;
+}
+
+.admin-summary-card span {
+  display: block;
+  font-size: 0.86rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(42, 37, 32, 0.72);
+}
+
+.admin-summary-card strong {
+  display: block;
+  font-size: 2rem;
+  margin-top: 0.3rem;
+  color: #2a2520;
+}
+
+.admin-summary-card p {
+  margin: 0.5rem 0 0;
+  color: rgba(42, 37, 32, 0.78);
+}
+
+.admin-toolbar {
+  margin-bottom: 1rem;
+}
+
+.admin-toolbar__controls {
+  grid-template-columns: minmax(180px, 240px) minmax(240px, 1fr);
+  flex: 1 1 500px;
+}
+
+.admin-field--compact {
+  margin: 0;
+}
+
+.admin-field--grow {
+  min-width: 280px;
+}
+
+.admin-claims-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.4fr);
+  gap: 1rem;
+}
+
+.admin-list-panel,
+.admin-detail-panel {
+  min-height: 65vh;
+}
+
+.admin-panel-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+  margin-bottom: 1rem;
+}
+
+.admin-panel-heading h2,
+.admin-detail-card h3,
+.admin-detail-card h4 {
+  margin: 0;
+}
+
+.admin-panel-heading p,
+.admin-detail-card p,
+.admin-copy-block p,
+.admin-empty-inline,
+.admin-empty-state,
+.admin-definition-list dd,
+.admin-claim-card p {
+  color: rgba(42, 37, 32, 0.8);
+}
+
+.admin-claims-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-claim-card {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(42, 37, 32, 0.12);
+  border-radius: 18px;
+  background: #fcfaf6;
+  padding: 1rem;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.admin-claim-card:hover,
+.admin-claim-card.is-selected {
+  border-color: rgba(159, 117, 71, 0.5);
+  box-shadow: 0 12px 24px rgba(42, 37, 32, 0.08);
+  transform: translateY(-1px);
+}
+
+.admin-claim-card__top,
+.admin-claim-card__meta,
+.admin-chip-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.admin-claim-card__top {
+  justify-content: space-between;
+}
+
+.admin-claim-card strong {
+  color: #2a2520;
+}
+
+.admin-claim-card__contact,
+.admin-claim-card__time {
+  margin: 0.4rem 0 0;
+  font-size: 0.94rem;
+}
+
+.admin-detail-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-detail-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-detail-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.2rem;
+}
+
+.admin-definition-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.admin-definition-list div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.admin-definition-list dt {
+  font-size: 0.88rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(42, 37, 32, 0.65);
+}
+
+.admin-definition-list dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+.admin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.32rem 0.72rem;
+  background: rgba(42, 37, 32, 0.08);
+  color: #2a2520;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.admin-chip--plan {
+  background: rgba(159, 117, 71, 0.12);
+  color: #7d5525;
+}
+
+.admin-chip--payment {
+  background: rgba(64, 92, 138, 0.12);
+  color: #294f89;
+}
+
+.admin-chip--status {
+  background: rgba(42, 37, 32, 0.11);
+}
+
+.admin-chip--accent {
+  background: rgba(52, 112, 71, 0.12);
+  color: #194a27;
+}
+
+.admin-copy-block {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-copy-block--history pre {
+  margin: 0;
+  padding: 1rem;
+  border-radius: 14px;
+  background: #fcfaf6;
+  border: 1px solid rgba(42, 37, 32, 0.1);
+  white-space: pre-wrap;
+  font: inherit;
+  color: rgba(42, 37, 32, 0.84);
+}
+
+.admin-callout {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+}
+
+.admin-callout--soft {
+  background: rgba(42, 37, 32, 0.05);
+}
+
+.admin-empty-state,
+.admin-empty-inline {
+  padding: 1rem;
+  border-radius: 14px;
+  background: #fcfaf6;
+  border: 1px dashed rgba(42, 37, 32, 0.18);
+}
+
+.admin-image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-image-card {
+  margin: 0;
+  border: 1px solid rgba(42, 37, 32, 0.12);
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fcfaf6;
+}
+
+.admin-image-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.admin-image-card figcaption {
+  padding: 0.65rem 0.75rem;
+  font-size: 0.9rem;
+  color: rgba(42, 37, 32, 0.8);
+}
+
+.admin-checkbox {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin: 0.25rem 0 0;
+}
+
+.admin-checkbox input {
+  margin-top: 0.25rem;
+}
+
+.button-outline--danger {
+  border-color: rgba(133, 46, 46, 0.32);
+  color: #7b1f1f;
+}
+
+@media (max-width: 1080px) {
+  .admin-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-claims-layout,
+  .admin-auth-card,
+  .admin-claims-intro,
+  .admin-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-toolbar__controls {
+    grid-template-columns: 1fr;
+  }
+}
