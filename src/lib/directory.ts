@@ -917,10 +917,8 @@ export async function getLocationBySlug(locationSlug: string): Promise<LocationR
 }
 
 export async function getLocationPaths() {
-  return memoizeBuildPromise('getLocationPaths', async () => {
-    const locations = await getLiveLocations();
-    return locations.map((location) => ({ params: { location: location.slug } }));
-  });
+  const locations = await getLiveLocations();
+  return locations.map((location) => ({ params: { location: location.slug } }));
 }
 
 async function getLocationSchoolLinks(locationId: string): Promise<LocationSchoolLink[]> {
