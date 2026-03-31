@@ -312,6 +312,21 @@ function fail(message: string, error?: { message?: string } | null): never {
   throw new Error(error?.message ? `${message}: ${error.message}` : message);
 }
 
+const buildPromiseCache = new Map<string, Promise<unknown>>();
+
+function memoizeBuildPromise<T>(cacheKey: string, factory: () => Promise<T>): Promise<T> {
+  const existing = buildPromiseCache.get(cacheKey) as Promise<T> | undefined;
+  if (existing) return existing;
+
+  const created = factory().catch((error) => {
+    buildPromiseCache.delete(cacheKey);
+    throw error;
+  });
+
+  buildPromiseCache.set(cacheKey, created as Promise<unknown>);
+  return created;
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -856,14 +871,16 @@ function aggregateAlevelMetrics(examResult: ExamResultRecord | null, subjectRows
 }
 
 export async function getLiveLocations(): Promise<LocationRecord[]> {
-  const { data, error } = await supabase
-    .from('locations')
-    .select('*')
-    .eq('is_live', true)
-    .order('name', { ascending: true });
+  return memoizeBuildPromise('getLiveLocations', async () => {
+    const { data, error } = await supabase
+      .from('locations')
+      .select('*')
+      .eq('is_live', true)
+      .order('name', { ascending: true });
 
-  if (error) fail('Could not load live locations', error);
-  return (data || []) as LocationRecord[];
+    if (error) fail('Could not load live locations', error);
+    return (data || []) as LocationRecord[];
+  });
 }
 
 
@@ -886,35 +903,45 @@ export async function getHomepageLocations(): Promise<HomepageLocationItem[]> {
 }
 
 export async function getLocationBySlug(locationSlug: string): Promise<LocationRecord> {
-  const { data, error } = await supabase
-    .from('locations')
-    .select('*')
-    .eq('slug', locationSlug)
-    .eq('is_live', true)
-    .single();
+  return memoizeBuildPromise(`getLocationBySlug:${locationSlug}`, async () => {
+    const { data, error } = await supabase
+      .from('locations')
+      .select('*')
+      .eq('slug', locationSlug)
+      .eq('is_live', true)
+      .single();
 
-  if (error || !data) fail(`Could not load location ${locationSlug}`, error);
-  return data as LocationRecord;
+    if (error || !data) fail(`Could not load location ${locationSlug}`, error);
+    return data as LocationRecord;
+  });
 }
 
 export async function getLocationPaths() {
-  const locations = await getLiveLocations();
-  return locations.map((location) => ({ params: { location: location.slug } }));
+  return memoizeBuildPromise('getLocationPaths', async () => {
+    const locations = await getLiveLocations();
+    return locations.map((location) => ({ params: { location: location.slug } }));
+  });
 }
 
 async function getLocationSchoolLinks(locationId: string): Promise<LocationSchoolLink[]> {
-  const { data, error } = await supabase
-    .from('location_schools')
-    .select('location_id, school_id, sort_order, is_featured')
-    .eq('location_id', locationId)
-    .order('sort_order', { ascending: true });
+  return memoizeBuildPromise(`getLocationSchoolLinks:${locationId}`, async () => {
+    const { data, error } = await supabase
+      .from('location_schools')
+      .select('location_id, school_id, sort_order, is_featured')
+      .eq('location_id', locationId)
+      .order('sort_order', { ascending: true });
 
-  if (error) fail(`Could not load location school links for ${locationId}`, error);
-  return (data || []) as LocationSchoolLink[];
+    if (error) fail(`Could not load location school links for ${locationId}`, error);
+    return (data || []) as LocationSchoolLink[];
+  });
 }
 
 function dedupeIds<T extends string | number>(values: T[]): T[] {
   return Array.from(new Map(values.map((value) => [String(value), value])).values());
+}
+
+function keyedList(values: Array<string | number>): string {
+  return dedupeIds(values).map((value) => String(value)).sort().join(',');
 }
 
 function chunkArray<T>(values: T[], size: number): T[][] {
@@ -965,66 +992,72 @@ async function getSchoolSlugMapByIds(schoolIds: Array<string | number>): Promise
   const uniqueSchoolIds = dedupeIds(schoolIds);
   if (!uniqueSchoolIds.length) return new Map();
 
-  const rows: Array<{ id: string | number; slug: string }> = [];
+  return memoizeBuildPromise(`getSchoolSlugMapByIds:${keyedList(uniqueSchoolIds)}`, async () => {
+    const rows: Array<{ id: string | number; slug: string }> = [];
 
-  for (const batch of chunkArray(uniqueSchoolIds, 500)) {
-    const { data, error } = await supabase
-      .from('schools')
-      .select('id, slug')
-      .in('id', batch);
+    for (const batch of chunkArray(uniqueSchoolIds, 500)) {
+      const { data, error } = await supabase
+        .from('schools')
+        .select('id, slug')
+        .in('id', batch);
 
-    if (error) fail('Could not load school slugs for dynamic paths', error);
-    rows.push(...(((data || []) as Array<{ id: string | number; slug: string }>)));
-  }
+      if (error) fail('Could not load school slugs for dynamic paths', error);
+      rows.push(...(((data || []) as Array<{ id: string | number; slug: string }>)));
+    }
 
-  return new Map(rows.map((school) => [String(school.id), school.slug]));
+    return new Map(rows.map((school) => [String(school.id), school.slug]));
+  });
 }
 
 async function getLocationSchoolPathLinks(locationIds: string[]): Promise<Array<{ location_id: string; school_id: string | number }>> {
   if (!locationIds.length) return [];
 
-  const rows: Array<{ location_id: string; school_id: string | number }> = [];
-  const pageSize = 500;
-  let from = 0;
+  return memoizeBuildPromise(`getLocationSchoolPathLinks:${keyedList(locationIds)}`, async () => {
+    const rows: Array<{ location_id: string; school_id: string | number }> = [];
+    const pageSize = 500;
+    let from = 0;
 
-  while (true) {
-    const { data, error } = await supabase
-      .from('location_schools')
-      .select('location_id, school_id')
-      .in('location_id', locationIds)
-      .order('location_id', { ascending: true })
-      .order('school_id', { ascending: true })
-      .range(from, from + pageSize - 1);
+    while (true) {
+      const { data, error } = await supabase
+        .from('location_schools')
+        .select('location_id, school_id')
+        .in('location_id', locationIds)
+        .order('location_id', { ascending: true })
+        .order('school_id', { ascending: true })
+        .range(from, from + pageSize - 1);
 
-    if (error) fail('Could not load location-school combinations', error);
+      if (error) fail('Could not load location-school combinations', error);
 
-    const page = (data || []) as Array<{ location_id: string; school_id: string | number }>;
-    rows.push(...page);
+      const page = (data || []) as Array<{ location_id: string; school_id: string | number }>;
+      rows.push(...page);
 
-    if (page.length < pageSize) break;
-    from += pageSize;
-  }
+      if (page.length < pageSize) break;
+      from += pageSize;
+    }
 
-  return rows;
+    return rows;
+  });
 }
 
 async function getSchoolsByIds(schoolIds: Array<string | number>): Promise<SchoolSummaryRecord[]> {
   const uniqueSchoolIds = dedupeIds(schoolIds);
   if (!uniqueSchoolIds.length) return [];
 
-  const rows: SchoolSummaryRecord[] = [];
+  return memoizeBuildPromise(`getSchoolsByIds:${keyedList(uniqueSchoolIds)}`, async () => {
+    const rows: SchoolSummaryRecord[] = [];
 
-  for (const batch of chunkArray(uniqueSchoolIds, 500)) {
-    const { data, error } = await supabase
-      .from('schools')
-      .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, website_override_url, contact_form_url, profile_package, profile_managed_by_school, claimed_at, pupil_numbers, description, inspection_rating, official_sixth_form, nursery_provision, number_of_boys, number_of_girls, religion, religious_ethos, status')
-      .in('id', batch);
+    for (const batch of chunkArray(uniqueSchoolIds, 500)) {
+      const { data, error } = await supabase
+        .from('schools')
+        .select('id, slug, name, school_type, provision_category, phase, gender, age_min, age_max, day_boarding, address_line1, town, county, postcode, latitude, longitude, website, website_override_url, contact_form_url, profile_package, profile_managed_by_school, claimed_at, pupil_numbers, description, inspection_rating, official_sixth_form, nursery_provision, number_of_boys, number_of_girls, religion, religious_ethos, status')
+        .in('id', batch);
 
-    if (error) fail('Could not load schools', error);
-    rows.push(...((data || []) as SchoolSummaryRecord[]));
-  }
+      if (error) fail('Could not load schools', error);
+      rows.push(...((data || []) as SchoolSummaryRecord[]));
+    }
 
-  return rows;
+    return rows;
+  });
 }
 
 export async function getLocationDirectoryData(locationSlug: string) {
@@ -1390,15 +1423,17 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
 
 
 async function getOrderedLocationSchools(locationSlug: string) {
-  const location = await getLocationBySlug(locationSlug);
-  const locationLinks = await getLocationSchoolLinks(location.id);
-  const schoolIds = locationLinks.map((row) => row.school_id);
-  const schoolsRaw = await getSchoolsByIds(schoolIds);
-  const schoolMap = new Map(schoolsRaw.map((school) => [String(school.id), school]));
+  return memoizeBuildPromise(`getOrderedLocationSchools:${locationSlug}`, async () => {
+    const location = await getLocationBySlug(locationSlug);
+    const locationLinks = await getLocationSchoolLinks(location.id);
+    const schoolIds = locationLinks.map((row) => row.school_id);
+    const schoolsRaw = await getSchoolsByIds(schoolIds);
+    const schoolMap = new Map(schoolsRaw.map((school) => [String(school.id), school]));
 
-  const schools = getOrderedSchoolsFromLinks(locationLinks, schoolMap);
+    const schools = getOrderedSchoolsFromLinks(locationLinks, schoolMap);
 
-  return { location, locationLinks, schoolIds, schools, schoolMap };
+    return { location, locationLinks, schoolIds, schools, schoolMap };
+  });
 }
 
 export async function getLocationFeesData(locationSlug: string) {
@@ -1642,9 +1677,7 @@ export async function getClaimableSchoolOptions(): Promise<ClaimableSchoolOption
 }
 
 export async function getLocationSchoolProfile(locationSlug: string, schoolSlug: string) {
-  const location = await getLocationBySlug(locationSlug);
-  const locationLinks = await getLocationSchoolLinks(location.id);
-  const schoolIds = locationLinks.map((row) => row.school_id);
+  const { location, locationLinks, schoolIds, schools: linkedSchools } = await getOrderedLocationSchools(locationSlug);
 
   const { data: schoolData, error: schoolError } = await supabase
     .from('schools')
@@ -1741,8 +1774,11 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
 
   const compareRows = ((compareSchoolsRes.data || []) as Array<{ id: string | number; slug: string; name: string }>);
   const compareSchoolMap = new Map(compareRows.map((row) => [String(row.id), row]));
+  const cachedCompareSchoolMap = new Map(
+    linkedSchools.map((row) => [String(row.id), { id: row.id, slug: row.slug, name: row.name }])
+  );
   const fallbackCompareLinks = locationLinks
-    .map((row) => compareSchoolMap.get(String(row.school_id)))
+    .map((row) => compareSchoolMap.get(String(row.school_id)) || cachedCompareSchoolMap.get(String(row.school_id)))
     .filter((row): row is { id: string | number; slug: string; name: string } => Boolean(row))
     .filter((row) => row.slug !== school.slug)
     .slice(0, 8)
