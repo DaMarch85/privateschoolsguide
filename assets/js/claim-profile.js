@@ -47,6 +47,8 @@
 
     var status = byId('school-claim-status');
     var schoolSelect = byId('school-id');
+    var schoolSearch = byId('school-search');
+    var schoolSearchResults = byId('school-search-results');
     var imageInput = byId('school-images');
     var imageHelp = byId('school-images-help');
     var foundingWrap = byId('founding-programme-wrap');
@@ -70,6 +72,69 @@
       return normalizePlan(plan) === 'claimed' ? 1 : 5;
     }
 
+    var originalSchoolOptions = schoolSelect
+      ? Array.from(schoolSelect.options || []).slice(1).map(function (option) {
+          return {
+            value: option.value,
+            text: option.textContent || '',
+            label: option.getAttribute('data-school-label') || option.textContent || '',
+            slug: option.getAttribute('data-school-slug') || ''
+          };
+        })
+      : [];
+
+    function rebuildSchoolOptions(filteredOptions, preserveValue) {
+      if (!schoolSelect) return;
+
+      var placeholder = schoolSelect.options[0]
+        ? schoolSelect.options[0].textContent || 'Select your school'
+        : 'Select your school';
+      schoolSelect.innerHTML = '';
+      var placeholderOption = document.createElement('option');
+      placeholderOption.value = '';
+      placeholderOption.textContent = placeholder;
+      schoolSelect.appendChild(placeholderOption);
+
+      filteredOptions.forEach(function (optionData) {
+        var option = document.createElement('option');
+        option.value = optionData.value;
+        option.textContent = optionData.text;
+        option.setAttribute('data-school-label', optionData.label);
+        option.setAttribute('data-school-slug', optionData.slug);
+        schoolSelect.appendChild(option);
+      });
+
+      if (preserveValue && filteredOptions.some(function (optionData) { return optionData.value === preserveValue; })) {
+        schoolSelect.value = preserveValue;
+      } else {
+        schoolSelect.value = '';
+      }
+    }
+
+    function filterSchools() {
+      if (!schoolSelect) return;
+      var query = schoolSearch ? String(schoolSearch.value || '').trim().toLowerCase() : '';
+      var selectedValue = schoolSelect.value;
+      var filteredOptions = !query
+        ? originalSchoolOptions.slice()
+        : originalSchoolOptions.filter(function (option) {
+            return option.text.toLowerCase().indexOf(query) !== -1;
+          });
+
+      rebuildSchoolOptions(filteredOptions, selectedValue);
+
+      if (schoolSearchResults) {
+        if (!query) {
+          schoolSearchResults.textContent = 'Schools are listed alphabetically.';
+        } else if (!filteredOptions.length) {
+          schoolSearchResults.textContent = 'No schools match that search yet. Please check the spelling or clear the search.';
+        } else if (filteredOptions.length === 1) {
+          schoolSearchResults.textContent = '1 school matches your search.';
+        } else {
+          schoolSearchResults.textContent = filteredOptions.length + ' schools match your search.';
+        }
+      }
+    }
 
     function shouldContinueToPayment(plan) {
       return plan !== 'claimed' && !(foundingCheckbox && foundingCheckbox.checked);
@@ -114,9 +179,11 @@
       var planParam = normalizePlan(params.get('plan') || params.get('package'));
 
       if (schoolParam && schoolSelect) {
-        var options = Array.from(schoolSelect.options || []);
-        var directOption = options.find(function (option) { return option.value === schoolParam; });
-        if (directOption) schoolSelect.value = schoolParam;
+        var directOption = originalSchoolOptions.find(function (option) { return option.value === schoolParam; });
+        if (directOption) {
+          rebuildSchoolOptions(originalSchoolOptions, schoolParam);
+          if (schoolSearch) schoolSearch.value = directOption.text;
+        }
       }
 
       if (planParam) {
@@ -152,6 +219,12 @@
       });
     }
 
+    if (schoolSearch) {
+      schoolSearch.addEventListener('input', filterSchools);
+      schoolSearch.addEventListener('search', filterSchools);
+    }
+
+    filterSchools();
     prefillFromQuery();
 
     form.addEventListener('submit', async function (event) {

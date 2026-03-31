@@ -67,6 +67,12 @@ const functionsBase = String(import.meta.env.PUBLIC_SUPABASE_FUNCTIONS_BASE_URL 
             <legend>School and contact details</legend>
 
             <label class="claim-field">
+              <span>Search for your school</span>
+              <input autocomplete="off" id="school-search" inputmode="search" placeholder="Type your school name…" spellcheck="false" type="search" />
+              <small id="school-search-help">Start typing to narrow the list, then choose the school below.</small>
+            </label>
+
+            <label class="claim-field">
               <span>School</span>
               <select id="school-id" name="school_id" required>
                 <option value="">Select your school</option>
@@ -74,6 +80,7 @@ const functionsBase = String(import.meta.env.PUBLIC_SUPABASE_FUNCTIONS_BASE_URL 
                   <option data-school-label={school.label} data-school-slug={school.slug} value={school.id}>{school.label}</option>
                 ))}
               </select>
+              <small id="school-search-results">Schools are listed alphabetically.</small>
             </label>
 
             <div class="claim-field-grid claim-field-grid--two">
@@ -98,9 +105,9 @@ const functionsBase = String(import.meta.env.PUBLIC_SUPABASE_FUNCTIONS_BASE_URL 
               </label>
             </div>
 
-            <label class="claim-field claim-field--hidden">
-              <span>Company</span>
-              <input autocomplete="off" name="company_name" tabindex="-1" type="text" />
+            <label aria-hidden="true" class="claim-field claim-field--hidden">
+              <span>Leave this field empty</span>
+              <input autocomplete="new-password" name="website_confirm" tabindex="-1" type="text" />
             </label>
           </fieldset>
         </div>

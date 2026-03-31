@@ -1638,7 +1638,7 @@ export async function getClaimableSchoolOptions(): Promise<ClaimableSchoolOption
       } satisfies ClaimableSchoolOption;
     })
     .filter((row): row is ClaimableSchoolOption => Boolean(row))
-    .sort((a, b) => a.locationName.localeCompare(b.locationName, 'en') || a.name.localeCompare(b.name, 'en'));
+    .sort((a, b) => a.name.localeCompare(b.name, 'en') || a.locationName.localeCompare(b.locationName, 'en'));
 }
 
 export async function getLocationSchoolProfile(locationSlug: string, schoolSlug: string) {

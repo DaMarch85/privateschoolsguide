@@ -172,7 +172,7 @@ Deno.serve(async (request) => {
 
   try {
     const formData = await request.formData();
-    if (optionalTrimmed(formData.get('company_name'))) {
+    if (optionalTrimmed(formData.get('website_confirm'))) {
       return jsonResponse({ ok: true, message: 'Thanks. Your request has been recorded.' });
     }
 
