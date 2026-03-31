@@ -1,11 +1,11 @@
 import Stripe from 'https://esm.sh/stripe@14?target=denonext';
 import { assertAdminReviewToken } from '../_shared/admin-auth.ts';
-import { createAdminClient, publishClaim, type SchoolClaimRow } from '../_shared/claim-publisher.ts';
+import { createAdminClient, publishClaim, unpublishClaim, type SchoolClaimRow } from '../_shared/claim-publisher.ts';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 
 type ActionPayload = {
   claimId?: string;
-  action?: 'approve' | 'reject' | 'save_note' | 'reopen';
+  action?: 'approve' | 'reject' | 'save_note' | 'reopen' | 'downgrade' | 'unpublish';
   reviewer?: string;
   note?: string;
   cancelBilling?: boolean;
@@ -48,6 +48,15 @@ function resolveApprovalPackage(claim: ClaimRow): 'claimed' | 'enhanced' | 'feat
   throw new Error('This paid package cannot be approved yet because payment has not been confirmed.');
 }
 
+
+function canDowngradeLiveClaim(claim: ClaimRow): boolean {
+  return claim.claim_status === 'published' && claim.plan_slug !== 'claimed';
+}
+
+function canUnpublishLiveClaim(claim: ClaimRow): boolean {
+  return claim.claim_status === 'published';
+}
+
 async function cancelSubscription(subscriptionId: string): Promise<string> {
   if (!stripe) throw new Error('STRIPE_SECRET_KEY is not configured, so billing cannot be cancelled from the review queue.');
   const subscription = await stripe.subscriptions.cancel(subscriptionId);
@@ -75,7 +84,7 @@ Deno.serve(async (request) => {
     if (!claimId) {
       throw new Error('Missing claimId.');
     }
-    if (!action || !['approve', 'reject', 'save_note', 'reopen'].includes(action)) {
+    if (!action || !['approve', 'reject', 'save_note', 'reopen', 'downgrade', 'unpublish'].includes(action)) {
       throw new Error('Unsupported admin action.');
     }
 
@@ -121,7 +130,7 @@ Deno.serve(async (request) => {
 
     if (action === 'reject') {
       if (claim.claim_status === 'published') {
-        throw new Error('This claim is already published. Unpublishing live claims should be handled separately.');
+        throw new Error('This claim is already published. Use the live downgrade or unpublish action instead.');
       }
 
       let nextPaymentStatus = String(claim.payment_status || 'not_started');
@@ -143,6 +152,72 @@ Deno.serve(async (request) => {
         .eq('id', claim.id);
       if (error) throw new Error(`Could not reject school claim: ${error.message}`);
       return jsonResponse({ ok: true, message: cancelBilling ? 'Claim rejected and Stripe subscription cancelled.' : 'Claim rejected.' });
+    }
+
+    if (action === 'downgrade') {
+      if (!canDowngradeLiveClaim(claim)) {
+        throw new Error('Only live Enhanced or Featured profiles can be downgraded to a claimed profile.');
+      }
+
+      let nextPaymentStatus = 'free';
+      if (cancelBilling && claim.stripe_subscription_id) {
+        await cancelSubscription(claim.stripe_subscription_id);
+      }
+
+      await publishClaim({
+        supabase,
+        claim: {
+          ...claim,
+          payment_status: nextPaymentStatus
+        },
+        packageSlug: 'claimed'
+      });
+
+      const nextInternalNotes = appendInternalNote(claim.internal_notes, reviewer, 'Downgraded live profile to claimed', note);
+      const { error } = await supabase
+        .from('school_profile_claims')
+        .update({
+          internal_notes: nextInternalNotes,
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: reviewer || 'Admin',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', claim.id);
+      if (error) throw new Error(`Live profile was downgraded but the claim record could not be updated: ${error.message}`);
+      return jsonResponse({ ok: true, message: cancelBilling ? 'Live profile downgraded to claimed and Stripe subscription cancelled.' : 'Live profile downgraded to claimed.' });
+    }
+
+    if (action === 'unpublish') {
+      if (!canUnpublishLiveClaim(claim)) {
+        throw new Error('Only live profiles can be unpublished.');
+      }
+
+      let nextPaymentStatus = String(claim.payment_status || 'not_started');
+      if (cancelBilling && claim.stripe_subscription_id) {
+        nextPaymentStatus = await cancelSubscription(claim.stripe_subscription_id);
+      }
+      nextPaymentStatus = nextPaymentStatus === 'canceled' ? 'cancelled' : nextPaymentStatus;
+      const nextClaimStatus = nextPaymentStatus === 'cancelled' ? 'cancelled' : 'rejected';
+
+      await unpublishClaim({
+        supabase,
+        claim,
+        nextClaimStatus,
+        nextPaymentStatus
+      });
+
+      const nextInternalNotes = appendInternalNote(claim.internal_notes, reviewer, 'Unpublished live profile', note);
+      const { error } = await supabase
+        .from('school_profile_claims')
+        .update({
+          internal_notes: nextInternalNotes,
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: reviewer || 'Admin',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', claim.id);
+      if (error) throw new Error(`Live profile was unpublished but the claim record could not be updated: ${error.message}`);
+      return jsonResponse({ ok: true, message: cancelBilling ? 'Live profile unpublished and Stripe subscription cancelled.' : 'Live profile unpublished.' });
     }
 
     const packageSlug = resolveApprovalPackage(claim);

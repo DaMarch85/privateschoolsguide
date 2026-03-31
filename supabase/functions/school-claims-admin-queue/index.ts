@@ -131,7 +131,7 @@ function getQueueRecommendation(claim: ClaimRow): string {
     return 'The school has not completed payment yet. This claim can stay in the queue until Stripe confirms checkout.';
   }
   if (claim.claim_status === 'published') {
-    return 'This claim is already live. The live profile panel shows what parents currently see.';
+    return 'This claim is already live. Use the actions below to keep it live, downgrade it to claimed, or unpublish it entirely.';
   }
   if (claim.claim_status === 'rejected') {
     return 'This claim was rejected. Reopen it if the school comes back with better verification or updated assets.';
@@ -185,6 +185,15 @@ function canReopenClaim(claim: ClaimRow): boolean {
 
 function canCancelBilling(claim: ClaimRow): boolean {
   return Boolean(claim.stripe_subscription_id) && ['paid', 'active', 'trialing', 'past_due', 'unpaid'].includes(claim.payment_status);
+}
+
+
+function canDowngradeClaim(claim: ClaimRow): boolean {
+  return claim.claim_status === 'published' && claim.plan_slug !== 'claimed';
+}
+
+function canUnpublishClaim(claim: ClaimRow): boolean {
+  return claim.claim_status === 'published';
 }
 
 async function loadSchoolContext(supabase: ReturnType<typeof createAdminClient>, schoolIds: Array<string | number>) {
@@ -368,6 +377,8 @@ function detailView(claim: ClaimRow, schoolContext: { school: SchoolRow; locatio
     canReject: canRejectClaim(claim),
     canReopen: canReopenClaim(claim),
     canCancelBilling: canCancelBilling(claim),
+    canDowngrade: canDowngradeClaim(claim),
+    canUnpublish: canUnpublishClaim(claim),
     liveProfile: school ? {
       websiteUrl: normalizeUrl(school.website_override_url) || normalizeUrl(school.website),
       contactFormUrl: normalizeUrl(school.contact_form_url),

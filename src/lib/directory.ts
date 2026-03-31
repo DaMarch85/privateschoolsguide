@@ -1603,9 +1603,27 @@ export async function getClaimableSchoolOptions(): Promise<ClaimableSchoolOption
     if (location) firstLocationBySchoolId.set(schoolKey, location);
   });
 
-  const schools = await getSchoolsByIds(Array.from(firstLocationBySchoolId.keys()));
+  const schoolIds = Array.from(firstLocationBySchoolId.keys());
+  const [schools, activeClaimsRes] = await Promise.all([
+    getSchoolsByIds(schoolIds),
+    withRetry(() =>
+      supabase
+        .from('school_profile_claims')
+        .select('school_id, claim_status')
+        .in('school_id', schoolIds)
+        .in('claim_status', ['submitted', 'needs_review', 'checkout_pending', 'paid', 'published'])
+    )
+  ]);
+
+  if (activeClaimsRes.error) fail('Could not load active school profile claims', activeClaimsRes.error);
+
+  const activeClaimedSchoolIds = new Set(
+    ((activeClaimsRes.data || []) as Array<{ school_id: string | number }>).map((row) => String(row.school_id))
+  );
 
   return schools
+    .filter((school) => !school.profile_managed_by_school && normalizeSchoolProfilePackage(school.profile_package) === 'organic')
+    .filter((school) => !activeClaimedSchoolIds.has(String(school.id)))
     .map((school) => {
       const location = firstLocationBySchoolId.get(String(school.id));
       if (!location) return null;

@@ -26,12 +26,12 @@ const functionsBase = String(import.meta.env.PUBLIC_SUPABASE_FUNCTIONS_BASE_URL 
           <p class="claim-kicker">Internal admin</p>
           <h1 id="admin-claims-title">School claims review queue</h1>
           <p>
-            Review claimed, founding and paid school submissions before they change live profile content. This route is not linked publicly and the data layer is protected by an admin review token.
+            Monitor school-managed profile submissions and live packages. This route is not linked publicly and the data layer is protected by an admin review token.
           </p>
         </div>
         <div class="admin-intro-callout">
-          <strong>Best launch setting</strong>
-          <p>Set <code>AUTO_APPROVE_SCHOOL_CLAIMS=false</code>, then use this console to approve free claims, founding programme requests and paid submissions after Stripe confirms payment.</p>
+          <strong>What this console is for</strong>
+          <p>Review live or pending school-managed profiles, save private notes, downgrade paid packages, or unpublish a profile if needed.</p>
         </div>
       </section>
 
@@ -402,6 +402,8 @@ const functionsBase = String(import.meta.env.PUBLIC_SUPABASE_FUNCTIONS_BASE_URL 
             <button class="button-outline" data-admin-action="save_note" type="button">Save internal note</button>
             ${detail.canReject ? '<button class="button-outline button-outline--danger" data-admin-action="reject" type="button">Reject claim</button>' : ''}
             ${detail.canReopen ? '<button class="button-outline" data-admin-action="reopen" type="button">Reopen claim</button>' : ''}
+            ${detail.canDowngrade ? '<button class="button-outline" data-admin-action="downgrade" type="button">Downgrade live profile to claimed</button>' : ''}
+            ${detail.canUnpublish ? '<button class="button-outline button-outline--danger" data-admin-action="unpublish" type="button">Unpublish live profile</button>' : ''}
           </div>
           <div class="admin-copy-block admin-copy-block--history">
             <strong>Internal notes history</strong>

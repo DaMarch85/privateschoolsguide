@@ -1,5 +1,5 @@
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { createAdminClient, normalizeUrl, publishClaim } from '../_shared/claim-publisher.ts';
+import { createAdminClient, normalizeUrl, publishClaim, sendClaimNotificationEmail } from '../_shared/claim-publisher.ts';
 
 type PlanSlug = 'claimed' | 'enhanced' | 'featured';
 
@@ -56,6 +56,47 @@ function maxImagesForPlan(plan: PlanSlug): number {
 function isAutoApproveEnabled(): boolean {
   const raw = String(Deno.env.get('AUTO_APPROVE_SCHOOL_CLAIMS') || '').trim().toLowerCase();
   return raw === 'true' || raw === '1' || raw === 'yes';
+}
+
+
+async function ensureSchoolIsClaimable(supabase: ReturnType<typeof createAdminClient>, schoolId: string | number) {
+  const [{ data: schoolData, error: schoolError }, { data: activeClaimData, error: activeClaimError }] = await Promise.all([
+    supabase
+      .from('schools')
+      .select('id, name, slug, profile_managed_by_school, profile_package')
+      .eq('id', schoolId)
+      .maybeSingle(),
+    supabase
+      .from('school_profile_claims')
+      .select('id, claim_status')
+      .eq('school_id', schoolId)
+      .in('claim_status', ['submitted', 'needs_review', 'checkout_pending', 'paid', 'published'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+  ]);
+
+  if (schoolError) {
+    throw new Error(`Could not verify the selected school: ${schoolError.message}`);
+  }
+  if (!schoolData) {
+    throw new Error('The selected school could not be found.');
+  }
+  if (activeClaimError) {
+    throw new Error(`Could not check for existing school claims: ${activeClaimError.message}`);
+  }
+
+  const schoolName = String(schoolData.name || 'School').trim() || 'School';
+  if (schoolData.profile_managed_by_school || String(schoolData.profile_package || '').trim().toLowerCase() !== 'organic') {
+    throw new Error(`${schoolName} already has a claimed or managed profile. Please contact The Private School Guide if you need to update it.`);
+  }
+
+  if ((activeClaimData || []).length) {
+    throw new Error(`${schoolName} already has an active school profile request in progress. Please contact The Private School Guide if you need help with it.`);
+  }
+
+  return {
+    schoolName
+  };
 }
 
 async function createCheckoutSession({
@@ -166,6 +207,7 @@ Deno.serve(async (request) => {
     }
 
     const supabase = createAdminClient();
+    const schoolContext = await ensureSchoolIsClaimable(supabase, schoolId);
     const claimId = crypto.randomUUID();
     const createdAt = new Date().toISOString();
     const schoolMediaPaths: string[] = [];
@@ -219,6 +261,35 @@ Deno.serve(async (request) => {
 
     if (insertError) {
       throw new Error(`Could not save the school claim: ${insertError.message}`);
+    }
+
+    const schoolPagePath = null;
+    try {
+      await sendClaimNotificationEmail({
+        claim: {
+          id: claimId,
+          school_id: schoolId,
+          plan_slug: plan,
+          contact_name: contactName,
+          contact_role: contactRole,
+          contact_email: contactEmail,
+          contact_phone: contactPhone,
+          founding_programme: foundingProgramme,
+          website_url: websiteUrl,
+          contact_form_url: contactFormUrl,
+          image_urls: schoolMediaPaths,
+          open_day_title: openDayTitle,
+          open_day_start_at: openDayStartAt,
+          open_day_booking_url: openDayBookingUrl,
+          notes,
+          payment_status: basePaymentStatus,
+          claim_status: plan === 'claimed' || foundingProgramme ? (autoPublish ? 'published' : 'submitted') : 'checkout_pending'
+        },
+        schoolName: schoolContext.schoolName,
+        schoolPagePath
+      });
+    } catch (notificationError) {
+      console.error('School claim notification email failed', notificationError);
     }
 
     if (plan === 'claimed' || foundingProgramme) {

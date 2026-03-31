@@ -70,6 +70,11 @@
       return normalizePlan(plan) === 'claimed' ? 1 : 5;
     }
 
+
+    function shouldContinueToPayment(plan) {
+      return plan !== 'claimed' && !(foundingCheckbox && foundingCheckbox.checked);
+    }
+
     function syncPlanUi() {
       var plan = currentPlan();
       var copy = packageCopy(plan);
@@ -98,6 +103,10 @@
         foundingCheckbox.disabled = !allowFounding;
         if (!allowFounding) foundingCheckbox.checked = false;
       }
+
+      if (submitButton) {
+        submitButton.textContent = shouldContinueToPayment(plan) ? 'Continue to payment' : 'Submit school profile';
+      }
     }
 
     function prefillFromQuery() {
@@ -117,7 +126,7 @@
       }
 
       if (params.get('checkout') === 'success') {
-        setStatus(status, 'Stripe confirmed the subscription setup. The school profile request has been recorded and is ready for publishing.', 'is-success');
+        setStatus(status, 'Stripe confirmed the subscription setup. The school profile request has been recorded successfully.', 'is-success');
       } else if (params.get('checkout') === 'cancel') {
         setStatus(status, 'Stripe Checkout was cancelled. The draft school claim is still saved and can be submitted again whenever you are ready.', 'is-info');
       }
@@ -128,6 +137,10 @@
     planInputs.forEach(function (input) {
       input.addEventListener('change', syncPlanUi);
     });
+
+    if (foundingCheckbox) {
+      foundingCheckbox.addEventListener('change', syncPlanUi);
+    }
 
     if (imageInput) {
       imageInput.addEventListener('change', function () {
@@ -194,7 +207,7 @@
       } finally {
         if (submitButton) {
           submitButton.disabled = false;
-          submitButton.textContent = originalButtonText || 'Submit school profile';
+          submitButton.textContent = originalButtonText || (shouldContinueToPayment(currentPlan()) ? 'Continue to payment' : 'Submit school profile');
         }
       }
     });
