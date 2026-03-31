@@ -28,11 +28,16 @@
     }
   }
 
+  function getLinkType(anchor) {
+    return anchor.dataset.gaLinkType || "external";
+  }
+
   function sendGaEvent(anchor) {
     if (typeof window.gtag !== "function") return;
 
     const schoolSlug = getSchoolSlug();
     const locationSlug = getLocationSlug();
+    const linkType = getLinkType(anchor);
     const linkText = (anchor.textContent || "").trim();
 
     let destinationHost = "";
@@ -49,6 +54,7 @@
     window.gtag("event", "school_outbound_click", {
       school_slug: schoolSlug,
       location_slug: locationSlug,
+      link_type: linkType,
       destination_host: destinationHost,
       link_url: linkUrl,
       link_text: linkText
