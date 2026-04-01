@@ -1,5 +1,7 @@
 
 (function () {
+  const OPENFREEMAP_BRIGHT_STYLE = "https://tiles.openfreemap.org/styles/bright";
+  const OSM_FALLBACK_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
   const body = document.body;
   const currentSlug =
     body.dataset.schoolSlug ||
@@ -194,6 +196,23 @@
     });
   }
 
+  function createBaseLayer() {
+    if (window.L && typeof window.L.maplibreGL === "function") {
+      try {
+        return window.L.maplibreGL({
+          style: OPENFREEMAP_BRIGHT_STYLE,
+        });
+      } catch (error) {
+        console.warn("OpenFreeMap Bright layer failed, falling back to OpenStreetMap raster tiles.", error);
+      }
+    }
+
+    return window.L.tileLayer(OSM_FALLBACK_URL, {
+      maxZoom: 18,
+      attribution: "© OpenStreetMap contributors",
+    });
+  }
+
   function popupHtml(data) {
     const note = data.mapData && data.mapData.note ? data.mapData.note : "";
     return `
@@ -210,10 +229,7 @@
 
     if (!map) {
       map = window.L.map(mapTarget, { zoomControl: true, scrollWheelZoom: false });
-      window.L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 18,
-        attribution: "© OpenStreetMap contributors",
-      }).addTo(map);
+      createBaseLayer().addTo(map);
     }
 
     if (markerLayer) markerLayer.remove();

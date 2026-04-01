@@ -1,4 +1,6 @@
 (function () {
+  const OPENFREEMAP_BRIGHT_STYLE = 'https://tiles.openfreemap.org/styles/bright';
+  const OSM_FALLBACK_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   function escapeHtml(value) {
     return String(value || '').replace(/[&<>"']/g, function (match) {
       return {
@@ -87,6 +89,24 @@
       iconSize: [16, 16],
       iconAnchor: [8, 8],
       popupAnchor: [0, -8]
+    });
+  }
+
+  function createBaseLayer() {
+    if (window.L && typeof window.L.maplibreGL === 'function') {
+      try {
+        return window.L.maplibreGL({
+          style: OPENFREEMAP_BRIGHT_STYLE
+        });
+      } catch (error) {
+        console.warn('OpenFreeMap Bright layer failed, falling back to OpenStreetMap raster tiles.', error);
+      }
+    }
+
+    return window.L.tileLayer(OSM_FALLBACK_URL, {
+      maxZoom: 18,
+      attribution: '© OpenStreetMap contributors',
+      detectRetina: window.devicePixelRatio > 1
     });
   }
 
@@ -188,11 +208,7 @@
     mapTarget.dataset.mapReady = 'true';
     mapTarget._leaflet_map_instance = map;
 
-    const tileLayer = window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      attribution: '© OpenStreetMap contributors',
-      detectRetina: window.devicePixelRatio > 1
-    }).addTo(map);
+    const tileLayer = createBaseLayer().addTo(map);
 
     mapTarget._leaflet_tile_layer = tileLayer;
     bindMapReflow(mapTarget, map, tileLayer);

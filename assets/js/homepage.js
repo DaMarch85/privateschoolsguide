@@ -4,6 +4,8 @@
   const UK_DEFAULT_CENTER = [54.25, -2.6];
   const UK_DEFAULT_ZOOM = 6;
   const POSTCODE_REGEX = /^([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})$/i;
+  const OPENFREEMAP_BRIGHT_STYLE = 'https://tiles.openfreemap.org/styles/bright';
+  const OSM_FALLBACK_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   const YEAR_LABELS = [
     'Pre-Reception', 'Reception', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6',
     'Year 7', 'Year 8', 'Year 9', 'Year 10', 'Year 11', 'Year 12', 'Year 13'
@@ -418,6 +420,24 @@
       '</div>' + wrapperEnd;
   }
 
+  function createBaseLayer() {
+    if (window.L && typeof window.L.maplibreGL === 'function') {
+      try {
+        return window.L.maplibreGL({
+          style: OPENFREEMAP_BRIGHT_STYLE
+        });
+      } catch (error) {
+        console.warn('OpenFreeMap Bright layer failed, falling back to OpenStreetMap raster tiles.', error);
+      }
+    }
+
+    return window.L.tileLayer(OSM_FALLBACK_URL, {
+      maxZoom: 18,
+      attribution: '© OpenStreetMap contributors',
+      detectRetina: window.devicePixelRatio > 1
+    });
+  }
+
   function updateError(message) {
     const errorTarget = getErrorTarget();
     if (!errorTarget) return;
@@ -439,11 +459,7 @@
       preferCanvas: true
     });
 
-    state.tileLayer = window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      attribution: '© OpenStreetMap contributors',
-      detectRetina: window.devicePixelRatio > 1
-    }).addTo(state.map);
+    state.tileLayer = createBaseLayer().addTo(state.map);
 
     state.markerLayer = window.L.layerGroup().addTo(state.map);
     state.searchLayer = window.L.layerGroup().addTo(state.map);
