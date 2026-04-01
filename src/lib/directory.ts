@@ -570,7 +570,7 @@ function buildLocationMapSchool(location: LocationRecord, school: SchoolSummaryR
   const coordinates = getSchoolCoordinates(school);
   if (!coordinates) return null;
 
-  const href = `/${location.slug}/schools/${school.slug}/`;
+  const href = `/schools/${school.slug}/`;
   const provisionCategory = getProvisionCategory(school);
   const note = [
     provisionCategory === 'sen_specialist' ? 'SEN specialist' : null,
@@ -1071,7 +1071,7 @@ export async function getLocationDirectoryData(locationSlug: string) {
   const schoolCards: SchoolCard[] = schools.map((school) => ({
     slug: school.slug,
     name: school.name,
-    href: `/${location.slug}/schools/${school.slug}/`,
+    href: `/schools/${school.slug}/`,
     cardClass: `school-square-card school-square-card--${getMapType(school.phase, school.age_max)}`,
     provisionCategory: getProvisionCategory(school),
     badgeLabel: getSchoolPackageBadge(school.profile_package),
@@ -1269,7 +1269,7 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
     const studentsLabel = studentCount !== null ? formatInteger(studentCount) : null;
     const boyGirlSplit = getBoyGirlSplitLabel(school);
     const linkedLocationSlug = locationSlugBySchoolId.get(schoolId) || null;
-    const href = linkedLocationSlug ? `/${linkedLocationSlug}/schools/${school.slug}/` : null;
+    const href = `/schools/${school.slug}/`;
     const schoolFeeRows = feeRowsRaw.filter((row) => String(row.school_id) === schoolId);
     const dayFeesByYear = buildHomepageFeeMap(schoolFeeRows, ['day']);
     const boardingFeesByYear = buildHomepageFeeMap(schoolFeeRows, ['weekly_boarding', 'full_boarding']);
@@ -1401,7 +1401,7 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
       schoolSlug: school.slug,
       provisionCategory: getProvisionCategory(school),
       name: school.name,
-      slug: `/${location.slug}/schools/${school.slug}/`,
+      slug: `/schools/${school.slug}/`,
       ages: ageLabel,
       gender: genderLabel,
       format: formatLabel,
@@ -1599,6 +1599,21 @@ export async function getLocationOpenDaysData(locationSlug: string) {
     openDays,
     lastVerifiedAt
   };
+}
+
+export async function getAllCanonicalSchoolPaths() {
+  const linkedSchools = await getGlobalLinkedSchools();
+  return linkedSchools.map((school) => ({ params: { slug: school.slug } }));
+}
+
+export async function getCanonicalSchoolProfile(schoolSlug: string) {
+  const linkedSchools = await getGlobalLinkedSchools();
+  const match = linkedSchools.find((school) => school.slug === schoolSlug);
+  if (!match) {
+    throw new Error(`Could not find linked location for school ${schoolSlug}`);
+  }
+
+  return getLocationSchoolProfile(match.locationSlug, schoolSlug);
 }
 
 export async function getAllLocationSchoolPaths() {
@@ -1824,7 +1839,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const ageLabel = getAgeLabel(school.age_min, school.age_max);
   const address = buildAddress(school);
   const subhead = school.description || `${phaseLabel} in ${school.town || location.name}.`;
-  const canonicalPath = `/${location.slug}/schools/${school.slug}/`;
+  const canonicalPath = `/schools/${school.slug}/`;
   const coordinates = getSchoolCoordinates(school);
   const officialWebsiteUrl = getSchoolWebsiteUrl(school);
   const contactFormUrl = String(school.contact_form_url || '').trim() || null;
@@ -1849,8 +1864,8 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
         }))
         .sort((a, b) => a.distanceMiles - b.distanceMiles || a.name.localeCompare(b.name, 'en'))
         .slice(0, 8)
-        .map((candidate) => ({ slug: candidate.slug, name: candidate.name, locationSlug: candidate.locationSlug }))
-    : fallbackCompareLinks;
+        .map((candidate) => ({ slug: candidate.slug, name: candidate.name, locationSlug: candidate.locationSlug, href: `/schools/${candidate.slug}/` }))
+    : fallbackCompareLinks.map((row) => ({ ...row, href: `/schools/${row.slug}/` }));
 
   const mapData = coordinates
     ? {

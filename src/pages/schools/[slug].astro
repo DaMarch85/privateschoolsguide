@@ -1,24 +1,24 @@
 ---
-import BaseLayout from '../../../layouts/BaseLayout.astro';
-import SiteHeader from '../../../components/SiteHeader.astro';
-import SiteFooter from '../../../components/SiteFooter.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
 import {
-  getAllLocationSchoolPaths,
-  getLocationSchoolProfile,
+  getAllCanonicalSchoolPaths,
+  getCanonicalSchoolProfile,
   formatCurrency,
   formatPercent,
   formatInteger,
   splitParagraphs
-} from '../../../lib/directory';
+} from '../../lib/directory';
 
 export async function getStaticPaths() {
-  return await getAllLocationSchoolPaths();
+  return await getAllCanonicalSchoolPaths();
 }
 
-const { location: locationSlug, slug } = Astro.params;
-if (!locationSlug || !slug) throw new Error('Missing location or school slug');
+const { slug } = Astro.params;
+if (!slug) throw new Error('Missing school slug');
 
-const profile = await getLocationSchoolProfile(locationSlug, slug);
+const profile = await getCanonicalSchoolProfile(slug);
 const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(profile.mapData)};`;
 ---
 <BaseLayout

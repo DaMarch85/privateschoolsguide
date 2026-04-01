@@ -102,7 +102,7 @@ const lastVerifiedLabel = lastVerifiedAt
                 {openDays.map((item) => (
                   <tr>
                     <th scope="row">{formatDate(item.startAt)}</th>
-                    <td><a href={`/${location.slug}/schools/${item.schoolSlug}/`}>{item.schoolName}</a></td>
+                    <td><a href={`/schools/${item.schoolSlug}/`}>{item.schoolName}</a></td>
                     <td>
                       <div>{item.title}</div>
                       {item.bookingUrl ? <div><a href={item.bookingUrl} rel="noreferrer" target="_blank">Book / details</a></div> : null}

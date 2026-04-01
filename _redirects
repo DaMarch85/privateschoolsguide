@@ -1,3 +1,5 @@
+/:location/schools/:slug /schools/:slug/ 301
+/:location/schools/:slug/ /schools/:slug/ 301
 /about /about/ 301
 /advertise /advertise/ 301
 /bath /bath/ 301

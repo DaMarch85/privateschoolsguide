@@ -111,7 +111,7 @@
     const grid = doc.querySelector(".school-feature-grid");
     const caption = doc.querySelector(".map-caption");
     const canonical = doc.querySelector('link[rel="canonical"]');
-    let path = `/${locationSlug}/schools/${slugHint}/`;
+    let path = `/schools/${slugHint}/`;
     if (canonical) {
       try {
         path = new URL(canonical.getAttribute("href")).pathname;
@@ -467,7 +467,7 @@
 
   async function fetchSchool(slug) {
     if (cache.has(slug)) return cache.get(slug);
-    const response = await fetch(`/${locationSlug}/schools/${slug}/`, {
+    const response = await fetch(`/schools/${slug}/`, {
       credentials: "same-origin",
     });
     if (!response.ok) throw new Error("Unable to fetch comparison school");
