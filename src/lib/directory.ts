@@ -22,21 +22,6 @@ export type LocationRecord = {
   show_on_homepage?: boolean | null;
   homepage_order?: number | null;
   homepage_status_label?: string | null;
-  hero_subtitle?: string | null;
-  search_terms?: string[] | string | null;
-  hero_image?: string | null;
-  hero_image_alt?: string | null;
-  default_school_hero_image?: string | null;
-  nav_compare_overview?: boolean | null;
-  nav_compare_alevels?: boolean | null;
-  nav_fees?: boolean | null;
-  nav_bursaries?: boolean | null;
-  nav_open_days?: boolean | null;
-  nav_moving_to_section?: boolean | null;
-  location_type?: string | null;
-  local_insights_title?: string | null;
-  local_insights_body?: string | null;
-  faq_items?: unknown;
 };
 
 export type HomepageLocationRecord = {
@@ -1166,6 +1151,122 @@ async function getGlobalLinkedSchools() {
   return globalLinkedSchoolsPromise;
 }
 
+let primaryLocationSlugBySchoolSlugPromise: Promise<Map<string, string>> | null = null;
+
+async function getPrimaryLocationSlugBySchoolSlug(): Promise<Map<string, string>> {
+  if (!primaryLocationSlugBySchoolSlugPromise) {
+    primaryLocationSlugBySchoolSlugPromise = (async () => {
+      const liveLocations = await getLiveLocations();
+      const locationSlugById = new Map(liveLocations.map((location) => [String(location.id), location.slug]));
+      const links = await getLocationSchoolPathLinks(liveLocations.map((location) => location.id));
+      const firstLocationBySchoolId = new Map<string, string>();
+
+      links.forEach((link) => {
+        const schoolKey = String(link.school_id);
+        const locationSlug = locationSlugById.get(String(link.location_id));
+        if (!locationSlug || firstLocationBySchoolId.has(schoolKey)) return;
+        firstLocationBySchoolId.set(schoolKey, locationSlug);
+      });
+
+      const schoolSlugById = await getSchoolSlugMapByIds(Array.from(firstLocationBySchoolId.keys()));
+      return new Map(
+        Array.from(firstLocationBySchoolId.entries()).flatMap(([schoolId, locationSlug]) => {
+          const schoolSlug = schoolSlugById.get(String(schoolId));
+          return schoolSlug ? [[schoolSlug, locationSlug] as [string, string]] : [];
+        })
+      );
+    })();
+  }
+
+  return primaryLocationSlugBySchoolSlugPromise;
+}
+
+async function getAllCanonicalSchoolSlugRows(): Promise<Array<{ slug: string }>> {
+  return memoizeBuildPromise('getAllCanonicalSchoolSlugRows', async () => {
+    const rows: Array<{ slug: string }> = [];
+    const pageSize = 500;
+    let from = 0;
+
+    while (true) {
+      const { data, error } = await supabase
+        .from('schools')
+        .select('slug')
+        .not('slug', 'is', null)
+        .order('slug', { ascending: true })
+        .range(from, from + pageSize - 1);
+
+      if (error) fail('Could not load canonical school slugs', error);
+
+      const page = ((data || []) as Array<{ slug: string | null }>).filter((row): row is { slug: string } => Boolean(row.slug));
+      rows.push(...page);
+
+      if (page.length < pageSize) break;
+      from += pageSize;
+    }
+
+    return rows;
+  });
+}
+
+async function getSchoolBySlug(schoolSlug: string): Promise<SchoolSummaryRecord> {
+  return memoizeBuildPromise(`getSchoolBySlug:${schoolSlug}`, async () => {
+    const { data, error } = await supabase
+      .from('schools')
+      .select('*')
+      .eq('slug', schoolSlug)
+      .single();
+
+    if (error || !data) fail(`Could not load school ${schoolSlug}`, error);
+    return data as SchoolSummaryRecord;
+  });
+}
+
+async function getCanonicalContextLocationForSchool(school: SchoolSummaryRecord): Promise<LocationRecord> {
+  const liveLocations = await getLiveLocations();
+  if (!liveLocations.length) {
+    throw new Error(`Could not resolve canonical location context for ${school.slug}`);
+  }
+
+  const liveLocationBySlug = new Map(liveLocations.map((location) => [location.slug, location]));
+  const primaryLocationSlugBySchoolSlug = await getPrimaryLocationSlugBySchoolSlug();
+  const directLocationSlug = primaryLocationSlugBySchoolSlug.get(school.slug);
+  const directLocation = directLocationSlug ? liveLocationBySlug.get(directLocationSlug) : null;
+  if (directLocation) return directLocation;
+
+  const schoolLat = toNumber(school.latitude);
+  const schoolLng = toNumber(school.longitude);
+
+  if (schoolLat !== null && schoolLng !== null) {
+    const closestLocation = liveLocations
+      .map((location) => {
+        const locationLat = toNumber(location.latitude);
+        const locationLng = toNumber(location.longitude);
+        if (locationLat === null || locationLng === null) return null;
+        return {
+          location,
+          distanceMiles: haversineMiles(schoolLat, schoolLng, locationLat, locationLng)
+        };
+      })
+      .filter((row): row is { location: LocationRecord; distanceMiles: number } => Boolean(row))
+      .sort((a, b) => a.distanceMiles - b.distanceMiles || a.location.name.localeCompare(b.location.name, 'en'))[0];
+
+    if (closestLocation) return closestLocation.location;
+  }
+
+  const placeTerms = [school.town, school.county]
+    .filter(Boolean)
+    .map((value) => String(value).trim().toLowerCase())
+    .filter(Boolean);
+
+  const namedMatch = liveLocations.find((location) => {
+    const locationName = location.name.toLowerCase();
+    return placeTerms.some((term) => term.includes(locationName) || locationName.includes(term));
+  });
+
+  return namedMatch || liveLocations[0];
+}
+
+
 function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const radians = Math.PI / 180;
   const dLat = (lat2 - lat1) * radians;
@@ -1226,7 +1327,6 @@ function buildHomepageFeeMap(rows: AnnualFeeRecord[], feeTypes: string[]): Recor
 }
 
 export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]> {
-  return memoizeBuildPromise('getHomepageSearchSchools', async () => {
   const linkedSchools = await getGlobalLinkedSchools();
   const locationSlugBySchoolId = new Map(linkedSchools.map((row) => [row.id, row.locationSlug]));
   const schools = await getHomepageSearchSchoolRows();
@@ -1330,7 +1430,6 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
       isManaged: Boolean(school.profile_managed_by_school),
       alevel: aggregateAlevelMetrics(latestExam, subjectRows)
     } satisfies HomepageSearchSchool;
-  });
   });
 }
 
@@ -1619,18 +1718,21 @@ export async function getLocationOpenDaysData(locationSlug: string) {
 }
 
 export async function getAllCanonicalSchoolPaths() {
-  const linkedSchools = await getGlobalLinkedSchools();
-  return linkedSchools.map((school) => ({ params: { slug: school.slug } }));
+  const schools = await getAllCanonicalSchoolSlugRows();
+  return schools.map((school) => ({ params: { slug: school.slug } }));
 }
 
 export async function getCanonicalSchoolProfile(schoolSlug: string) {
-  const linkedSchools = await getGlobalLinkedSchools();
-  const match = linkedSchools.find((school) => school.slug === schoolSlug);
-  if (!match) {
-    throw new Error(`Could not find linked location for school ${schoolSlug}`);
+  const primaryLocationSlugBySchoolSlug = await getPrimaryLocationSlugBySchoolSlug();
+  const directLocationSlug = primaryLocationSlugBySchoolSlug.get(schoolSlug);
+
+  if (directLocationSlug) {
+    return getLocationSchoolProfile(directLocationSlug, schoolSlug);
   }
 
-  return getLocationSchoolProfile(match.locationSlug, schoolSlug);
+  const school = await getSchoolBySlug(schoolSlug);
+  const contextLocation = await getCanonicalContextLocationForSchool(school);
+  return getLocationSchoolProfile(contextLocation.slug, schoolSlug, { allowUnlinkedSchool: true });
 }
 
 export async function getAllLocationSchoolPaths() {
@@ -1706,7 +1808,7 @@ export async function getClaimableSchoolOptions(): Promise<ClaimableSchoolOption
     .sort((a, b) => a.name.localeCompare(b.name, 'en') || a.locationName.localeCompare(b.locationName, 'en'));
 }
 
-export async function getLocationSchoolProfile(locationSlug: string, schoolSlug: string) {
+export async function getLocationSchoolProfile(locationSlug: string, schoolSlug: string, options: { allowUnlinkedSchool?: boolean } = {}) {
   const { location, locationLinks, schoolIds, schools: linkedSchools } = await getOrderedLocationSchools(locationSlug);
 
   const { data: schoolData, error: schoolError } = await supabase
@@ -1719,7 +1821,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
 
   const school = schoolData as SchoolSummaryRecord;
   const allowedSchoolIds = new Set(schoolIds.map((id) => String(id)));
-  if (!allowedSchoolIds.has(String(school.id))) {
+  if (!allowedSchoolIds.has(String(school.id)) && !options.allowUnlinkedSchool) {
     throw new Error(`${schoolSlug} is not linked to ${locationSlug}`);
   }
 
