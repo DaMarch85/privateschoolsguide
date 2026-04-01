@@ -1,10 +1,22 @@
-import { cp, mkdir, rm, stat, copyFile } from 'node:fs/promises';
+import { cp, mkdir, rm, stat, copyFile, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
 const publicDir = path.join(root, 'public');
+const GOOGLE_TAG_ID = 'G-BDP9V8TPZZ';
+const GOOGLE_TAG_SNIPPET = [
+  '<!-- Google tag (gtag.js) -->',
+  `<script async src="https://www.googletagmanager.com/gtag/js?id=${GOOGLE_TAG_ID}"></script>`,
+  '<script>',
+  'window.dataLayer = window.dataLayer || [];',
+  'function gtag(){dataLayer.push(arguments);}',
+  "gtag('js', new Date());",
+  '',
+  `gtag('config', '${GOOGLE_TAG_ID}');`,
+  '</script>'
+].join('\n');
 
 const copyTargets = [
   { from: 'assets', to: 'assets' },
@@ -34,6 +46,39 @@ async function exists(p) {
   }
 }
 
+function upsertGoogleTag(html) {
+  const normalized = html
+    .replace(/https:\/\/www\.googletagmanager\.com\/gtag\/js\?id=[A-Z0-9-]+/g, `https://www.googletagmanager.com/gtag/js?id=${GOOGLE_TAG_ID}`)
+    .replace(/gtag\('config',\s*'[^']+'\);/g, `gtag('config', '${GOOGLE_TAG_ID}');`);
+
+  if (/googletagmanager\.com\/gtag\/js\?id=/.test(normalized)) {
+    return normalized;
+  }
+
+  return normalized.replace(/<head([^>]*)>/i, (match) => `${match}\n${GOOGLE_TAG_SNIPPET}`);
+}
+
+async function injectGoogleTagIntoHtmlFiles(dir) {
+  if (!(await exists(dir))) return;
+
+  const entries = await readdir(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const entryPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      await injectGoogleTagIntoHtmlFiles(entryPath);
+      continue;
+    }
+
+    if (!entry.isFile() || !entry.name.endsWith('.html')) continue;
+
+    const html = await readFile(entryPath, 'utf8');
+    const nextHtml = upsertGoogleTag(html);
+    if (nextHtml !== html) {
+      await writeFile(entryPath, nextHtml);
+    }
+  }
+}
+
 await mkdir(publicDir, { recursive: true });
 
 for (const target of copyTargets) {
@@ -50,5 +95,7 @@ for (const target of copyTargets) {
     await copyFile(from, to);
   }
 }
+
+await injectGoogleTagIntoHtmlFiles(publicDir);
 
 console.log('Public assets and legacy static routes prepared.');

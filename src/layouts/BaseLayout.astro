@@ -26,15 +26,6 @@ const canonical = new URL(canonicalPath, Astro.site);
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BDP9V8TPZZ"></script>
-    <script is:inline>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-BDP9V8TPZZ');
-    </script>
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="robots" content="index, follow" />
@@ -46,6 +37,16 @@ const canonical = new URL(canonicalPath, Astro.site);
       href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BDP9V8TPZZ"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-BDP9V8TPZZ');
+    </script>
 
     {includeLeaflet && (
       <link
