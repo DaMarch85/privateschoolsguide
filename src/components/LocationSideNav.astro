@@ -17,31 +17,15 @@ const nav = getLocationNavigationConfig(locationSlug) || {
   movingToSection: false
 };
 
-const hasCompareLinks = Boolean(nav.compareOverview || nav.compareAlevels);
-const hasDataLinks = Boolean(nav.fees || nav.bursaries || nav.openDays);
-const hasAnySections = Boolean(hasCompareLinks || hasDataLinks || nav.movingToSection);
+const hasAnySections = Boolean(nav.openDays || nav.movingToSection);
 ---
 {hasAnySections && (
   <nav class="location-side-nav" aria-label={`${locationName} page navigation`}>
     <p class="nav-kicker">Navigate {locationName}</p>
 
-    {hasCompareLinks && (
+    {nav.openDays && (
       <div class="location-side-nav-group">
-        <span class="location-side-nav-title">Compare schools</span>
-        {nav.compareOverview && (
-          <a class:list={["sub-link", currentSection === 'compare-overview' && 'is-current']} href={`/${locationSlug}/compare/`}>School overview</a>
-        )}
-        {nav.compareAlevels && (
-          <a class:list={["sub-link", currentSection === 'compare-alevel' && 'is-current']} href={`/${locationSlug}/compare/a-levels/`}>A-levels</a>
-        )}
-      </div>
-    )}
-
-    {hasDataLinks && (
-      <div class="location-side-nav-group">
-        {nav.fees && <a class:list={["location-side-nav-title", currentSection === 'fees' && 'is-current']} href={`/${locationSlug}/fees/`}>Fees</a>}
-        {nav.bursaries && <a class:list={["location-side-nav-title", currentSection === 'bursaries' && 'is-current']} href={`/${locationSlug}/bursaries/`}>Bursaries</a>}
-        {nav.openDays && <a class:list={["location-side-nav-title", currentSection === 'open-days' && 'is-current']} href={`/${locationSlug}/open-days/`}>Open days</a>}
+        <a class:list={["location-side-nav-title", currentSection === 'open-days' && 'is-current']} href={`/${locationSlug}/open-days/`}>Open days</a>
       </div>
     )}
 

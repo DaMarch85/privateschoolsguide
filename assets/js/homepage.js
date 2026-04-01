@@ -862,6 +862,27 @@
     }
   }
 
+
+  function applyInitialQueryParams() {
+    const form = getFilterForm();
+    if (!form || typeof window === 'undefined') return;
+
+    const params = new URLSearchParams(window.location.search || '');
+    const locationValue = params.get('location');
+    const radiusValue = params.get('radius');
+    const locationInput = form.querySelector('#school-filter-location');
+    const radiusInput = form.querySelector('#school-filter-radius');
+
+    if (locationInput && locationValue) {
+      locationInput.value = locationValue;
+    }
+
+    if (radiusInput && radiusValue) {
+      const parsedRadius = parsePositiveNumber(radiusValue, DEFAULT_RADIUS_MILES);
+      radiusInput.value = String(parsedRadius);
+    }
+  }
+
   function bindResultViewControls() {
     document.querySelectorAll('[data-view-mode]').forEach(function (button) {
       button.addEventListener('click', function () {
@@ -921,6 +942,7 @@
     bindFilterDropdowns();
     bindFilterForm();
     bindResultViewControls();
+    applyInitialQueryParams();
     bootHomepageMap(0);
     applyFilters();
   }

@@ -2,9 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
-import LocationSideNav from '../../components/LocationSideNav.astro';
-import SchoolSquareCard from '../../components/SchoolSquareCard.astro';
-import { getLocationPaths, getLocationDirectoryData } from '../../lib/directory';
+import { getLocationPaths, getLocationBySlug, getLiveLocations, getHomepageSearchSchools } from '../../lib/directory';
 import { getLocationPresentation } from '../../lib/location-config';
 
 export async function getStaticPaths() {
@@ -14,110 +12,303 @@ export async function getStaticPaths() {
 const { location: locationSlug } = Astro.params;
 if (!locationSlug) throw new Error('Missing location slug');
 
-const { location, schoolCards, mapSchools } = await getLocationDirectoryData(locationSlug);
-const presentation = getLocationPresentation(location.slug, location.name);
-const heroSubtitle = presentation.heroSubtitle;
-const fallbackMetaTitle = `${location.name} private schools | The Private School Guide`;
-const fallbackMetaDescription = `Independent guide to ${location.name} private schools. Compare schools, review fees and bursaries, explore open days, and use the map to narrow your shortlist.`;
-const locationMapScript = `window.locationPageMapData = ${JSON.stringify(mapSchools)};`;
+function normaliseText(value: unknown): string | null {
+  const cleaned = String(value || '').replace(/\s+/g, ' ').trim();
+  return cleaned || null;
+}
 
-const fallbackLatValue = location.latitude !== null ? Number(location.latitude) : NaN;
-const fallbackLngValue = location.longitude !== null ? Number(location.longitude) : NaN;
-const fallbackLat = Number.isFinite(fallbackLatValue) ? fallbackLatValue : null;
-const fallbackLng = Number.isFinite(fallbackLngValue) ? fallbackLngValue : null;
+function paragraphise(value: string | null) {
+  if (!value) return [];
+  return value.split(/\n{2,}/).map((paragraph) => paragraph.trim()).filter(Boolean);
+}
+
+function toFiniteNumber(value: unknown): number | null {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
+function formatCount(value: number) {
+  return new Intl.NumberFormat('en-GB').format(value);
+}
+
+function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const radians = Math.PI / 180;
+  const dLat = (lat2 - lat1) * radians;
+  const dLng = (lng2 - lng1) * radians;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * radians) * Math.cos(lat2 * radians) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+
+  return 3958.8 * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+
+function parseFaqItems(value: unknown): Array<{ question: string; answer: string }> {
+  const source = typeof value === 'string' ? (() => {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return [];
+    }
+  })() : value;
+
+  if (!Array.isArray(source)) return [];
+
+  return source
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const question = normaliseText((item as Record<string, unknown>).question);
+      const answer = normaliseText((item as Record<string, unknown>).answer);
+      if (!question || !answer) return null;
+      return { question, answer };
+    })
+    .filter((item): item is { question: string; answer: string } => Boolean(item));
+}
+
+const location = await getLocationBySlug(locationSlug);
+const presentation = getLocationPresentation(location.slug, location.name);
+const allSchools = await getHomepageSearchSchools();
+const locationSchools = allSchools
+  .filter((school) => school.locationSlug === location.slug)
+  .sort((a, b) => a.name.localeCompare(b.name, 'en'));
+const liveLocations = await getLiveLocations();
+
+const girlsCount = locationSchools.filter((school) => school.genderFilter === 'girls').length;
+const boysCount = locationSchools.filter((school) => school.genderFilter === 'boys').length;
+const mixedCount = locationSchools.filter((school) => school.genderFilter === 'mixed').length;
+const dayOnlyCount = locationSchools.filter((school) => school.boardingFilter === 'day').length;
+const bothCount = locationSchools.filter((school) => school.boardingFilter === 'both').length;
+const boardingOnlyCount = locationSchools.filter((school) => school.boardingFilter === 'boarding').length;
+const sixthFormCount = locationSchools.filter((school) => school.hasSixthForm).length;
+const nurseryCount = locationSchools.filter((school) => school.hasNursery).length;
+const dayFeesCount = locationSchools.filter((school) => school.hasDayFees).length;
+const alevelCount = locationSchools.filter((school) => Boolean(school.alevel)).length;
+
+const atGlanceRows = [
+  { label: 'Schools', value: formatCount(locationSchools.length) },
+  { label: 'Gender mix', value: `${formatCount(girlsCount)} girls · ${formatCount(boysCount)} boys · ${formatCount(mixedCount)} mixed` },
+  { label: 'Boarding mix', value: `${formatCount(dayOnlyCount)} day · ${formatCount(bothCount)} day & boarding · ${formatCount(boardingOnlyCount)} boarding` },
+  { label: 'Sixth form', value: `${formatCount(sixthFormCount)} schools` },
+  { label: 'Nursery', value: `${formatCount(nurseryCount)} schools` },
+  { label: 'Published day fees', value: `${formatCount(dayFeesCount)} schools` },
+  { label: 'Published A-levels', value: `${formatCount(alevelCount)} schools` }
+];
+
+const heroImage = normaliseText(location.hero_image) || presentation.heroImage;
+const heroImageAlt = normaliseText(location.hero_image_alt) || presentation.heroImageAlt;
+const heroSubtitle = normaliseText(location.hero_subtitle) || presentation.heroSubtitle;
+const heroTitle = normaliseText(location.hero_title) || location.name;
+const fallbackMetaTitle = `Private schools in ${location.name} | The Private School Guide`;
+const fallbackMetaDescription = `Browse private schools in ${location.name}, explore nearby locations, compare schools side by side and jump into the homepage radius search to refine the area.`;
+const areaIntroTitle = 'Area introduction';
+const areaIntroParagraphs = paragraphise(normaliseText(location.intro_text)) || [];
+const areaIntroFallback = `Use this ${location.name} guide to browse the core school catchment, compare nearby options and then refine your shortlist with the homepage radius search.`;
+const localInsightsTitle = normaliseText(location.local_insights_title) || 'Local insights';
+const localInsightsParagraphs = paragraphise(normaliseText(location.local_insights_body));
+const faqItems = parseFaqItems(location.faq_items);
+const nearbyLocations = liveLocations
+  .filter((item) => item.slug !== location.slug)
+  .map((item) => {
+    const subtitle = normaliseText(item.hero_subtitle) || getLocationPresentation(item.slug, item.name).heroSubtitle;
+    const lat = toFiniteNumber(item.latitude);
+    const lng = toFiniteNumber(item.longitude);
+    const baseLat = toFiniteNumber(location.latitude);
+    const baseLng = toFiniteNumber(location.longitude);
+    const hasCoords = baseLat !== null && baseLng !== null && lat !== null && lng !== null;
+    return {
+      name: item.name,
+      href: `/${item.slug}/`,
+      subtitle,
+      searchText: [item.name, subtitle || ''].filter(Boolean).join(' '),
+      distanceMiles: hasCoords ? haversineMiles(baseLat, baseLng, lat, lng) : Number.POSITIVE_INFINITY
+    };
+  })
+  .sort((a, b) => a.distanceMiles - b.distanceMiles || a.name.localeCompare(b.name, 'en'))
+  .slice(0, 10);
+
+const changeSearchHref = `/?location=${encodeURIComponent(location.name)}&radius=10`;
+const locationSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.stringify(locationSchools)};`;
+const initialSchoolCount = formatCount(locationSchools.length);
 ---
 <BaseLayout
   title={location.meta_title || fallbackMetaTitle}
   description={location.meta_description || fallbackMetaDescription}
   canonicalPath={`/${location.slug}/`}
   includeLeaflet={true}
-  bodyClass="location-page"
+  bodyClass="location-landing-page"
   dataLocationSlug={location.slug}
 >
   <Fragment slot="head">
     <link rel="stylesheet" href="/assets/css/styles.css" />
-    <link rel="stylesheet" href="/assets/css/bath-refined.css" />
-    <style>
-      .location-hero-subtitle {
-        display: block;
-        width: 100%;
-        margin: 14px auto 0;
-        text-align: center;
-        color: rgba(255, 255, 255, 0.95);
-        font-style: italic;
-        font-weight: 400;
-        font-size: clamp(1.25rem, 2.2vw, 1.5rem);
-        line-height: 1.35;
-        letter-spacing: 0.02em;
-        max-width: none;
-      }
-
-      @media (max-width: 720px) {
-        .location-hero-subtitle {
-          margin-top: 10px;
-          font-size: 1.25rem;
-          line-height: 1.35;
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="/assets/css/homepage.css?v=20260401-location-landing" />
   </Fragment>
 
   <a class="skip-link" href="#main">Skip to content</a>
   <SiteHeader minimal={true} />
 
-  <section class="location-hero" aria-labelledby="location-hero-title">
-    <img src={presentation.heroImage} alt={presentation.heroImageAlt} />
-    <div class="location-hero-copy">
-      <h1 id="location-hero-title" class="location-hero-title location-hero-title-single">
-        <span>{location.hero_title || location.name}</span>
-      </h1>
-      {heroSubtitle && <p class="location-hero-subtitle">{heroSubtitle}</p>}
+  <section class="location-landing-hero" aria-labelledby="location-hero-title">
+    <img src={heroImage} alt={heroImageAlt} />
+    <div class="location-landing-hero__copy shell">
+      <h1 id="location-hero-title" class="location-landing-hero__title">{heroTitle}</h1>
+      {heroSubtitle && <p class="location-landing-hero__subtitle">{heroSubtitle}</p>}
     </div>
   </section>
-  <div class="page-back-strip"><div class="shell"><a class="page-back-link" href="/">Back to homepage</a></div></div>
 
-  <main id="main" class="page-shell">
-    <div class="shell location-layout">
-      <LocationSideNav locationSlug={location.slug} locationName={location.name} currentSection="overview" />
+  <main id="main">
+    <section class="location-overview-band">
+      <div class="shell location-overview-grid">
+        <article class="location-editorial-card">
+          <div class="location-editorial-card__head">
+            <p class="finder-kicker">At a glance</p>
+            <h2 class="location-editorial-card__title">{location.name}</h2>
+          </div>
+          <dl class="location-at-a-glance-list">
+            {atGlanceRows.map((row) => (
+              <div class="location-at-a-glance-list__row">
+                <dt>{row.label}</dt>
+                <dd>{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </article>
 
-      <section class="location-main-column" aria-labelledby="location-grid-title">
-        <h2 id="location-grid-title" class="location-grid-title">{location.name} private schools</h2>
-        {location.intro_text ? <p class="location-intro">{location.intro_text}</p> : null}
-        <div class="school-square-grid">
-          {schoolCards.map((school) => (
-            <div class="school-square-grid-item">
-              <SchoolSquareCard {...school} />
+        <article class="location-editorial-card location-editorial-card--intro">
+          <div class="location-editorial-card__head">
+            <p class="finder-kicker">Editorial</p>
+            <h2 class="location-editorial-card__title">{areaIntroTitle}</h2>
+          </div>
+          <div class="location-editorial-copy">
+            {(areaIntroParagraphs.length ? areaIntroParagraphs : [areaIntroFallback]).map((paragraph) => (
+              <p>{paragraph}</p>
+            ))}
+          </div>
+          <div class="location-editorial-actions">
+            <a class="location-change-search-button" href={changeSearchHref}>Change search area</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="finder-title" class="home-finder shell">
+      <h2 class="visually-hidden" id="finder-title">{location.name} schools</h2>
+      <div class="finder-grid">
+        <div class="finder-left-column">
+          <div class="finder-left-inner">
+            <div class="finder-panel finder-map-panel">
+              <div class="finder-results-head finder-results-head--map">
+                <div>
+                  <p class="finder-kicker">Map</p>
+                  <h3 class="finder-results-title">School locations</h3>
+                </div>
+              </div>
+              <div aria-label={`${location.name} school map`} class="homepage-map" id="homepage-map"></div>
+              <p class="finder-note" id="homepage-map-empty" hidden>School locations are being updated.</p>
             </div>
-          ))}
-        </div>
-      </section>
 
-      <aside class="location-map-panel">
-        <div class="location-map-head">
-          <p class="nav-kicker">{location.name} map</p>
-          <h2>School locations</h2>
+            <div class="finder-panel finder-locations">
+              <div class="finder-locations-head">
+                <div>
+                  <p class="finder-kicker">Nearby areas</p>
+                  <h3 class="finder-results-title">Nearby locations</h3>
+                </div>
+              </div>
+              <label class="visually-hidden" for="guide-location-search">Search nearby locations</label>
+              <input autocomplete="off" class="location-search" id="guide-location-search" placeholder="Browse nearby locations" type="search" />
+              <ul class="location-list" id="guide-location-list">
+                {nearbyLocations.map((item) => (
+                  <li>
+                    <a class="location-link is-live" data-location-item data-name={item.name} data-search={item.searchText} href={item.href}>
+                      <span class="location-name">{item.name}</span>
+                      <span class="location-state">{item.subtitle || 'Private school guide'}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
-        <div
-          id="location-directory-map"
-          class="bath-location-map"
-          aria-label={`${location.name} school map`}
-          data-directory-map
-          data-map-data-id="location-map-data"
-          data-fallback-lat={fallbackLat ?? undefined}
-          data-fallback-lng={fallbackLng ?? undefined}
-          data-fallback-zoom="11"
-        ></div>
-        <p id="location-map-empty" class="location-intro" hidden>School locations are being updated.</p>
-      </aside>
-    </div>
+
+        <div class="finder-panel finder-cards-panel">
+          <div class="finder-results-head finder-results-head--results">
+            <div>
+              <p class="finder-kicker">School results</p>
+              <h2 class="finder-results-title">Schools</h2>
+            </div>
+            <p aria-live="polite" class="finder-results-summary" id="homepage-results-summary">Showing all {initialSchoolCount} schools in this area.</p>
+          </div>
+
+          <div class="homepage-results-toolbar">
+            <div class="homepage-view-toggle" role="tablist" aria-label="Location result view">
+              <button class="homepage-view-button is-active" data-view-mode="tiles" type="button">Tiles</button>
+              <button class="homepage-view-button" data-view-mode="table" type="button">Table</button>
+            </div>
+
+            <div class="homepage-table-controls" id="homepage-table-controls" hidden>
+              <div class="homepage-view-toggle homepage-view-toggle--sub" role="tablist" aria-label="Location table data view">
+                <button class="homepage-view-button is-active" data-table-section="glance" type="button">At a glance</button>
+                <button class="homepage-view-button" data-table-section="dayFees" type="button">Annual day fees</button>
+                <button class="homepage-view-button" data-table-section="boardingFees" type="button">Annual boarding fees</button>
+                <button class="homepage-view-button" data-table-section="alevel" type="button">A-levels</button>
+              </div>
+
+              <div class="homepage-table-nav">
+                <button class="homepage-table-nav__button" id="homepage-table-prev" type="button" aria-label="Previous schools">←</button>
+                <p class="homepage-table-nav__label" id="homepage-table-page-label">Schools 1–6</p>
+                <button class="homepage-table-nav__button" id="homepage-table-next" type="button" aria-label="Next schools">→</button>
+                <button class="homepage-table-show-all" id="homepage-table-show-all" type="button">Show all</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="homepage-visible-school-grid" id="homepage-visible-school-grid"></div>
+          <div class="homepage-school-table-wrap" id="homepage-school-table-wrap" hidden>
+            <div class="homepage-school-table-scroll">
+              <table class="homepage-school-table" id="homepage-school-table"></table>
+            </div>
+          </div>
+          <p class="finder-note" id="homepage-visible-school-empty" hidden>No schools are currently visible on the map.</p>
+
+          <article class="location-editorial-card location-editorial-card--lower">
+            <div class="location-editorial-card__head">
+              <p class="finder-kicker">Editorial</p>
+              <h2 class="location-editorial-card__title">{localInsightsTitle}</h2>
+            </div>
+            <div class="location-editorial-copy">
+              {(localInsightsParagraphs.length ? localInsightsParagraphs : [`Local insights for ${location.name} will be added here as this page is developed.`]).map((paragraph) => (
+                <p>{paragraph}</p>
+              ))}
+            </div>
+          </article>
+
+          <article class="location-editorial-card location-editorial-card--lower">
+            <div class="location-editorial-card__head">
+              <p class="finder-kicker">FAQs</p>
+              <h2 class="location-editorial-card__title">Frequently asked questions</h2>
+            </div>
+            {faqItems.length ? (
+              <div class="location-faq-list">
+                {faqItems.map((item) => (
+                  <details class="location-faq-item">
+                    <summary>{item.question}</summary>
+                    <div class="location-faq-answer">
+                      {paragraphise(item.answer).map((paragraph) => (
+                        <p>{paragraph}</p>
+                      ))}
+                    </div>
+                  </details>
+                ))}
+              </div>
+            ) : (
+              <p class="finder-note">FAQs for {location.name} will appear here as this page is expanded.</p>
+            )}
+          </article>
+        </div>
+      </div>
+    </section>
   </main>
 
   <SiteFooter />
 
-  <script is:inline set:html={locationMapScript}></script>
-  <script type="application/json" id="location-map-data">{JSON.stringify(mapSchools)}</script>
+  <script is:inline set:html={locationSchoolSearchScript}></script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script defer src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js" crossorigin=""></script>
-  <script defer src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js" crossorigin=""></script>
-  <script defer src="/assets/js/location-pages.js?v=20260401-openfreemap-bright"></script>
+  <script defer src="/assets/js/homepage.js?v=20260401-location-landing"></script>
 </BaseLayout>

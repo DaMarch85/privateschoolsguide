@@ -22,6 +22,21 @@ export type LocationRecord = {
   show_on_homepage?: boolean | null;
   homepage_order?: number | null;
   homepage_status_label?: string | null;
+  hero_subtitle?: string | null;
+  search_terms?: string[] | string | null;
+  hero_image?: string | null;
+  hero_image_alt?: string | null;
+  default_school_hero_image?: string | null;
+  nav_compare_overview?: boolean | null;
+  nav_compare_alevels?: boolean | null;
+  nav_fees?: boolean | null;
+  nav_bursaries?: boolean | null;
+  nav_open_days?: boolean | null;
+  nav_moving_to_section?: boolean | null;
+  location_type?: string | null;
+  local_insights_title?: string | null;
+  local_insights_body?: string | null;
+  faq_items?: unknown;
 };
 
 export type HomepageLocationRecord = {
@@ -1211,6 +1226,7 @@ function buildHomepageFeeMap(rows: AnnualFeeRecord[], feeTypes: string[]): Recor
 }
 
 export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]> {
+  return memoizeBuildPromise('getHomepageSearchSchools', async () => {
   const linkedSchools = await getGlobalLinkedSchools();
   const locationSlugBySchoolId = new Map(linkedSchools.map((row) => [row.id, row.locationSlug]));
   const schools = await getHomepageSearchSchoolRows();
@@ -1314,6 +1330,7 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
       isManaged: Boolean(school.profile_managed_by_school),
       alevel: aggregateAlevelMetrics(latestExam, subjectRows)
     } satisfies HomepageSearchSchool;
+  });
   });
 }
 
