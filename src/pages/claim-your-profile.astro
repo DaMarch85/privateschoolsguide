@@ -2,15 +2,16 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
-import { getClaimableSchoolOptions } from '../lib/directory';
+import { getClaimableSchoolOptions, getManageableSchoolOptions } from '../lib/directory';
 import { SCHOOL_PACKAGE_DEFINITIONS } from '../lib/school-commercial';
 
 const claimableSchools = await getClaimableSchoolOptions();
+const manageableSchools = await getManageableSchoolOptions();
 const functionsBase = String(import.meta.env.PUBLIC_SUPABASE_FUNCTIONS_BASE_URL || 'https://rmxsymdoprmgjgmwwaop.supabase.co/functions/v1').replace(/\/$/, '');
 ---
 <BaseLayout
   title="For schools | The Private School Guide"
-  description="Claim your school profile, upload official imagery, add website and admissions links, and choose a managed listing package."
+  description="Claim your school profile, upload official imagery, add website and admissions links, and choose a school-supported listing package."
   canonicalPath="/claim-your-profile/"
   bodyClass="claim-profile-page"
 >
@@ -28,15 +29,23 @@ const functionsBase = String(import.meta.env.PUBLIC_SUPABASE_FUNCTIONS_BASE_URL 
         <p class="claim-kicker">For schools</p>
         <h1 id="claim-hero-title">Claim or improve your school profile</h1>
         <p class="claim-hero__lede">
-          Add official imagery, direct parents to your website and admissions page, and choose a managed profile package that fits how visible you want to be in the directory.
+          Add official imagery, direct parents to your website and admissions page, and choose a school-supported profile package that fits how visible you want to be in the directory.
         </p>
+      </div>
+    </section>
+
+    <section class="claim-section shell" aria-live="polite" hidden id="claim-payment-result">
+      <div class="claim-result-card" id="claim-payment-result-card">
+        <p class="claim-kicker" id="claim-payment-result-kicker">Payment update</p>
+        <h2 id="claim-payment-result-title">Payment successful</h2>
+        <p id="claim-payment-result-message"></p>
       </div>
     </section>
 
     <section class="claim-section shell" id="packages" aria-labelledby="packages-title">
       <div class="claim-section__heading">
         <p class="claim-kicker">Packages</p>
-        <h2 id="packages-title">Managed school profile packages</h2>
+        <h2 id="packages-title">School-supported profile packages</h2>
         <p>Start with a free claimed profile or choose a visibility package with stronger placement and richer content.</p>
       </div>
 
@@ -195,7 +204,7 @@ const functionsBase = String(import.meta.env.PUBLIC_SUPABASE_FUNCTIONS_BASE_URL 
             <p class="claim-kicker">Selected package</p>
             <h4 data-selected-plan-name>Claimed profile</h4>
             <p data-selected-plan-price>Free</p>
-            <p data-selected-plan-summary>Keeps the profile accurate and clearly school-managed.</p>
+            <p data-selected-plan-summary>Keeps the profile accurate and clearly school-supported.</p>
           </div>
 
           <p class="claim-note">
@@ -210,6 +219,62 @@ const functionsBase = String(import.meta.env.PUBLIC_SUPABASE_FUNCTIONS_BASE_URL 
       </form>
     </section>
 
+
+    <section class="claim-section shell" id="manage-profile" aria-labelledby="manage-profile-title">
+      <div class="claim-section__heading">
+        <p class="claim-kicker">Manage a live profile</p>
+        <h2 id="manage-profile-title">Already support a school profile?</h2>
+        <p>Check the current package on a school-supported profile, then upgrade, downgrade or cancel it.</p>
+      </div>
+
+      <form class="claim-form-grid" data-functions-base={functionsBase} id="school-manage-form" novalidate>
+        <div class="claim-form-card">
+          <fieldset>
+            <legend>School and contact details</legend>
+
+            <label class="claim-field">
+              <span>Search for your school</span>
+              <input autocomplete="off" id="manage-school-search" inputmode="search" placeholder="Type your school name…" spellcheck="false" type="search" />
+              <small id="manage-school-search-help">Start typing to narrow the list, then choose the school below.</small>
+            </label>
+
+            <label class="claim-field">
+              <span>School</span>
+              <select id="manage-school-id" name="school_id" required>
+                <option value="">Select your school</option>
+                {manageableSchools.map((school) => (
+                  <option data-school-label={school.label} data-school-slug={school.slug} value={school.id}>{school.label}</option>
+                ))}
+              </select>
+              <small id="manage-school-search-results">Only live school-supported profiles appear here.</small>
+            </label>
+
+            <label class="claim-field">
+              <span>School contact email</span>
+              <input autocomplete="email" id="manage-contact-email" name="contact_email" required type="email" />
+              <small>Use the same contact email address used for the live school-supported profile.</small>
+            </label>
+          </fieldset>
+        </div>
+
+        <aside class="claim-form-card claim-form-card--sidebar">
+          <h3>Current package</h3>
+          <div class="claim-summary-box" id="manage-summary-box">
+            <h4 id="manage-summary-plan">Not loaded yet</h4>
+            <p id="manage-summary-price">Choose your school and contact email, then check the live profile.</p>
+            <p id="manage-summary-detail">You can then upgrade, downgrade or cancel the current package.</p>
+          </div>
+          <div class="claim-manage-actions" hidden id="manage-action-buttons"></div>
+        </aside>
+
+        <div class="claim-form-actions">
+          <p class="claim-status" aria-live="polite" hidden id="school-manage-status"></p>
+          <div class="claim-manage-button-row">
+            <button class="button claim-submit-button" id="school-manage-status-button" type="submit">Check current profile</button>
+          </div>
+        </div>
+      </form>
+    </section>
 
   </main>
 

@@ -447,12 +447,19 @@ export function getAgeLabel(ageMin: number | null, ageMax: number | null): strin
   return 'To be confirmed';
 }
 
-export function getSchoolWebsiteUrl(school: Pick<SchoolSummaryRecord, 'website' | 'website_override_url'>): string | null {
-  const preferred = String(school.website_override_url || '').trim();
-  if (preferred) return preferred;
+function normalizeExternalUrl(value: unknown): string | null {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  const candidate = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  try {
+    return new URL(candidate).toString();
+  } catch {
+    return null;
+  }
+}
 
-  const fallback = String(school.website || '').trim();
-  return fallback || null;
+export function getSchoolWebsiteUrl(school: Pick<SchoolSummaryRecord, 'website' | 'website_override_url'>): string | null {
+  return normalizeExternalUrl(school.website_override_url) || normalizeExternalUrl(school.website);
 }
 
 function firstNonEmptyText(...values: Array<unknown>): string | null {
@@ -1808,6 +1815,42 @@ export async function getClaimableSchoolOptions(): Promise<ClaimableSchoolOption
     .sort((a, b) => a.name.localeCompare(b.name, 'en') || a.locationName.localeCompare(b.locationName, 'en'));
 }
 
+export async function getManageableSchoolOptions(): Promise<ClaimableSchoolOption[]> {
+  const locations = await getLiveLocations();
+  if (!locations.length) return [];
+
+  const locationById = new Map(locations.map((location) => [String(location.id), location]));
+  const links = await getLocationSchoolPathLinks(locations.map((location) => location.id));
+  const firstLocationBySchoolId = new Map<string, LocationRecord>();
+
+  links.forEach((link) => {
+    const schoolKey = String(link.school_id);
+    if (firstLocationBySchoolId.has(schoolKey)) return;
+    const location = locationById.get(String(link.location_id));
+    if (location) firstLocationBySchoolId.set(schoolKey, location);
+  });
+
+  const schools = await getSchoolsByIds(Array.from(firstLocationBySchoolId.keys()));
+
+  return schools
+    .filter((school) => school.profile_managed_by_school || normalizeSchoolProfilePackage(school.profile_package) !== 'organic')
+    .map((school) => {
+      const location = firstLocationBySchoolId.get(String(school.id));
+      if (!location) return null;
+
+      return {
+        id: String(school.id),
+        slug: school.slug,
+        name: school.name,
+        locationSlug: location.slug,
+        locationName: location.name,
+        label: `${school.name} — ${location.name}`
+      } satisfies ClaimableSchoolOption;
+    })
+    .filter((row): row is ClaimableSchoolOption => Boolean(row))
+    .sort((a, b) => a.name.localeCompare(b.name, 'en') || a.locationName.localeCompare(b.locationName, 'en'));
+}
+
 export async function getLocationSchoolProfile(locationSlug: string, schoolSlug: string, options: { allowUnlinkedSchool?: boolean } = {}) {
   const { location, locationLinks, schoolIds, schools: linkedSchools } = await getOrderedLocationSchools(locationSlug);
 
@@ -1961,7 +2004,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const canonicalPath = `/schools/${school.slug}/`;
   const coordinates = getSchoolCoordinates(school);
   const officialWebsiteUrl = getSchoolWebsiteUrl(school);
-  const contactFormUrl = String(school.contact_form_url || '').trim() || null;
+  const contactFormUrl = normalizeExternalUrl(school.contact_form_url);
   const profilePackage = normalizeSchoolProfilePackage(school.profile_package);
   const profileBadgeLabel = getSchoolPackageBadge(profilePackage);
   const profileManagedLabel = school.profile_managed_by_school ? getSchoolManagedLabel(profilePackage) : null;

@@ -18,7 +18,7 @@ export const SCHOOL_PACKAGE_DEFINITIONS: SchoolPackageDefinition[] = [
     name: 'Claimed profile',
     monthlyPriceLabel: 'Free',
     headline: 'For schools that want to manage their official presence.',
-    visibilitySummary: 'Keeps the profile accurate and clearly school-managed.',
+    visibilitySummary: 'Keeps the profile accurate and clearly school-supported.',
     ctaLabel: 'Claim profile',
     features: [
       'Claim and verify the school profile',
@@ -40,7 +40,7 @@ export const SCHOOL_PACKAGE_DEFINITIONS: SchoolPackageDefinition[] = [
       'Up to 5 school images',
       'Official website and admissions/contact links',
       'Highlighted open day link',
-      'Profile managed by school badge'
+      'Profile supported by school badge'
     ]
   },
   {
@@ -96,7 +96,7 @@ export function getSchoolPackageBadge(value: unknown): string | null {
 export function getSchoolManagedLabel(value: unknown): string | null {
   const pkg = normalizeSchoolProfilePackage(value);
   if (pkg === 'claimed' || pkg === 'enhanced' || pkg === 'featured') {
-    return 'Profile managed by school';
+    return 'Profile supported by school';
   }
   return null;
 }

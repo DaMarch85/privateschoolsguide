@@ -27,7 +27,11 @@
     tablePage: 0,
     hiddenTableSchoolIds: new Set(),
     debouncedApplyTimer: null,
-    mapReady: false
+    mapReady: false,
+    markersBySchoolId: new Map(),
+    hoveredSchoolId: null,
+    initialMapFocus: null,
+    mapFocusLocation: null
   };
 
   function escapeHtml(str) {
@@ -404,9 +408,10 @@
     const eyebrow = point.distanceMiles !== null && Number.isFinite(point.distanceMiles)
       ? (point.displayLocation ? escapeHtml(point.displayLocation) + ' · ' : '') + escapeHtml(formatDistanceLabel(point.distanceMiles))
       : escapeHtml(point.displayLocation || '');
+    const sharedAttributes = ' class="homepage-school-card homepage-school-card--' + escapeHtml(point.type) + (point.href ? '' : ' homepage-school-card--static') + '" data-school-id="' + escapeHtml(point.id) + '"';
     const wrapperStart = point.href
-      ? '<a class="homepage-school-card homepage-school-card--' + escapeHtml(point.type) + '" href="' + escapeHtml(point.href) + '">'
-      : '<article class="homepage-school-card homepage-school-card--' + escapeHtml(point.type) + ' homepage-school-card--static">';
+      ? '<a' + sharedAttributes + ' href="' + escapeHtml(point.href) + '">'
+      : '<article' + sharedAttributes + '>';
     const wrapperEnd = point.href ? '</a>' : '</article>';
 
     return wrapperStart +
@@ -418,6 +423,41 @@
       (extras.length ? '<p class="homepage-school-card__meta homepage-school-card__meta--secondary">' + escapeHtml(extras.join(' · ')) + '</p>' : '') +
       (!point.href ? '<p class="homepage-school-card__status">Profile coming soon</p>' : '') +
       '</div>' + wrapperEnd;
+  }
+
+  function setHoveredSchoolId(nextSchoolId) {
+    const nextId = nextSchoolId ? String(nextSchoolId) : null;
+    if (state.hoveredSchoolId === nextId) return;
+
+    if (state.hoveredSchoolId && state.markersBySchoolId.has(state.hoveredSchoolId)) {
+      const previousMarker = state.markersBySchoolId.get(state.hoveredSchoolId);
+      const previousElement = previousMarker && previousMarker.getElement ? previousMarker.getElement() : null;
+      if (previousElement) previousElement.classList.remove('is-highlighted');
+    }
+
+    state.hoveredSchoolId = nextId;
+
+    if (nextId && state.markersBySchoolId.has(nextId)) {
+      const nextMarker = state.markersBySchoolId.get(nextId);
+      const nextElement = nextMarker && nextMarker.getElement ? nextMarker.getElement() : null;
+      if (nextElement) nextElement.classList.add('is-highlighted');
+    }
+  }
+
+  function bindCardHoverStates() {
+    const cardGrid = document.getElementById('homepage-visible-school-grid');
+    if (!cardGrid) return;
+
+    Array.from(cardGrid.querySelectorAll('[data-school-id]')).forEach(function (card) {
+      const schoolId = card.getAttribute('data-school-id');
+      if (!schoolId) return;
+      card.addEventListener('mouseenter', function () { setHoveredSchoolId(schoolId); });
+      card.addEventListener('mouseleave', function () { setHoveredSchoolId(null); });
+      card.addEventListener('focusin', function () { setHoveredSchoolId(schoolId); });
+      card.addEventListener('focusout', function (event) {
+        if (!card.contains(event.relatedTarget)) setHoveredSchoolId(null);
+      });
+    });
   }
 
   function createBaseLayer() {
@@ -483,13 +523,14 @@
     renderResultsOnly();
   }
 
-  function redrawMap(results, filters, resolvedLocation) {
+  function redrawMap(results, filters, resolvedLocation, mapFocusLocation) {
     const map = ensureMap();
     const emptyState = document.getElementById('homepage-map-empty');
     if (!map || !state.markerLayer || !state.searchLayer) return;
 
     state.markerLayer.clearLayers();
     state.searchLayer.clearLayers();
+    state.markersBySchoolId = new Map();
     const boundsLayers = [];
 
     if (resolvedLocation) {
@@ -514,6 +555,9 @@
       const marker = window.L.marker([school.lat, school.lng], { icon: buildIcon(school.type) });
       marker.bindPopup(popupHtml(school));
       state.markerLayer.addLayer(marker);
+      if (school.id) {
+        state.markersBySchoolId.set(String(school.id), marker);
+      }
       boundsLayers.push(marker);
     });
 
@@ -526,10 +570,18 @@
       }
     }
 
-    if (boundsLayers.length) {
+    if (resolvedLocation && boundsLayers.length) {
+      map.fitBounds(window.L.featureGroup(boundsLayers).getBounds(), { padding: [28, 28], maxZoom: 11, animate: false });
+    } else if (mapFocusLocation) {
+      map.setView([mapFocusLocation.lat, mapFocusLocation.lng], mapFocusLocation.zoom || 14, { animate: false });
+    } else if (boundsLayers.length) {
       map.fitBounds(window.L.featureGroup(boundsLayers).getBounds(), { padding: [28, 28], maxZoom: 11, animate: false });
     } else {
       map.setView(UK_DEFAULT_CENTER, UK_DEFAULT_ZOOM, { animate: false });
+    }
+
+    if (state.hoveredSchoolId) {
+      setHoveredSchoolId(state.hoveredSchoolId);
     }
 
     window.requestAnimationFrame(function () {
@@ -674,6 +726,7 @@
     if (!cardGrid) return;
     const shown = state.visibleSchools.slice(0, MAX_VISIBLE_TILES);
     cardGrid.innerHTML = shown.map(schoolCardHtml).join('');
+    bindCardHoverStates();
   }
 
   function updateResultsSummary() {
@@ -791,6 +844,8 @@
     if (searchKey) {
       if (state.resolvedLocation && state.resolvedLocation.key === searchKey) {
         resolvedLocation = state.resolvedLocation;
+      } else if (state.mapFocusLocation && state.mapFocusLocation.key === searchKey) {
+        resolvedLocation = state.mapFocusLocation;
       } else {
         resolvedLocation = await resolveSearchLocation(filters.locationQuery);
         if (requestId !== state.activeRequestId) return;
@@ -800,7 +855,19 @@
 
     if (requestId !== state.activeRequestId) return;
 
-    state.resolvedLocation = resolvedLocation ? {
+    const useCenterOnlyMap = Boolean(
+      resolvedLocation && state.initialMapFocus && state.initialMapFocus.key === searchKey
+    );
+
+    state.mapFocusLocation = useCenterOnlyMap && resolvedLocation ? {
+      key: searchKey,
+      lat: resolvedLocation.lat,
+      lng: resolvedLocation.lng,
+      label: resolvedLocation.label,
+      zoom: state.initialMapFocus.zoom
+    } : null;
+
+    state.resolvedLocation = !useCenterOnlyMap && resolvedLocation ? {
       key: searchKey,
       lat: resolvedLocation.lat,
       lng: resolvedLocation.lng,
@@ -811,7 +878,7 @@
     state.filteredSchools = filterSchools(filters, state.resolvedLocation);
     state.visibleSchools = state.filteredSchools.slice();
     renderResultsOnly();
-    redrawMap(state.filteredSchools, filters, state.resolvedLocation);
+    redrawMap(state.filteredSchools, filters, state.resolvedLocation, state.mapFocusLocation);
   }
 
   function bindFilterForm() {
@@ -831,19 +898,20 @@
     form.querySelectorAll('input[type="checkbox"]').forEach(function (input) {
       input.addEventListener('change', function () {
         refreshFilterDropdownLabels();
-        closeFilterDropdowns();
         applyFilters();
       });
     });
 
     if (locationInput) {
       locationInput.addEventListener('input', function () {
+        state.initialMapFocus = null;
         scheduleApplyFilters(350);
       });
     }
 
     if (radiusInput) {
       radiusInput.addEventListener('input', function () {
+        state.initialMapFocus = null;
         scheduleApplyFilters(250);
       });
     }
@@ -852,6 +920,8 @@
       resetButton.addEventListener('click', function () {
         form.reset();
         state.resolvedLocation = null;
+        state.mapFocusLocation = null;
+        state.initialMapFocus = null;
         state.hiddenTableSchoolIds.clear();
         state.tablePage = 0;
         closeFilterDropdowns();
@@ -870,6 +940,8 @@
     const params = new URLSearchParams(window.location.search || '');
     const locationValue = params.get('location');
     const radiusValue = params.get('radius');
+    const mapMode = params.get('map');
+    const zoomValue = parsePositiveNumber(params.get('zoom'), 14);
     const locationInput = form.querySelector('#school-filter-location');
     const radiusInput = form.querySelector('#school-filter-radius');
 
@@ -880,6 +952,13 @@
     if (radiusInput && radiusValue) {
       const parsedRadius = parsePositiveNumber(radiusValue, DEFAULT_RADIUS_MILES);
       radiusInput.value = String(parsedRadius);
+    }
+
+    if (locationValue && mapMode === 'centered') {
+      state.initialMapFocus = {
+        key: normalizeSearchQuery(locationValue),
+        zoom: zoomValue
+      };
     }
   }
 

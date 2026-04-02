@@ -125,7 +125,7 @@ const nearbyLocations = liveLocations
   .sort((a, b) => a.distanceMiles - b.distanceMiles || a.name.localeCompare(b.name, 'en'))
   .slice(0, 10);
 
-const changeSearchHref = `/?location=${encodeURIComponent(location.name)}&radius=10`;
+const changeSearchHref = `/?location=${encodeURIComponent(location.name)}&map=centered&zoom=14`;
 const locationSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.stringify(locationSchools)};`;
 const initialSchoolCount = formatCount(locationSchools.length);
 ---

@@ -65,6 +65,86 @@
     });
   }
 
+  function initHeroSlideshow() {
+    const slideshow = document.querySelector('[data-hero-slideshow]');
+    if (!slideshow || slideshow.dataset.bound === 'true') return;
+
+    const slides = Array.from(slideshow.querySelectorAll('[data-hero-slide]'));
+    if (slides.length <= 1) return;
+
+    const dots = Array.from(slideshow.querySelectorAll('[data-hero-dot]'));
+    const prevButton = slideshow.querySelector('[data-hero-prev]');
+    const nextButton = slideshow.querySelector('[data-hero-next]');
+    const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let activeIndex = 0;
+    let timer = null;
+
+    function renderSlides(nextIndex) {
+      activeIndex = (nextIndex + slides.length) % slides.length;
+      slides.forEach((slide, index) => {
+        slide.classList.toggle('is-active', index === activeIndex);
+      });
+      dots.forEach((dot, index) => {
+        dot.classList.toggle('is-active', index === activeIndex);
+        dot.setAttribute('aria-pressed', index === activeIndex ? 'true' : 'false');
+      });
+    }
+
+    function stopAutoplay() {
+      if (timer) {
+        window.clearInterval(timer);
+        timer = null;
+      }
+    }
+
+    function startAutoplay() {
+      if (prefersReducedMotion) return;
+      stopAutoplay();
+      timer = window.setInterval(function () {
+        renderSlides(activeIndex + 1);
+      }, 5000);
+    }
+
+    if (prevButton) {
+      prevButton.addEventListener('click', function () {
+        renderSlides(activeIndex - 1);
+        startAutoplay();
+      });
+    }
+
+    if (nextButton) {
+      nextButton.addEventListener('click', function () {
+        renderSlides(activeIndex + 1);
+        startAutoplay();
+      });
+    }
+
+    dots.forEach((dot) => {
+      dot.addEventListener('click', function () {
+        const nextIndex = Number(dot.getAttribute('data-hero-index'));
+        if (Number.isFinite(nextIndex)) {
+          renderSlides(nextIndex);
+          startAutoplay();
+        }
+      });
+    });
+
+    slideshow.addEventListener('mouseenter', stopAutoplay);
+    slideshow.addEventListener('mouseleave', startAutoplay);
+    slideshow.addEventListener('focusin', stopAutoplay);
+    slideshow.addEventListener('focusout', function (event) {
+      if (!slideshow.contains(event.relatedTarget)) startAutoplay();
+    });
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) stopAutoplay();
+      else startAutoplay();
+    });
+
+    slideshow.dataset.bound = 'true';
+    renderSlides(0);
+    startAutoplay();
+  }
+
   function normalizeMapData(raw) {
     if (!raw || typeof raw !== "object") return null;
     const lat = Number(raw.lat ?? raw.latitude);
@@ -479,6 +559,7 @@
   }
 
   bindTileInteractions(document);
+  initHeroSlideshow();
   renderCurrentMap(0);
 
   async function fetchSchool(slug) {
@@ -657,8 +738,8 @@
   sideCompareLinks.forEach((link) => {
     link.addEventListener("click", (event) => {
       const href = link.getAttribute("href") || "";
-      const url = new URL(href, window.location.origin);
-      let target = url.searchParams.get("compare");
+      const url = new URL(href || window.location.href, window.location.origin);
+      let target = link.dataset.compareSchool || url.searchParams.get("compare");
       if (!target && url.searchParams.get("schools")) {
         const schools = url.searchParams.get("schools").split(",");
         target = schools.find((slug) => slug && slug !== currentSlug);

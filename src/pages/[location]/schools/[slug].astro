@@ -20,6 +20,16 @@ if (!locationSlug || !slug) throw new Error('Missing location or school slug');
 
 const profile = await getLocationSchoolProfile(locationSlug, slug);
 const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(profile.mapData)};`;
+const heroSlides = Array.from(
+  new Map(
+    [
+      { url: profile.heroImageUrl, alt: profile.heroImageAlt || `${profile.school.name} hero image`, imageType: 'hero' },
+      ...profile.galleryImages
+    ]
+      .filter((image) => Boolean(image?.url))
+      .map((image) => [image.url, image])
+  ).values()
+);
 ---
 <BaseLayout
   title={`${profile.school.name} | ${profile.location.name} school profile`}
@@ -38,8 +48,36 @@ const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(profile.
   <a class="skip-link" href="#main">Skip to content</a>
   <SiteHeader minimal={true} />
 
-  <section aria-labelledby="school-page-title" class="school-profile-hero">
-    <img alt={profile.heroImageAlt} src={profile.heroImageUrl} />
+  <section aria-labelledby="school-page-title" class={`school-profile-hero ${heroSlides.length > 1 ? 'school-profile-hero--slideshow' : ''}`}>
+    <div class="school-profile-hero-media" data-hero-slideshow={heroSlides.length > 1 ? 'true' : undefined}>
+      {heroSlides.map((image, index) => (
+        <img
+          alt={image.alt || `${profile.school.name} image ${index + 1}`}
+          class={`school-profile-hero-slide ${index === 0 ? 'is-active' : ''}`}
+          data-hero-slide
+          loading={index === 0 ? 'eager' : 'lazy'}
+          src={image.url}
+        />
+      ))}
+
+      {heroSlides.length > 1 ? (
+        <div class="school-profile-hero-controls" aria-label="School image gallery controls">
+          <button aria-label="Previous school image" class="school-profile-hero-control" data-hero-prev type="button">←</button>
+          <div class="school-profile-hero-dots" role="tablist" aria-label="School image slides">
+            {heroSlides.map((image, index) => (
+              <button
+                aria-label={`Show image ${index + 1}`}
+                class={`school-profile-hero-dot ${index === 0 ? 'is-active' : ''}`}
+                data-hero-dot
+                data-hero-index={index}
+                type="button"
+              ></button>
+            ))}
+          </div>
+          <button aria-label="Next school image" class="school-profile-hero-control" data-hero-next type="button">→</button>
+        </div>
+      ) : null}
+    </div>
     <div class="school-profile-hero-copy">
       {(profile.profileBadgeLabel || profile.profileManagedLabel) ? (
         <div class="school-profile-status-row">
@@ -76,7 +114,7 @@ const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(profile.
           <ul class="school-compare-links">
             {profile.compareLinks.map((link) => (
               <li>
-                <a data-compare-school={link.slug} href={`/schools/${link.slug}/`}>{link.name}</a>
+                <a data-compare-school={link.slug} href={`?compare=${encodeURIComponent(link.slug)}`}>{link.name}</a>
               </li>
             ))}
           </ul>
@@ -289,26 +327,10 @@ const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(profile.
           ) : null}
         </div>
 
-        {profile.galleryImages.length > 0 && (
-          <section class="school-gallery-section" aria-labelledby="school-gallery-title">
-            <div class="school-section-heading">
-              <p class="nav-kicker">Gallery</p>
-              <h2 id="school-gallery-title">School images</h2>
-            </div>
-            <div class="school-gallery-grid">
-              {profile.galleryImages.map((image, index) => (
-                <figure class="school-gallery-figure">
-                  <img alt={image.alt || `${profile.school.name} image ${index + 1}`} loading="lazy" src={image.url} />
-                </figure>
-              ))}
-            </div>
-          </section>
-        )}
-
         <section class="school-claim-cta" aria-labelledby="school-claim-cta-title">
           <p class="nav-kicker">For schools</p>
           <h2 id="school-claim-cta-title">School staff? Claim or improve this profile</h2>
-          <p>Upload official imagery, add your website and admissions links, and choose a managed profile package.</p>
+          <p>Upload official imagery, add your website and admissions links, and choose a school-supported profile package.</p>
           <a class="button-outline" href={`/claim-your-profile/?school=${profile.school.id}`}>Go to the school portal</a>
         </section>
       </section>

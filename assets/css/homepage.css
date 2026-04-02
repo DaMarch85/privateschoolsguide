@@ -620,3 +620,17 @@ body.home-minimal a{color:inherit;text-decoration:none}
     gap:.35rem;
   }
 }
+
+/* --- 2026-04-02 homepage/location tile-to-map hover highlight --- */
+.homepage-map .school-map-icon,
+.homepage-map .school-map-marker{
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.homepage-map .school-map-icon.is-highlighted{
+  z-index:1000 !important;
+}
+.homepage-map .school-map-icon.is-highlighted .school-map-marker{
+  transform:scale(1.4);
+  border-color:#fff;
+  box-shadow:0 0 0 4px rgba(179,91,46,.2), 0 10px 22px rgba(41,36,33,.22);
+}
