@@ -24,6 +24,7 @@
     currentFilters: null,
     viewMode: 'tiles',
     tableSection: 'glance',
+    sortMode: 'az',
     tablePage: 0,
     hiddenTableSchoolIds: new Set(),
     debouncedApplyTimer: null,
@@ -72,6 +73,35 @@
   function formatDistanceLabel(value) {
     if (!Number.isFinite(value)) return '';
     return formatMiles(value) + ' miles away';
+  }
+
+  function compareByName(a, b) {
+    return String(a && a.name || '').localeCompare(String(b && b.name || ''), 'en');
+  }
+
+  function getSortFeeValue(school, sortMode) {
+    if (sortMode === 'dayFees') return school.dayFeeAverage;
+    if (sortMode === 'boardingFees') return school.boardingFeeAverage;
+    return null;
+  }
+
+  function schoolMatchesSortMode(school, sortMode) {
+    if (sortMode === 'dayFees') return Number.isFinite(school.dayFeeAverage);
+    if (sortMode === 'boardingFees') return Number.isFinite(school.boardingFeeAverage);
+    return true;
+  }
+
+  function sortSchools(schools, sortMode) {
+    return schools.slice().sort(function (a, b) {
+      if (sortMode === 'dayFees' || sortMode === 'boardingFees') {
+        const aValue = getSortFeeValue(a, sortMode);
+        const bValue = getSortFeeValue(b, sortMode);
+        const delta = (aValue || 0) - (bValue || 0);
+        if (delta !== 0) return delta;
+      }
+
+      return compareByName(a, b);
+    });
   }
 
   function haversineMiles(lat1, lng1, lat2, lng2) {
@@ -137,6 +167,12 @@
           boyGirlSplit: item.boyGirlSplit || '',
           hasDayFees: Boolean(item.hasDayFees),
           hasBoardingFees: Boolean(item.hasBoardingFees),
+          dayFeeAverage: item.dayFeeAverage !== null && item.dayFeeAverage !== '' && Number.isFinite(Number(item.dayFeeAverage))
+            ? Number(item.dayFeeAverage)
+            : null,
+          boardingFeeAverage: item.boardingFeeAverage !== null && item.boardingFeeAverage !== '' && Number.isFinite(Number(item.boardingFeeAverage))
+            ? Number(item.boardingFeeAverage)
+            : null,
           dayFeesByYear: item.dayFeesByYear || {},
           boardingFeesByYear: item.boardingFeesByYear || {},
           packageSlug: item.packageSlug || 'organic',
@@ -359,7 +395,7 @@
     const boarding = new Set(filters.boarding || []);
     const religions = new Set(filters.religions || []);
 
-    return state.schools
+    const filtered = state.schools
       .map(function (school) {
         const distanceMiles = resolvedLocation ? haversineMiles(resolvedLocation.lat, resolvedLocation.lng, school.lat, school.lng) : null;
         return Object.assign({}, school, { distanceMiles: distanceMiles });
@@ -371,17 +407,11 @@
         if (filters.nurseryOnly && !school.hasNursery) return false;
         if (religions.size && !religions.has(school.religion)) return false;
         if (resolvedLocation && (!Number.isFinite(school.distanceMiles) || school.distanceMiles > filters.radiusMiles)) return false;
+        if (!schoolMatchesSortMode(school, state.sortMode)) return false;
         return true;
-      })
-      .sort(function (a, b) {
-        if (resolvedLocation) {
-          const delta = (a.distanceMiles || 0) - (b.distanceMiles || 0);
-          if (delta !== 0) return delta;
-        }
-        const packageDelta = (b.packagePriority || 0) - (a.packagePriority || 0);
-        if (packageDelta !== 0) return packageDelta;
-        return a.name.localeCompare(b.name, 'en');
       });
+
+    return sortSchools(filtered, state.sortMode);
   }
 
   function buildIcon(type) {
@@ -496,7 +526,9 @@
       zoomAnimation: false,
       fadeAnimation: false,
       markerZoomAnimation: false,
-      preferCanvas: true
+      preferCanvas: true,
+      minZoom: UK_DEFAULT_ZOOM,
+      maxBoundsViscosity: 1
     });
 
     state.tileLayer = createBaseLayer().addTo(state.map);
@@ -532,6 +564,19 @@
     state.searchLayer.clearLayers();
     state.markersBySchoolId = new Map();
     const boundsLayers = [];
+
+    if (typeof map.setMinZoom === 'function') {
+      map.setMinZoom(0);
+    }
+    if (typeof map.setMaxBounds === 'function') {
+      try {
+        map.setMaxBounds(null);
+      } catch (error) {
+        try {
+          map.setMaxBounds(window.L.latLngBounds([[-90, -180], [90, 180]]));
+        } catch (innerError) {}
+      }
+    }
 
     if (resolvedLocation) {
       const radiusCircle = window.L.circle([resolvedLocation.lat, resolvedLocation.lng], {
@@ -578,6 +623,17 @@
       map.fitBounds(window.L.featureGroup(boundsLayers).getBounds(), { padding: [28, 28], maxZoom: 11, animate: false });
     } else {
       map.setView(UK_DEFAULT_CENTER, UK_DEFAULT_ZOOM, { animate: false });
+    }
+
+    const constrainedBounds = map.getBounds();
+    const constrainedZoom = map.getZoom();
+    if (constrainedBounds && typeof constrainedBounds.isValid === 'function' && constrainedBounds.isValid()) {
+      if (typeof map.setMinZoom === 'function' && Number.isFinite(constrainedZoom)) {
+        map.setMinZoom(constrainedZoom);
+      }
+      if (typeof map.setMaxBounds === 'function') {
+        map.setMaxBounds(constrainedBounds.pad(0.2));
+      }
     }
 
     if (state.hoveredSchoolId) {
@@ -796,16 +852,17 @@
   }
 
   function syncViewControls() {
-    document.querySelectorAll('[data-view-mode]').forEach(function (button) {
-      const active = button.getAttribute('data-view-mode') === state.viewMode;
+    document.querySelectorAll('[data-result-view]').forEach(function (button) {
+      const view = button.getAttribute('data-result-view') || 'tiles';
+      const active = view === 'tiles'
+        ? state.viewMode === 'tiles'
+        : (state.viewMode === 'table' && state.tableSection === view);
       button.classList.toggle('is-active', active);
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
-    document.querySelectorAll('[data-table-section]').forEach(function (button) {
-      const active = button.getAttribute('data-table-section') === state.tableSection;
-      button.classList.toggle('is-active', active);
-      button.setAttribute('aria-pressed', active ? 'true' : 'false');
-    });
+
+    const sortSelect = document.getElementById('homepage-school-sort');
+    if (sortSelect) sortSelect.value = state.sortMode;
 
     const cards = document.getElementById('homepage-visible-school-grid');
     const tableWrap = document.getElementById('homepage-school-table-wrap');
@@ -963,20 +1020,25 @@
   }
 
   function bindResultViewControls() {
-    document.querySelectorAll('[data-view-mode]').forEach(function (button) {
+    document.querySelectorAll('[data-result-view]').forEach(function (button) {
       button.addEventListener('click', function () {
-        state.viewMode = button.getAttribute('data-view-mode') || 'tiles';
-        renderResultsOnly();
-      });
-    });
-
-    document.querySelectorAll('[data-table-section]').forEach(function (button) {
-      button.addEventListener('click', function () {
-        state.tableSection = button.getAttribute('data-table-section') || 'glance';
+        const nextView = button.getAttribute('data-result-view') || 'tiles';
+        state.viewMode = nextView === 'tiles' ? 'tiles' : 'table';
+        if (nextView !== 'tiles') state.tableSection = nextView;
         state.tablePage = 0;
         renderResultsOnly();
       });
     });
+
+    const sortSelect = document.getElementById('homepage-school-sort');
+    if (sortSelect) {
+      sortSelect.addEventListener('change', function () {
+        state.sortMode = sortSelect.value || 'az';
+        state.hiddenTableSchoolIds.clear();
+        state.tablePage = 0;
+        applyFilters();
+      });
+    }
 
     const prevButton = document.getElementById('homepage-table-prev');
     const nextButton = document.getElementById('homepage-table-next');
@@ -1009,6 +1071,76 @@
     });
   }
 
+  function bindLocationPanelToggle() {
+    const locationsPanel = document.querySelector('.finder-locations');
+    const toggleButton = document.querySelector('[data-location-toggle]');
+    if (!locationsPanel || !toggleButton) return;
+
+    let lastIsMobile = null;
+
+    function setCollapsed(collapsed) {
+      locationsPanel.classList.toggle('is-collapsed', collapsed);
+      toggleButton.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      toggleButton.textContent = collapsed ? 'Show locations' : 'Hide locations';
+    }
+
+    function syncCollapseForViewport() {
+      const isMobile = window.matchMedia('(max-width: 900px)').matches;
+      if (isMobile !== lastIsMobile) {
+        setCollapsed(isMobile);
+        lastIsMobile = isMobile;
+      } else if (!isMobile) {
+        setCollapsed(false);
+      }
+    }
+
+    toggleButton.addEventListener('click', function () {
+      setCollapsed(!locationsPanel.classList.contains('is-collapsed'));
+    });
+
+    syncCollapseForViewport();
+    window.addEventListener('resize', syncCollapseForViewport);
+  }
+
+  function bindResponsiveFinderLayout() {
+    const filterBar = document.querySelector('.home-school-filter-bar');
+    const finderLeftInner = document.querySelector('.finder-left-inner');
+    const mapPanel = finderLeftInner ? finderLeftInner.querySelector('.finder-map-panel') : null;
+    if (!filterBar || !finderLeftInner || !mapPanel) return;
+
+    const originalParent = filterBar.parentElement;
+    const originalNextSibling = filterBar.nextElementSibling;
+
+    function syncLayout() {
+      const isMobile = window.matchMedia('(max-width: 900px)').matches;
+
+      if (isMobile) {
+        if (filterBar.parentElement !== finderLeftInner) {
+          finderLeftInner.insertBefore(filterBar, mapPanel.nextSibling);
+        }
+        filterBar.classList.add('finder-filter-panel');
+      } else {
+        if (originalParent && filterBar.parentElement !== originalParent) {
+          if (originalNextSibling && originalNextSibling.parentElement === originalParent) {
+            originalParent.insertBefore(filterBar, originalNextSibling);
+          } else {
+            originalParent.appendChild(filterBar);
+          }
+        }
+        filterBar.classList.remove('finder-filter-panel');
+      }
+
+      if (state.map) {
+        window.requestAnimationFrame(function () {
+          try { state.map.invalidateSize({ pan: false, animate: false }); } catch (error) {}
+        });
+      }
+    }
+
+    syncLayout();
+    window.addEventListener('resize', syncLayout);
+  }
+
   function bootHomepageMap(attempt) {
     if (ensureMap()) return;
     if (attempt >= 50) return;
@@ -1017,6 +1149,8 @@
 
   function initHomepage() {
     state.schools = getSchoolData();
+    bindResponsiveFinderLayout();
+    bindLocationPanelToggle();
     bindGuideLocationSearch();
     bindFilterDropdowns();
     bindFilterForm();
