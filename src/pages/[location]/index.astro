@@ -123,7 +123,8 @@ const nearbyLocations = liveLocations
     };
   })
   .sort((a, b) => a.distanceMiles - b.distanceMiles || a.name.localeCompare(b.name, 'en'))
-  .slice(0, 10);
+  .slice(0, 10)
+  .sort((a, b) => a.name.localeCompare(b.name, 'en'));
 
 const changeSearchHref = `/?location=${encodeURIComponent(location.name)}&map=centered&zoom=14`;
 const locationSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.stringify(locationSchools)};`;
@@ -139,7 +140,7 @@ const initialSchoolCount = formatCount(locationSchools.length);
 >
   <Fragment slot="head">
     <link rel="stylesheet" href="/assets/css/styles.css" />
-    <link rel="stylesheet" href="/assets/css/homepage.css?v=20260401-location-landing" />
+    <link rel="stylesheet" href="/assets/css/homepage.css?v=20260407-location-landing" />
   </Fragment>
 
   <a class="skip-link" href="#main">Skip to content</a>
@@ -196,7 +197,6 @@ const initialSchoolCount = formatCount(locationSchools.length);
             <div class="finder-panel finder-map-panel">
               <div class="finder-results-head finder-results-head--map">
                 <div>
-                  <p class="finder-kicker">Map</p>
                   <h3 class="finder-results-title">School locations</h3>
                 </div>
               </div>
@@ -207,22 +207,24 @@ const initialSchoolCount = formatCount(locationSchools.length);
             <div class="finder-panel finder-locations">
               <div class="finder-locations-head">
                 <div>
-                  <p class="finder-kicker">Nearby areas</p>
                   <h3 class="finder-results-title">Nearby locations</h3>
                 </div>
+                <button class="finder-locations-toggle" data-location-toggle aria-controls="guide-location-panel" aria-expanded="true" type="button">Hide locations</button>
               </div>
-              <label class="visually-hidden" for="guide-location-search">Search nearby locations</label>
-              <input autocomplete="off" class="location-search" id="guide-location-search" placeholder="Browse nearby locations" type="search" />
-              <ul class="location-list" id="guide-location-list">
-                {nearbyLocations.map((item) => (
-                  <li>
-                    <a class="location-link is-live" data-location-item data-name={item.name} data-search={item.searchText} href={item.href}>
-                      <span class="location-name">{item.name}</span>
-                      <span class="location-state">{item.subtitle || 'Private school guide'}</span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
+              <div class="finder-locations-body" data-location-panel id="guide-location-panel">
+                <label class="visually-hidden" for="guide-location-search">Search nearby locations</label>
+                <input autocomplete="off" class="location-search" id="guide-location-search" placeholder="Browse nearby locations" type="search" />
+                <ul class="location-list" id="guide-location-list">
+                  {nearbyLocations.map((item) => (
+                    <li>
+                      <a class="location-link is-live" data-location-item data-name={item.name} data-search={item.searchText} href={item.href}>
+                        <span class="location-name">{item.name}</span>
+                        <span class="location-state">{item.subtitle || 'Private school guide'}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -230,7 +232,6 @@ const initialSchoolCount = formatCount(locationSchools.length);
         <div class="finder-panel finder-cards-panel">
           <div class="finder-results-head finder-results-head--results">
             <div>
-              <p class="finder-kicker">School results</p>
               <h2 class="finder-results-title">Schools</h2>
             </div>
             <p aria-live="polite" class="finder-results-summary" id="homepage-results-summary">Showing all {initialSchoolCount} schools in this area.</p>
@@ -238,18 +239,23 @@ const initialSchoolCount = formatCount(locationSchools.length);
 
           <div class="homepage-results-toolbar">
             <div class="homepage-view-toggle" role="tablist" aria-label="Location result view">
-              <button class="homepage-view-button is-active" data-view-mode="tiles" type="button">Tiles</button>
-              <button class="homepage-view-button" data-view-mode="table" type="button">Table</button>
+              <button class="homepage-view-button is-active" data-result-view="tiles" type="button">Schools</button>
+              <button class="homepage-view-button" data-result-view="glance" type="button">At a glance</button>
+              <button class="homepage-view-button" data-result-view="dayFees" type="button">Day fees</button>
+              <button class="homepage-view-button" data-result-view="boardingFees" type="button">Boarding fees</button>
+              <button class="homepage-view-button" data-result-view="alevel" type="button">A-levels</button>
+            </div>
+
+            <div class="homepage-sort-controls">
+              <label class="homepage-sort-label" for="homepage-school-sort">Sort by</label>
+              <select class="homepage-sort-select" id="homepage-school-sort">
+                <option value="az">A–Z</option>
+                <option value="dayFees">Day fees</option>
+                <option value="boardingFees">Boarding fees</option>
+              </select>
             </div>
 
             <div class="homepage-table-controls" id="homepage-table-controls" hidden>
-              <div class="homepage-view-toggle homepage-view-toggle--sub" role="tablist" aria-label="Location table data view">
-                <button class="homepage-view-button is-active" data-table-section="glance" type="button">At a glance</button>
-                <button class="homepage-view-button" data-table-section="dayFees" type="button">Annual day fees</button>
-                <button class="homepage-view-button" data-table-section="boardingFees" type="button">Annual boarding fees</button>
-                <button class="homepage-view-button" data-table-section="alevel" type="button">A-levels</button>
-              </div>
-
               <div class="homepage-table-nav">
                 <button class="homepage-table-nav__button" id="homepage-table-prev" type="button" aria-label="Previous schools">←</button>
                 <p class="homepage-table-nav__label" id="homepage-table-page-label">Schools 1–6</p>
@@ -310,5 +316,5 @@ const initialSchoolCount = formatCount(locationSchools.length);
 
   <script is:inline set:html={locationSchoolSearchScript}></script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script defer src="/assets/js/homepage.js?v=20260401-location-landing"></script>
+  <script defer src="/assets/js/homepage.js?v=20260407-location-landing"></script>
 </BaseLayout>
