@@ -256,6 +256,8 @@ export type HomepageSearchSchool = {
   boyGirlSplit: string | null;
   hasDayFees: boolean;
   hasBoardingFees: boolean;
+  dayFeeAverage: number | null;
+  boardingFeeAverage: number | null;
   dayFeesByYear: Record<string, string>;
   boardingFeesByYear: Record<string, string>;
   packageSlug: string;
@@ -1333,6 +1335,23 @@ function buildHomepageFeeMap(rows: AnnualFeeRecord[], feeTypes: string[]): Recor
   }));
 }
 
+function getHomepageAverageAnnualFee(rows: AnnualFeeRecord[], feeTypes: string[]): number | null {
+  const academicYears = Array.from(new Set(rows.map((row) => row.academic_year))).sort();
+  const latestAcademicYear = academicYears.at(-1) || null;
+  const activeRows = latestAcademicYear
+    ? rows.filter((row) => row.academic_year === latestAcademicYear && feeTypes.includes(row.fee_type))
+    : [];
+
+  const values = activeRows.flatMap((row) =>
+    ANNUAL_FEE_COLUMNS
+      .map(({ key }) => toNumber(row[key]))
+      .filter((value): value is number => value !== null)
+  );
+
+  if (!values.length) return null;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
 export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]> {
   const linkedSchools = await getGlobalLinkedSchools();
   const locationSlugBySchoolId = new Map(linkedSchools.map((row) => [row.id, row.locationSlug]));
@@ -1394,6 +1413,8 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
     const linkedLocationSlug = locationSlugBySchoolId.get(schoolId) || null;
     const href = `/schools/${school.slug}/`;
     const schoolFeeRows = feeRowsRaw.filter((row) => String(row.school_id) === schoolId);
+    const dayFeeAverage = getHomepageAverageAnnualFee(schoolFeeRows, ['day']);
+    const boardingFeeAverage = getHomepageAverageAnnualFee(schoolFeeRows, ['weekly_boarding', 'full_boarding']);
     const dayFeesByYear = buildHomepageFeeMap(schoolFeeRows, ['day']);
     const boardingFeesByYear = buildHomepageFeeMap(schoolFeeRows, ['weekly_boarding', 'full_boarding']);
     const hasDayFees = Object.values(dayFeesByYear).some(Boolean);
@@ -1429,6 +1450,8 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
       boyGirlSplit,
       hasDayFees,
       hasBoardingFees,
+      dayFeeAverage,
+      boardingFeeAverage,
       dayFeesByYear,
       boardingFeesByYear,
       packageSlug: normalizeSchoolProfilePackage(school.profile_package),
