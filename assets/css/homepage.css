@@ -7,6 +7,7 @@
   --home-border:rgba(41,36,33,.18);
   --home-dark:#1f1a17;
   --home-map-height:420px;
+  --home-location-list-max-height:52rem;
 }
 
 *{box-sizing:border-box}
@@ -227,7 +228,7 @@ body.home-minimal a{color:inherit;text-decoration:none}
 }
 
 .finder-left-column{position:relative;border-right:1px solid var(--home-border);background:#f6f0e8}
-.finder-left-inner{position:sticky;top:0;display:flex;flex-direction:column;max-height:100vh}
+.finder-left-inner{position:static;display:flex;flex-direction:column;max-height:none}
 .finder-panel{padding:1.35rem 1.5rem}
 .finder-map-panel{background:#f2ece3;padding-top:1.5rem;padding-bottom:1rem}
 
@@ -255,8 +256,7 @@ body.home-minimal a{color:inherit;text-decoration:none}
 .finder-results-summary{margin:0;max-width:34ch;color:var(--home-muted);font-size:.95rem;line-height:1.5;text-align:right}
 
 .homepage-results-toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem 1.25rem;margin-bottom:1rem;flex-wrap:wrap}
-.homepage-view-toggle{display:inline-flex;border:1px solid var(--home-border);background:#f8f4ee}
-.homepage-view-toggle--sub{background:transparent;flex-wrap:wrap}
+.homepage-view-toggle{display:inline-flex;flex-wrap:wrap;border:1px solid var(--home-border);background:#f8f4ee}
 
 .homepage-view-button{
   border:0;
@@ -270,6 +270,26 @@ body.home-minimal a{color:inherit;text-decoration:none}
 }
 .homepage-view-button + .homepage-view-button{border-left:1px solid var(--home-border)}
 .homepage-view-button.is-active{background:var(--home-dark);color:#fff}
+
+.homepage-sort-controls{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+.homepage-sort-label{
+  margin:0;
+  color:var(--home-muted);
+  font-size:.78rem;
+  font-weight:700;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.homepage-sort-select{
+  min-height:42px;
+  padding:.75rem 2.5rem .75rem .9rem;
+  border:1px solid var(--home-border);
+  background:#fff;
+  color:var(--home-ink);
+  font:600 .84rem/1.2 "Inter",system-ui,sans-serif;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
 
 .homepage-table-controls{display:flex;align-items:center;gap:.8rem 1rem;flex-wrap:wrap;justify-content:flex-end}
 .homepage-table-nav{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
@@ -289,17 +309,30 @@ body.home-minimal a{color:inherit;text-decoration:none}
 .homepage-table-nav__label{margin:0;color:var(--home-muted);font-size:.92rem;line-height:1.35}
 
 .homepage-map{width:100%;height:var(--home-map-height);background:#ddd4c8;border:1px solid var(--home-border)}
-.finder-locations{flex:1 1 auto;min-height:0;overflow:auto;padding-top:1rem;padding-bottom:1.25rem}
-.finder-locations-head{margin-bottom:.35rem}
+.finder-locations{flex:0 0 auto;min-height:0;max-height:var(--home-location-list-max-height);overflow:auto;padding-top:1rem;padding-bottom:1.25rem}
+.finder-locations-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:.35rem}
+.finder-locations-body{min-height:0}
+.finder-locations-toggle{
+  display:none;
+  min-height:40px;
+  padding:.65rem .85rem;
+  border:1px solid var(--home-border);
+  background:#fff;
+  color:var(--home-ink);
+  font:600 .78rem/1.2 "Inter",system-ui,sans-serif;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
 
-.location-search{width:100%;padding:1rem 0;border:none;border-bottom:1px solid var(--home-border);background:transparent;color:var(--home-ink);font:500 1rem/1.4 "Inter",system-ui,sans-serif;outline:none}
+.location-search{width:100%;padding:.85rem 0;border:none;border-bottom:1px solid var(--home-border);background:transparent;color:var(--home-ink);font:500 .98rem/1.4 "Inter",system-ui,sans-serif;outline:none}
 .location-search::placeholder{color:#8a7f75}
 
-.location-list{list-style:none;margin:1.1rem 0 0;padding:0}
-.location-link{display:flex;flex-direction:column;align-items:flex-start;gap:.22rem;padding:1rem 0;border-bottom:1px solid var(--home-border);transition:color .18s ease,padding-left .18s ease}
+.location-list{list-style:none;margin:.8rem 0 0;padding:0}
+.location-link{display:flex;flex-direction:column;align-items:flex-start;gap:.18rem;padding:.65rem 0;border-bottom:1px solid var(--home-border);transition:color .18s ease,padding-left .18s ease}
 .location-link:hover,.location-link:focus-visible{color:var(--home-accent);padding-left:.4rem}
-.location-name{font-family:"EB Garamond", ui-serif, Georgia, serif;font-size:1.9rem;letter-spacing:.04em}
-.location-state{color:var(--home-muted);font-size:.88rem;text-transform:uppercase;letter-spacing:.12em;line-height:1.3}
+.location-name{font-family:"EB Garamond", ui-serif, Georgia, serif;font-size:1.5rem;letter-spacing:.04em;line-height:1.08}
+.location-state{color:var(--home-muted);font-size:.74rem;text-transform:uppercase;letter-spacing:.12em;line-height:1.3}
 .location-link.is-live .location-state{color:var(--home-accent)}
 
 .finder-cards-panel{padding:1.5rem;background:var(--home-bg);min-height:calc(var(--home-map-height) + 3rem)}
@@ -380,9 +413,14 @@ body.home-minimal a{color:inherit;text-decoration:none}
   .finder-grid{grid-template-columns:1fr}
   .finder-left-column{border-right:none;border-bottom:1px solid var(--home-border)}
   .finder-left-inner{position:static;max-height:none}
-  .finder-map-panel{order:2}
-  .finder-locations{order:1;overflow:visible}
+  .finder-map-panel{order:1}
+  .home-school-filter-bar.finder-filter-panel{order:2;border-top:1px solid var(--home-border);border-bottom:1px solid var(--home-border)}
+  .finder-filter-panel > .shell{width:100%}
+  .finder-locations{order:3;overflow:visible;max-height:none}
+  .finder-cards-panel{order:4}
   .finder-panel,.finder-cards-panel{padding:2rem 1.1rem 1.8rem}
+  .finder-locations-toggle{display:inline-flex}
+  .finder-locations.is-collapsed .finder-locations-body{display:none}
   .homepage-map{height:340px}
   .homepage-visible-school-grid{grid-template-columns:1fr}
   .footer-grid{grid-template-columns:1fr;gap:1.4rem}
@@ -395,8 +433,8 @@ body.home-minimal a{color:inherit;text-decoration:none}
   .school-filter-options--grid{grid-template-columns:1fr}
   .school-filter-button-row{width:100%}
   .school-filter-reset{flex:1 1 auto}
-  .location-name{font-size:1.45rem}
-  .location-state{font-size:.74rem}
+  .location-name{font-size:1.35rem}
+  .location-state{font-size:.72rem}
   .finder-note{font-size:.95rem}
 }
 .homepage-school-card__badge{
