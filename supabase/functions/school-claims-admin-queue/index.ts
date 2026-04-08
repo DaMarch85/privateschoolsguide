@@ -145,7 +145,7 @@ function getQueueRecommendation(claim: ClaimRow): string {
 function getPaymentLabel(value: string): string {
   switch (value) {
     case 'free':
-      return 'Free claim';
+      return 'Free member profile';
     case 'founding_trial':
       return 'Founding programme';
     case 'checkout_pending':
@@ -168,7 +168,7 @@ function getPaymentLabel(value: string): string {
 }
 
 function getPlanName(value: ClaimRow['plan_slug']): string {
-  return value === 'featured' ? 'Featured' : value === 'enhanced' ? 'Enhanced' : 'Claimed';
+  return value === 'featured' ? 'Featured' : value === 'enhanced' ? 'Enhanced' : 'Member';
 }
 
 function isClaimActionable(claim: ClaimRow): boolean {

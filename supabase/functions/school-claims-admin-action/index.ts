@@ -156,7 +156,7 @@ Deno.serve(async (request) => {
 
     if (action === 'downgrade') {
       if (!canDowngradeLiveClaim(claim)) {
-        throw new Error('Only live Enhanced or Featured profiles can be downgraded to a claimed profile.');
+        throw new Error('Only live Enhanced or Featured profiles can be downgraded to a Member profile.');
       }
 
       let nextPaymentStatus = 'free';

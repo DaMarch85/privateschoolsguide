@@ -26,6 +26,12 @@
   const sideCompareLinks = Array.from(
     document.querySelectorAll(".school-compare-links a")
   );
+  const compareToggle = document.querySelector('[data-compare-toggle]');
+  const compareHideButton = document.querySelector('[data-compare-hide]');
+  const compareLinksPanel = document.querySelector('[data-compare-links-panel]');
+  const floatingCompareBar = document.querySelector('[data-compare-floating-bar]');
+  const floatingCompareLabel = document.querySelector('[data-compare-floating-label]');
+  const floatingCompareClose = document.querySelector('[data-compare-floating-close]');
   const main = document.querySelector(".school-profile-main");
   const baseGrid = main ? main.querySelector(".school-feature-grid") : null;
 
@@ -661,6 +667,8 @@
 
   bindTileInteractions(document);
   initHeroSlideshow();
+  bindComparePanelToggle();
+  if (floatingCompareClose) floatingCompareClose.addEventListener("click", clearComparison);
   renderCurrentMap(0);
 
   async function fetchSchool(slug) {
@@ -683,6 +691,37 @@
         new URL(link.href, window.location.origin).searchParams.get("compare");
       link.classList.toggle("is-active", target === slug);
     });
+  }
+
+  function setComparePanelOpen(open) {
+    if (!compareToggle || !compareLinksPanel) return;
+    compareLinksPanel.hidden = !open;
+    compareToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    compareToggle.textContent = open ? 'Hide nearby schools' : 'Compare with nearby schools';
+  }
+
+  function bindComparePanelToggle() {
+    if (!compareToggle || !compareLinksPanel) return;
+    compareToggle.addEventListener('click', function () {
+      setComparePanelOpen(compareLinksPanel.hidden);
+    });
+    if (compareHideButton) {
+      compareHideButton.addEventListener('click', function () {
+        setComparePanelOpen(false);
+      });
+    }
+    setComparePanelOpen(false);
+  }
+
+  function setFloatingCompareBar(nextData) {
+    if (!floatingCompareBar || !floatingCompareLabel) return;
+    if (!nextData) {
+      floatingCompareBar.hidden = true;
+      floatingCompareLabel.textContent = 'Comparing schools';
+      return;
+    }
+    floatingCompareLabel.textContent = 'Comparing with ' + (nextData.name || 'nearby school');
+    floatingCompareBar.hidden = false;
   }
 
   function createCompareHeader(data, label, allowClear) {
@@ -812,6 +851,8 @@
       compareMount.style.display = "block";
       body.classList.add("is-compare-mode");
       setActiveLink(slug);
+      setFloatingCompareBar(comparisonData);
+      setComparePanelOpen(false);
       renderMap(currentData, comparisonData);
 
       const nextUrl = new URL(window.location.href);
@@ -827,6 +868,7 @@
     if (compareMount) compareMount.style.display = "none";
     body.classList.remove("is-compare-mode");
     setActiveLink("");
+    setFloatingCompareBar(null);
     renderMap(currentData, null);
     const nextUrl = new URL(window.location.href);
     nextUrl.searchParams.delete("compare");

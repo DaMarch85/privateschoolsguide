@@ -83,7 +83,7 @@ function getSiteUrl(): string {
 }
 
 function planLabel(plan: PlanSlug): string {
-  return plan === 'featured' ? 'Featured profile' : plan === 'enhanced' ? 'Enhanced profile' : 'Claimed profile';
+  return plan === 'featured' ? 'Featured profile' : plan === 'enhanced' ? 'Enhanced profile' : 'Member profile';
 }
 
 function planPriceLabel(plan: PlanSlug): string {
@@ -115,7 +115,7 @@ function getPriceId(plan: PlanSlug): string {
     if (!value) throw new Error('Missing STRIPE_PRICE_FEATURED_MONTHLY.');
     return value;
   }
-  throw new Error('The claimed profile does not use a Stripe price.');
+  throw new Error('The Member profile does not use a Stripe price.');
 }
 
 function buildAvailableActions(currentPlan: PlanSlug): Array<{ action: 'change_plan' | 'cancel_profile'; targetPlan?: PlanSlug; label: string; tone?: 'primary' | 'danger' | 'default' }> {
@@ -123,21 +123,21 @@ function buildAvailableActions(currentPlan: PlanSlug): Array<{ action: 'change_p
     return [
       { action: 'change_plan', targetPlan: 'enhanced', label: 'Upgrade to Enhanced', tone: 'primary' },
       { action: 'change_plan', targetPlan: 'featured', label: 'Upgrade to Featured' },
-      { action: 'cancel_profile', label: 'Cancel claimed profile', tone: 'danger' }
+      { action: 'cancel_profile', label: 'Remove Member profile', tone: 'danger' }
     ];
   }
 
   if (currentPlan === 'enhanced') {
     return [
       { action: 'change_plan', targetPlan: 'featured', label: 'Upgrade to Featured', tone: 'primary' },
-      { action: 'change_plan', targetPlan: 'claimed', label: 'Downgrade to Claimed' },
+      { action: 'change_plan', targetPlan: 'claimed', label: 'Downgrade to Member profile' },
       { action: 'cancel_profile', label: 'Cancel profile', tone: 'danger' }
     ];
   }
 
   return [
     { action: 'change_plan', targetPlan: 'enhanced', label: 'Downgrade to Enhanced' },
-    { action: 'change_plan', targetPlan: 'claimed', label: 'Downgrade to Claimed' },
+    { action: 'change_plan', targetPlan: 'claimed', label: 'Downgrade to Member profile' },
     { action: 'cancel_profile', label: 'Cancel profile', tone: 'danger' }
   ];
 }
@@ -438,7 +438,7 @@ Deno.serve(async (request) => {
 
       return jsonResponse({
         ok: true,
-        message: `${school.name} has been downgraded to a claimed profile.`
+        message: `${school.name} has been downgraded to a Member profile.`
       });
     }
 

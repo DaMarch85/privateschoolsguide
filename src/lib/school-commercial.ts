@@ -15,13 +15,13 @@ export type SchoolPackageDefinition = {
 export const SCHOOL_PACKAGE_DEFINITIONS: SchoolPackageDefinition[] = [
   {
     slug: 'claimed',
-    name: 'Claimed profile',
+    name: 'Member profile',
     monthlyPriceLabel: 'Free',
     headline: 'For schools that want to manage their official presence.',
     visibilitySummary: 'Keeps the profile accurate and clearly school-supported.',
-    ctaLabel: 'Claim profile',
+    ctaLabel: 'Join free',
     features: [
-      'Claim and verify the school profile',
+      'Verify the school profile',
       'Add 1 hero image',
       'Official website link',
       'Submit an open day',

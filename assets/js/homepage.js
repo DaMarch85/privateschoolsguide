@@ -24,7 +24,7 @@
     currentFilters: null,
     viewMode: 'tiles',
     tableSection: 'glance',
-    sortMode: 'az',
+    sortMode: 'dayFeesDesc',
     tablePage: 0,
     hiddenTableSchoolIds: new Set(),
     debouncedApplyTimer: null,
@@ -1073,6 +1073,39 @@
     });
   }
 
+  function bindFilterPanelToggle() {
+    const form = getFilterForm();
+    const toggleButton = document.querySelector('[data-filter-toggle]');
+    const collapsible = document.querySelector('[data-filter-collapsible]');
+    if (!form || !toggleButton || !collapsible) return;
+
+    let lastIsMobile = null;
+
+    function setCollapsed(collapsed) {
+      form.classList.toggle('is-collapsed', collapsed);
+      collapsible.hidden = collapsed;
+      toggleButton.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      toggleButton.textContent = collapsed ? 'Apply filters' : 'Hide filters';
+    }
+
+    function syncForViewport() {
+      const isMobile = window.matchMedia('(max-width: 900px)').matches;
+      if (isMobile !== lastIsMobile) {
+        setCollapsed(isMobile);
+        lastIsMobile = isMobile;
+      } else if (!isMobile) {
+        setCollapsed(false);
+      }
+    }
+
+    toggleButton.addEventListener('click', function () {
+      setCollapsed(!form.classList.contains('is-collapsed'));
+    });
+
+    syncForViewport();
+    window.addEventListener('resize', syncForViewport);
+  }
+
   function bindLocationPanelToggle() {
     const locationsPanel = document.querySelector('.finder-locations');
     const toggleButton = document.querySelector('[data-location-toggle]');
@@ -1156,6 +1189,7 @@
     bindGuideLocationSearch();
     bindFilterDropdowns();
     bindFilterForm();
+    bindFilterPanelToggle();
     bindResultViewControls();
     applyInitialQueryParams();
     bootHomepageMap(0);

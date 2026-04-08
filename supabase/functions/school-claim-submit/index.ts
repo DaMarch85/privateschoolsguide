@@ -316,7 +316,7 @@ Deno.serve(async (request) => {
           claimId,
           message: foundingProgramme
             ? 'Your Founding School Programme request has been submitted and published on the Enhanced package.'
-            : 'Your claimed profile has been submitted and published.'
+            : 'Your Member profile has been submitted and published.'
         });
       }
 
@@ -325,7 +325,7 @@ Deno.serve(async (request) => {
         claimId,
         message: foundingProgramme
           ? 'Your Founding School Programme request has been submitted for review.'
-          : 'Your claimed profile has been submitted for review.'
+          : 'Your Member profile has been submitted for review.'
       });
     }
 

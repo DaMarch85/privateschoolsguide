@@ -87,7 +87,7 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
   bodyClass="home-minimal"
 >
   <Fragment slot="head">
-    <link rel="stylesheet" href="/assets/css/homepage.css?v=20260408-fee-sort-map-refresh" />
+    <link rel="stylesheet" href="/assets/css/homepage.css?v=20260408b-fee-sort-map-refresh" />
   </Fragment>
 
   <main id="main">
@@ -113,6 +113,11 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
         <form class="school-filter-form" id="homepage-school-filters" novalidate>
           <h2 class="visually-hidden" id="school-filter-title">School filters</h2>
 
+          <div class="school-filter-mobile-actions">
+            <button aria-controls="homepage-school-filter-collapsible" aria-expanded="true" class="school-filter-mobile-button" data-filter-toggle type="button">Hide filters</button>
+          </div>
+
+          <div class="school-filter-collapsible" data-filter-collapsible id="homepage-school-filter-collapsible">
           <div class="school-filter-grid">
             <div class="school-filter-field school-filter-field--location">
               <label class="school-filter-label" for="school-filter-location">Location</label>
@@ -216,6 +221,7 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
               <button class="school-filter-reset" id="homepage-school-filter-reset" type="button">Clear filters</button>
             </div>
           </div>
+          </div>
         </form>
       </div>
     </section>
@@ -281,7 +287,7 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
               <label class="homepage-sort-label" for="homepage-school-sort">Sort by</label>
               <select class="homepage-sort-select" id="homepage-school-sort">
                 <option value="az">A–Z</option>
-                <option value="dayFeesDesc">Day fees: high to low</option>
+                <option selected value="dayFeesDesc">Day fees: high to low</option>
                 <option value="dayFeesAsc">Day fees: low to high</option>
                 <option value="boardingFeesDesc">Boarding fees: high to low</option>
                 <option value="boardingFeesAsc">Boarding fees: low to high</option>
@@ -316,5 +322,5 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script defer src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js" crossorigin=""></script>
   <script defer src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js" crossorigin=""></script>
-  <script defer src="/assets/js/homepage.js?v=20260408-fee-sort-map-refresh"></script>
+  <script defer src="/assets/js/homepage.js?v=20260408b-fee-sort-map-refresh"></script>
 </BaseLayout>

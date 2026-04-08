@@ -613,6 +613,23 @@
 .school-profile-page .fee-year-column{
   display:contents;
 }
+
+.school-profile-page .school-compare-section-head{display:grid;gap:10px}
+.school-profile-page .school-compare-toggle{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 14px;border:1px solid var(--psg-line);background:var(--psg-paper);color:var(--psg-dark);font:600 .76rem/1.2 "Inter",sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+.school-profile-page .school-compare-toggle:hover,.school-profile-page .school-compare-toggle:focus-visible{color:var(--psg-accent);border-color:rgba(179,91,46,.48)}
+.school-profile-page .school-compare-toggle--secondary{margin-top:12px;width:100%}
+.school-profile-page .school-compare-links-panel[hidden]{display:none !important}
+.school-profile-page .school-compare-floating-bar{position:fixed;top:0;left:0;right:0;z-index:70;background:rgba(246,240,232,.98);border-bottom:1px solid var(--psg-line);box-shadow:0 8px 24px rgba(31,26,23,.08)}
+.school-profile-page .school-compare-floating-bar__inner{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:58px;padding-top:8px;padding-bottom:8px}
+.school-profile-page .school-compare-floating-bar__text{margin:0;font:600 .76rem/1.2 "Inter",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--psg-dark)}
+.school-profile-page .school-compare-floating-bar__button{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 14px;border:1px solid var(--psg-accent);background:var(--psg-accent);color:#fff;font:600 .76rem/1.2 "Inter",sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+.school-profile-page .school-compare-floating-bar__button:hover,.school-profile-page .school-compare-floating-bar__button:focus-visible{background:#9a4a24;border-color:#9a4a24}
+.school-profile-page.is-compare-mode .school-compare-column-head{top:82px}
+@media (max-width:900px){
+  .school-profile-page .school-compare-floating-bar__inner{flex-direction:column;align-items:stretch;gap:10px;min-height:0}
+  .school-profile-page .school-compare-floating-bar__button,.school-profile-page .school-compare-toggle{width:100%}
+  .school-profile-page.is-compare-mode .school-compare-column-head{top:108px}
+}
 .school-profile-page .school-compare-links a.is-active{
   color:var(--psg-accent);
   transform:translateX(6px);

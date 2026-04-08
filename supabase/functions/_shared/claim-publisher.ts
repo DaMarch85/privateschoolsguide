@@ -110,8 +110,8 @@ export async function sendClaimNotificationEmail({
   const siteUrl = String(Deno.env.get('PUBLIC_SITE_URL') || 'https://www.privateschoolguide.co.uk').replace(/\/$/, '');
   const schoolPageUrl = schoolPagePath ? `${siteUrl}${schoolPagePath.startsWith('/') ? schoolPagePath : `/${schoolPagePath}`}` : null;
   const adminUrl = buildAdminClaimUrl(claim.id);
-  const planLabel = claim.plan_slug === 'featured' ? 'Featured profile' : claim.plan_slug === 'enhanced' ? 'Enhanced profile' : 'Claimed profile';
-  const paymentLabel = claim.founding_programme ? 'Founding programme' : claim.plan_slug === 'claimed' ? 'Free claim' : 'Paid package';
+  const planLabel = claim.plan_slug === 'featured' ? 'Featured profile' : claim.plan_slug === 'enhanced' ? 'Enhanced profile' : 'Member profile';
+  const paymentLabel = claim.founding_programme ? 'Founding programme' : claim.plan_slug === 'claimed' ? 'Free member profile' : 'Paid package';
   const submittedWebsite = normalizeUrl(claim.website_url);
   const submittedContactForm = normalizeUrl(claim.contact_form_url);
   const submittedImages = readImageUrls(claim.image_urls);
@@ -121,7 +121,7 @@ export async function sendClaimNotificationEmail({
   const notes = toTrimmedString(claim.notes);
 
   const text = [
-    `New school claim submitted for ${schoolName}.`,
+    `New school profile request submitted for ${schoolName}.`,
     '',
     `Package: ${planLabel}`,
     `Billing: ${paymentLabel}`,
@@ -140,7 +140,7 @@ export async function sendClaimNotificationEmail({
   ].join('\n');
 
   const html = `
-    <h2>New school claim submitted</h2>
+    <h2>New school profile request submitted</h2>
     <p><strong>${escapeHtml(schoolName)}</strong> has a new school-managed profile request.</p>
     <ul>
       <li><strong>Package:</strong> ${escapeHtml(planLabel)}</li>

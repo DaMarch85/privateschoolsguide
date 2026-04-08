@@ -34,7 +34,7 @@
         };
       default:
         return {
-          name: 'Claimed profile',
+          name: 'Member profile',
           price: 'Free',
           summary: 'Keeps the profile accurate and clearly school-supported.'
         };
@@ -239,7 +239,7 @@
 
       if (imageHelp) {
         imageHelp.textContent = plan === 'claimed'
-          ? 'Claimed profiles can upload 1 image.'
+          ? 'Member profiles can upload 1 image.'
           : 'Enhanced and Featured profiles can upload up to 5 images.';
       }
 
@@ -401,7 +401,7 @@
     }
 
     function renderManageSummary(payload) {
-      if (summaryPlan) summaryPlan.textContent = payload.currentPlanLabel || 'Claimed profile';
+      if (summaryPlan) summaryPlan.textContent = payload.currentPlanLabel || 'Member profile';
       if (summaryPrice) summaryPrice.textContent = payload.currentPriceLabel || '';
       if (summaryDetail) summaryDetail.textContent = payload.currentSummary || '';
     }
@@ -492,7 +492,7 @@
         if (action === 'cancel_profile') {
           confirmMessage = 'Cancel this school-supported profile and remove its live package?';
         } else if (action === 'change_plan' && targetPlan === 'claimed') {
-          confirmMessage = 'Downgrade this live package to the free claimed profile?';
+          confirmMessage = 'Downgrade this live package to the free Member profile?';
         }
 
         if (confirmMessage && !window.confirm(confirmMessage)) {
