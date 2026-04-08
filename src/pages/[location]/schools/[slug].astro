@@ -20,6 +20,9 @@ if (!locationSlug || !slug) throw new Error('Missing location or school slug');
 
 const profile = await getLocationSchoolProfile(locationSlug, slug);
 const schoolMapScript = `window.schoolProfileMapData = ${JSON.stringify(profile.mapData)};`;
+const schoolNearbyMapScript = `window.schoolProfileNearbyMapData = ${JSON.stringify(profile.nearbyMapSchools || [])};`;
+const schoolMapJson = JSON.stringify(profile.mapData);
+const schoolNearbyMapJson = JSON.stringify(profile.nearbyMapSchools || []);
 const heroSlides = Array.from(
   new Map(
     [
@@ -42,7 +45,7 @@ const heroSlides = Array.from(
 >
   <Fragment slot="head">
     <link rel="stylesheet" href="/assets/css/styles.css" />
-    <link rel="stylesheet" href="/assets/css/bath-refined.css" />
+    <link rel="stylesheet" href="/assets/css/bath-refined.css?v=20260408-school-page-refresh" />
   </Fragment>
 
   <a class="skip-link" href="#main">Skip to content</a>
@@ -123,133 +126,6 @@ const heroSlides = Array.from(
 
       <section class="school-profile-main">
         <div class="school-feature-grid">
-          {profile.alevelResult && (
-            <article class="school-feature-tile">
-              <h2>A-level results</h2>
-              <div class="school-feature-body">
-                <div class="tile-kpis">
-                  <div class="tile-kpi"><span class="tile-kpi-label">% A*–A</span><span class="tile-kpi-value">{formatPercent(profile.alevelResult.pct_a_star_a)}</span></div>
-                  <div class="tile-kpi"><span class="tile-kpi-label">% A*–B</span><span class="tile-kpi-value">{formatPercent(profile.alevelResult.pct_a_star_b)}</span></div>
-                  <div class="tile-kpi"><span class="tile-kpi-label">Different A-level subjects</span><span class="tile-kpi-value">{formatInteger(profile.alevelResult.unique_subjects)}</span></div>
-                </div>
-                <p class="tile-note">Results shown for {profile.alevelResult.result_year}.</p>
-              </div>
-            </article>
-          )}
-
-          {profile.subjectRows.length > 0 && (
-            <article class={`school-feature-tile ${profile.subjectExtraRows.length ? 'tile-expandable' : ''}`}>
-              <h2>Popular subjects</h2>
-              <div class="school-feature-body">
-                <div class="metric-list">
-                  {profile.subjectTopRows.map((subject) => (
-                    <div class="metric-row"><span class="metric-name">{subject.subject_name}</span><span class="metric-value">{formatPercent(subject.share_of_entries)}</span></div>
-                  ))}
-                </div>
-                {profile.subjectExtraRows.length > 0 && (
-                  <Fragment>
-                    <button class="subject-toggle" data-subject-toggle="expand" type="button">Show full subject mix</button>
-                    <div class="subject-extra" hidden>
-                      <div class="metric-list">
-                        {profile.subjectExtraRows.map((subject) => (
-                          <div class="metric-row"><span class="metric-name">{subject.subject_name}</span><span class="metric-value">{formatPercent(subject.share_of_entries)}</span></div>
-                        ))}
-                      </div>
-                      <button class="subject-toggle subject-toggle--collapse" data-subject-toggle="collapse" type="button">Collapse subject mix</button>
-                    </div>
-                  </Fragment>
-                )}
-              </div>
-            </article>
-          )}
-
-          {profile.content?.inspection_snapshot || profile.school.inspection_rating ? (
-            <article class="school-feature-tile">
-              <h2>Inspection snapshot</h2>
-              <div class="school-feature-body">
-                <div class="school-card-copy">
-                  {profile.inspectionBullets.length > 1 ? (
-                    <ul>
-                      {profile.inspectionBullets.map((item) => <li>{item}</li>)}
-                    </ul>
-                  ) : (
-                    splitParagraphs(profile.content?.inspection_snapshot || profile.school.inspection_rating).map((paragraph) => <p>{paragraph}</p>)
-                  )}
-                </div>
-              </div>
-            </article>
-          ) : null}
-
-          {profile.content?.assessment_approach ? (
-            <article class="school-feature-tile">
-              <h2>Assessment approach</h2>
-              <div class="school-feature-body">
-                <div class="school-card-copy">
-                  {profile.assessmentBullets.length > 1 ? (
-                    <ul>
-                      {profile.assessmentBullets.map((item) => <li>{item}</li>)}
-                    </ul>
-                  ) : (
-                    splitParagraphs(profile.content.assessment_approach).map((paragraph) => <p>{paragraph}</p>)
-                  )}
-                </div>
-              </div>
-            </article>
-          ) : null}
-
-          <article class="school-feature-tile">
-            <h2>Scholarships</h2>
-            <div class="school-feature-body">
-              <div class="school-card-copy">
-                {profile.content?.scholarships ? (
-                  profile.scholarshipBullets.length > 1 ? (
-                    <ul>
-                      {profile.scholarshipBullets.map((item) => <li>{item}</li>)}
-                    </ul>
-                  ) : (
-                    splitParagraphs(profile.content.scholarships).map((paragraph) => <p>{paragraph}</p>)
-                  )
-                ) : (
-                  <p>Coming soon</p>
-                )}
-              </div>
-            </div>
-          </article>
-
-          <article class="school-feature-tile">
-            <h2>Leavers destinations</h2>
-            <div class="school-feature-body">
-              <div class="school-card-copy">
-                {profile.content?.destinations ? (
-                  profile.destinationsBullets.length > 1 ? (
-                    <ul>
-                      {profile.destinationsBullets.map((item) => <li>{item}</li>)}
-                    </ul>
-                  ) : (
-                    splitParagraphs(profile.content.destinations).map((paragraph) => <p>{paragraph}</p>)
-                  )
-                ) : (
-                  <p>Coming soon</p>
-                )}
-              </div>
-            </div>
-          </article>
-
-          <article class="school-feature-tile">
-            <h2>Parents like</h2>
-            <div class="school-feature-body">
-              <div class="school-card-copy">
-                {profile.parentLikes.length > 0 ? (
-                  <ul>
-                    {profile.parentLikes.map((item) => <li>{item}</li>)}
-                  </ul>
-                ) : (
-                  <p>Coming soon</p>
-                )}
-              </div>
-            </div>
-          </article>
-
           <article class="school-feature-tile">
             <h2>How the school describes itself</h2>
             <div class="school-feature-body">
@@ -299,6 +175,91 @@ const heroSlides = Array.from(
             </article>
           )}
 
+          {profile.alevelResult && (
+            <article class="school-feature-tile">
+              <h2>A-level results</h2>
+              <div class="school-feature-body">
+                <div class="tile-kpis">
+                  <div class="tile-kpi"><span class="tile-kpi-label">% A*–A</span><span class="tile-kpi-value">{formatPercent(profile.alevelResult.pct_a_star_a)}</span></div>
+                  <div class="tile-kpi"><span class="tile-kpi-label">% A*–B</span><span class="tile-kpi-value">{formatPercent(profile.alevelResult.pct_a_star_b)}</span></div>
+                  <div class="tile-kpi"><span class="tile-kpi-label">Different A-level subjects</span><span class="tile-kpi-value">{formatInteger(profile.alevelResult.unique_subjects)}</span></div>
+                </div>
+                <p class="tile-note">Results shown for {profile.alevelResult.result_year}.</p>
+              </div>
+            </article>
+          )}
+
+          {profile.subjectRows.length > 0 && (
+            <article class={`school-feature-tile ${profile.subjectExtraRows.length ? 'tile-expandable' : ''}`}>
+              <h2>Popular subjects</h2>
+              <div class="school-feature-body">
+                <div class="metric-list">
+                  {profile.subjectTopRows.map((subject) => (
+                    <div class="metric-row"><span class="metric-name">{subject.subject_name}</span><span class="metric-value">{formatPercent(subject.share_of_entries)}</span></div>
+                  ))}
+                </div>
+                {profile.subjectExtraRows.length > 0 && (
+                  <Fragment>
+                    <button class="subject-toggle" data-subject-toggle="expand" type="button">Show full subject mix</button>
+                    <div class="subject-extra" hidden>
+                      <div class="metric-list">
+                        {profile.subjectExtraRows.map((subject) => (
+                          <div class="metric-row"><span class="metric-name">{subject.subject_name}</span><span class="metric-value">{formatPercent(subject.share_of_entries)}</span></div>
+                        ))}
+                      </div>
+                      <button class="subject-toggle subject-toggle--collapse" data-subject-toggle="collapse" type="button">Collapse subject mix</button>
+                    </div>
+                  </Fragment>
+                )}
+              </div>
+            </article>
+          )}
+
+          <article class="school-feature-tile">
+            <h2>Parents like</h2>
+            <div class="school-feature-body">
+              <div class="school-card-copy">
+                {profile.parentLikes.length > 0 ? (
+                  <ul>
+                    {profile.parentLikes.map((item) => <li>{item}</li>)}
+                  </ul>
+                ) : (
+                  <p>Coming soon</p>
+                )}
+              </div>
+            </div>
+          </article>
+
+          {profile.content?.admissions_summary ? (
+            <article class="school-feature-tile">
+              <h2>Admissions</h2>
+              <div class="school-feature-body">
+                <div class="school-card-copy">
+                  {splitParagraphs(profile.content.admissions_summary).map((paragraph) => <p>{paragraph}</p>)}
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          <article class="school-feature-tile">
+            <h2>Scholarships</h2>
+            <div class="school-feature-body">
+              <div class="school-card-copy">
+                {profile.content?.scholarships ? (
+                  profile.scholarshipBullets.length > 1 ? (
+                    <ul>
+                      {profile.scholarshipBullets.map((item) => <li>{item}</li>)}
+                    </ul>
+                  ) : (
+                    splitParagraphs(profile.content.scholarships).map((paragraph) => <p>{paragraph}</p>)
+                  )
+                ) : (
+                  <p>Coming soon</p>
+                )}
+              </div>
+            </div>
+          </article>
+
           {profile.bursary ? (
             <article class="school-feature-tile">
               <h2>Bursaries</h2>
@@ -315,24 +276,51 @@ const heroSlides = Array.from(
             </article>
           ) : null}
 
-          {profile.content?.admissions_summary ? (
+          {profile.content?.inspection_snapshot || profile.school.inspection_rating ? (
             <article class="school-feature-tile">
-              <h2>Admissions</h2>
+              <h2>Inspection snapshot</h2>
               <div class="school-feature-body">
                 <div class="school-card-copy">
-                  {splitParagraphs(profile.content.admissions_summary).map((paragraph) => <p>{paragraph}</p>)}
+                  {profile.inspectionBullets.length > 1 ? (
+                    <ul>
+                      {profile.inspectionBullets.map((item) => <li>{item}</li>)}
+                    </ul>
+                  ) : (
+                    splitParagraphs(profile.content?.inspection_snapshot || profile.school.inspection_rating).map((paragraph) => <p>{paragraph}</p>)
+                  )}
                 </div>
               </div>
             </article>
           ) : null}
-        </div>
 
-        <section class="school-claim-cta" aria-labelledby="school-claim-cta-title">
-          <p class="nav-kicker">For schools</p>
-          <h2 id="school-claim-cta-title">School staff? Claim or improve this profile</h2>
-          <p>Upload official imagery, add your website and admissions links, and choose a school-supported profile package.</p>
-          <a class="button-outline" href={`/claim-your-profile/?school=${profile.school.id}`}>Go to the school portal</a>
-        </section>
+          {profile.content?.assessment_approach ? (
+            <article class="school-feature-tile">
+              <h2>Assessment approach</h2>
+              <div class="school-feature-body">
+                <div class="school-card-copy">
+                  {profile.assessmentBullets.length > 1 ? (
+                    <ul>
+                      {profile.assessmentBullets.map((item) => <li>{item}</li>)}
+                    </ul>
+                  ) : (
+                    splitParagraphs(profile.content.assessment_approach).map((paragraph) => <p>{paragraph}</p>)
+                  )}
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          <article class="school-feature-tile school-feature-tile--cta">
+            <h2>For schools</h2>
+            <div class="school-feature-body">
+              <div class="school-card-copy">
+                <p>School staff? Claim or improve this profile.</p>
+                <p>Upload official imagery, add your website and admissions links, and choose a school-supported profile package.</p>
+              </div>
+              <a class="button-outline school-feature-tile__cta" href={`/claim-your-profile/?school=${profile.school.id}`}>Go to the school portal</a>
+            </div>
+          </article>
+        </div>
       </section>
 
       <aside class="location-map-panel school-map-panel">
@@ -342,6 +330,10 @@ const heroSlides = Array.from(
         </div>
         <div aria-label={`Map showing ${profile.school.name}`} class="bath-location-map school-page-map" id="school-page-map"></div>
         <p class="map-caption">{profile.address}</p>
+        <div class="school-map-actions">
+          {profile.parentLocationHref ? <a class="school-map-action school-map-action--secondary" href={profile.parentLocationHref}>Back to {profile.parentLocationName || profile.location.name}</a> : null}
+          <a class="school-map-action school-map-action--primary" href={profile.changeSearchHref}>Change search area</a>
+        </div>
       </aside>
     </div>
   </main>
@@ -349,9 +341,12 @@ const heroSlides = Array.from(
   <SiteFooter />
 
   <script is:inline set:html={schoolMapScript}></script>
+  <script is:inline set:html={schoolNearbyMapScript}></script>
+  <script id="school-map-data" is:inline set:html={schoolMapJson} type="application/json"></script>
+  <script id="school-nearby-map-data" is:inline set:html={schoolNearbyMapJson} type="application/json"></script>
   <script defer src="/assets/js/site.js"></script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script defer src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js" crossorigin=""></script>
   <script defer src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js" crossorigin=""></script>
-  <script defer src="/assets/js/school-pages.js?v=20260401-openfreemap-bright"></script>
+  <script defer src="/assets/js/school-pages.js?v=20260408-school-compare-map-refresh"></script>
 </BaseLayout>

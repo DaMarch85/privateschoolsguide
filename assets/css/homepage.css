@@ -282,13 +282,14 @@ body.home-minimal a{color:inherit;text-decoration:none}
 }
 .homepage-sort-select{
   min-height:42px;
+  min-width:240px;
   padding:.75rem 2.5rem .75rem .9rem;
   border:1px solid var(--home-border);
   background:#fff;
   color:var(--home-ink);
-  font:600 .84rem/1.2 "Inter",system-ui,sans-serif;
-  letter-spacing:.08em;
-  text-transform:uppercase;
+  font:600 .88rem/1.2 "Inter",system-ui,sans-serif;
+  letter-spacing:.03em;
+  text-transform:none;
 }
 
 .homepage-table-controls{display:flex;align-items:center;gap:.8rem 1rem;flex-wrap:wrap;justify-content:flex-end}
@@ -309,6 +310,7 @@ body.home-minimal a{color:inherit;text-decoration:none}
 .homepage-table-nav__label{margin:0;color:var(--home-muted);font-size:.92rem;line-height:1.35}
 
 .homepage-map{width:100%;height:var(--home-map-height);background:#ddd4c8;border:1px solid var(--home-border)}
+.finder-map-actions{margin-top:1rem;display:flex;flex-wrap:wrap;gap:.75rem}
 .finder-locations{flex:0 0 auto;min-height:0;max-height:var(--home-location-list-max-height);overflow:auto;padding-top:1rem;padding-bottom:1.25rem}
 .finder-locations-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:.35rem}
 .finder-locations-body{min-height:0}
@@ -346,6 +348,7 @@ body.home-minimal a{color:inherit;text-decoration:none}
 .homepage-school-card__meta{margin:0;color:var(--home-muted);font-size:.92rem;line-height:1.45}
 .homepage-school-card__meta--secondary{color:var(--home-ink);opacity:.72}
 .homepage-school-card__status{margin:0;color:var(--home-accent);font-size:.82rem;font-weight:700;letter-spacing:.08em;line-height:1.35;text-transform:uppercase}
+.homepage-school-card__status--neutral{color:var(--home-muted)}
 .homepage-school-card--static{cursor:default}
 .homepage-school-card--static:hover,.homepage-school-card--static:focus-visible{transform:none;border-color:var(--home-border);box-shadow:none}
 .homepage-school-card--allthrough{border-left:4px solid var(--home-accent)}
@@ -671,4 +674,12 @@ body.home-minimal a{color:inherit;text-decoration:none}
   transform:scale(1.4);
   border-color:#fff;
   box-shadow:0 0 0 4px rgba(179,91,46,.2), 0 10px 22px rgba(41,36,33,.22);
+}
+
+
+@media (max-width: 720px){
+  .homepage-sort-select{
+    width:100%;
+    min-width:0;
+  }
 }

@@ -187,6 +187,58 @@
     }
   }
 
+  function normalizeNearbyMapData(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const lat = Number(raw.lat ?? raw.latitude);
+    const lng = Number(raw.lng ?? raw.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    const path = raw.path || raw.href || (raw.slug ? (String(raw.slug).startsWith("/") ? raw.slug : `/schools/${raw.slug}/`) : "");
+    return {
+      ...raw,
+      lat,
+      lng,
+      path,
+      note: raw.note || "",
+      name: raw.name || "School",
+      slug: raw.slug || "",
+    };
+  }
+
+  function extractNearbyMapData(doc) {
+    if (doc === document && Array.isArray(window.schoolProfileNearbyMapData)) {
+      return window.schoolProfileNearbyMapData
+        .map(normalizeNearbyMapData)
+        .filter(Boolean);
+    }
+
+    const jsonScript = doc.getElementById("school-nearby-map-data");
+    if (jsonScript) {
+      try {
+        const parsed = JSON.parse(jsonScript.textContent || "[]");
+        return Array.isArray(parsed)
+          ? parsed.map(normalizeNearbyMapData).filter(Boolean)
+          : [];
+      } catch (err) {}
+    }
+
+    const script = Array.from(doc.querySelectorAll("script")).find((node) =>
+      node.textContent.includes("window.schoolProfileNearbyMapData")
+    );
+    if (!script) return [];
+    const match = script.textContent.match(
+      /window\.schoolProfileNearbyMapData\s*=\s*(\[[\s\S]*?\]);?/
+    );
+    if (!match) return [];
+    try {
+      const parsed = JSON.parse(match[1]);
+      return Array.isArray(parsed)
+        ? parsed.map(normalizeNearbyMapData).filter(Boolean)
+        : [];
+    } catch (err) {
+      return [];
+    }
+  }
+
   function extractSchoolData(doc, slugHint) {
     const titleEl = doc.querySelector("#school-page-title");
     const subheadEl = doc.querySelector(".school-profile-subhead");
@@ -206,6 +258,7 @@
       subhead: subheadEl ? subheadEl.textContent.trim() : "",
       tiles: grid ? Array.from(grid.children).map((node) => node.outerHTML) : [],
       mapData: extractMapData(doc),
+      nearbyMapData: extractNearbyMapData(doc),
       address: caption ? caption.textContent.trim() : "",
     };
   }
@@ -233,7 +286,9 @@
     const order = [];
     const seen = new Set();
     const pushTitle = (title) => {
-      if (title && !seen.has(title)) {
+      if (!title) return;
+      if (String(title).toLowerCase() === "for schools") return;
+      if (!seen.has(title)) {
         seen.add(title);
         order.push(title);
       }
@@ -263,16 +318,22 @@
 
   function getMarkerIcon(kind) {
     if (!window.L) return null;
-    const markerClass =
-      kind === "secondary"
-        ? "school-map-marker school-map-marker--secondary"
-        : "school-map-marker school-map-marker--primary";
+    let markerClass = "school-map-marker school-map-marker--primary";
+    let size = 18;
+    if (kind === "secondary") {
+      markerClass = "school-map-marker school-map-marker--secondary";
+      size = 15;
+    }
+    if (kind === "nearby") {
+      markerClass = "school-map-marker school-map-marker--nearby";
+      size = 11;
+    }
     return window.L.divIcon({
-      className: "school-map-icon-wrap",
+      className: `school-map-icon-wrap school-map-icon-wrap--${kind}`,
       html: `<span class="${markerClass}"></span>`,
-      iconSize: [16, 16],
-      iconAnchor: [8, 8],
-      popupAnchor: [0, -8],
+      iconSize: [size, size],
+      iconAnchor: [Math.round(size / 2), Math.round(size / 2)],
+      popupAnchor: [0, -Math.round(size / 2)],
     });
   }
 
@@ -294,14 +355,43 @@
   }
 
   function popupHtml(data) {
-    const note = data.mapData && data.mapData.note ? data.mapData.note : "";
+    const note = data.note || (data.mapData && data.mapData.note ? data.mapData.note : "");
+    const path = data.path || "";
     return `
       <div class="school-map-popup">
         <h3>${escapeHtml(data.name)}</h3>
         ${note ? `<p>${escapeHtml(note)}</p>` : ""}
-        <p><a href="${escapeHtml(data.path)}">View school</a></p>
+        ${path ? `<p><a href="${escapeHtml(path)}">View school</a></p>` : ""}
       </div>
     `;
+  }
+
+  function nearbyMarkerKey(data) {
+    if (!data) return "";
+    if (data.path) return `path:${data.path}`;
+    if (data.slug) return `slug:${data.slug}`;
+    return `${data.name || "school"}:${Number(data.lat).toFixed(5)},${Number(data.lng).toFixed(5)}`;
+  }
+
+  function buildNearbyMarkers(primary, secondary) {
+    const ignored = new Set();
+    if (primary?.path) ignored.add(primary.path);
+    if (secondary?.path) ignored.add(secondary.path);
+
+    const seen = new Set();
+    const combined = [];
+    [primary, secondary].forEach((data) => {
+      const nearbyPoints = Array.isArray(data?.nearbyMapData) ? data.nearbyMapData : [];
+      nearbyPoints.forEach((point) => {
+        if (!point) return;
+        if (point.path && ignored.has(point.path)) return;
+        const key = nearbyMarkerKey(point);
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        combined.push(point);
+      });
+    });
+    return combined;
   }
 
   function renderMap(primary, secondary) {
@@ -316,48 +406,59 @@
     markerLayer = window.L.layerGroup().addTo(map);
 
     const bounds = [];
-    const addMarker = (data, kind) => {
-      if (!data || !data.mapData) return;
-      const latLng = [data.mapData.lat, data.mapData.lng];
+    const nearbyMarkers = buildNearbyMarkers(primary, secondary);
+    const addMarker = (data, kind, zIndexOffset) => {
+      if (!data) return;
+      const source = data.mapData ? data.mapData : data;
+      if (!source || !Number.isFinite(source.lat) || !Number.isFinite(source.lng)) return;
+      const latLng = [source.lat, source.lng];
       bounds.push(latLng);
-      const marker = window.L.marker(latLng, { icon: getMarkerIcon(kind) }).addTo(
-        markerLayer
-      );
+      const marker = window.L.marker(latLng, {
+        icon: getMarkerIcon(kind),
+        zIndexOffset: zIndexOffset || 0,
+      }).addTo(markerLayer);
       marker.bindPopup(popupHtml(data));
     };
 
-    addMarker(primary, "primary");
-    if (secondary) addMarker(secondary, "secondary");
+    nearbyMarkers.forEach((point) => addMarker(point, "nearby", 100));
+    addMarker(primary, "primary", 500);
+    if (secondary) addMarker(secondary, "secondary", 420);
 
     if (bounds.length === 1) {
       map.setView(bounds[0], primary.mapData.zoom || 13);
     } else if (bounds.length > 1) {
-      map.fitBounds(bounds, { padding: [40, 40] });
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: primary.mapData.zoom || 13 });
     }
 
-    if (mapTitle) mapTitle.textContent = secondary ? "School locations" : "School location";
+    const hasNearbyMarkers = nearbyMarkers.length > 0;
+    if (mapTitle) {
+      mapTitle.textContent = secondary || hasNearbyMarkers ? "School locations" : "School location";
+    }
     if (mapCaption) {
-      mapCaption.textContent = secondary
+      const baseCaption = secondary
         ? `${primary.name} and ${secondary.name} in ${locationName}`
         : primary.address || locationName;
+      mapCaption.textContent = hasNearbyMarkers
+        ? `${baseCaption} · Nearby schools shown`
+        : baseCaption;
     }
 
     const existingLegend = document.querySelector(".school-map-legend");
     if (existingLegend) existingLegend.remove();
 
-    if (secondary && mapTarget.parentElement) {
+    if ((secondary || hasNearbyMarkers) && mapTarget.parentElement) {
       const legend = document.createElement("div");
       legend.className = "school-map-legend";
-      legend.innerHTML = `
-        <span class="school-map-legend-item">
-          <i class="school-map-dot school-map-dot--primary"></i>
-          ${escapeHtml(primary.name)}
-        </span>
-        <span class="school-map-legend-item">
-          <i class="school-map-dot school-map-dot--secondary"></i>
-          ${escapeHtml(secondary.name)}
-        </span>
-      `;
+      const items = [
+        `<span class="school-map-legend-item"><i class="school-map-dot school-map-dot--primary"></i><span>${escapeHtml(primary.name)}</span></span>`,
+      ];
+      if (secondary) {
+        items.push(`<span class="school-map-legend-item"><i class="school-map-dot school-map-dot--secondary"></i><span>${escapeHtml(secondary.name)}</span></span>`);
+      }
+      if (hasNearbyMarkers) {
+        items.push('<span class="school-map-legend-item"><i class="school-map-dot school-map-dot--nearby"></i><span>Other nearby schools</span></span>');
+      }
+      legend.innerHTML = items.join('');
       mapTarget.parentElement.appendChild(legend);
     }
 
@@ -586,22 +687,22 @@
 
   function createCompareHeader(data, label, allowClear) {
     const column = document.createElement("section");
-    column.className = "school-compare-column";
+    column.className = `school-compare-column ${allowClear ? "school-compare-column--secondary" : "school-compare-column--primary"}`;
     const header = document.createElement("div");
     header.className = "school-compare-column-head";
     header.innerHTML = `
-      <p class="school-compare-kicker">${escapeHtml(label)}</p>
+      <p class="school-compare-column-kicker">${escapeHtml(label)}</p>
       <h2>${escapeHtml(data.name)}</h2>
       <p>${escapeHtml(data.subhead)}</p>
     `;
     const actions = document.createElement("div");
     actions.className = "school-compare-column-actions";
-    actions.innerHTML = `<a href="${escapeHtml(data.path)}">Open full page</a>`;
+    actions.innerHTML = `<a class="school-compare-head-link" href="${escapeHtml(data.path)}">Open full page</a>`;
     if (allowClear) {
       const clearBtn = document.createElement("button");
       clearBtn.type = "button";
-      clearBtn.className = "school-compare-clear";
-      clearBtn.textContent = "Clear comparison";
+      clearBtn.className = "school-compare-clear school-compare-clear--prominent";
+      clearBtn.textContent = "Close comparison ×";
       clearBtn.addEventListener("click", clearComparison);
       actions.appendChild(clearBtn);
     }
@@ -649,6 +750,8 @@
         : createPlaceholderTile(title);
       addCompareSchoolName(primaryTile, primaryData.name);
       addCompareSchoolName(secondaryTile, secondaryData.name);
+      if (primaryTile) primaryTile.classList.add("school-feature-tile--compare-primary");
+      if (secondaryTile) secondaryTile.classList.add("school-feature-tile--compare-secondary");
       if (primaryTile) row.appendChild(primaryTile);
       if (secondaryTile) row.appendChild(secondaryTile);
       wrapper.appendChild(row);

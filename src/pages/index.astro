@@ -87,7 +87,7 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
   bodyClass="home-minimal"
 >
   <Fragment slot="head">
-    <link rel="stylesheet" href="/assets/css/homepage.css?v=20260407-homepage-results-refresh" />
+    <link rel="stylesheet" href="/assets/css/homepage.css?v=20260408-fee-sort-map-refresh" />
   </Fragment>
 
   <main id="main">
@@ -281,8 +281,10 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
               <label class="homepage-sort-label" for="homepage-school-sort">Sort by</label>
               <select class="homepage-sort-select" id="homepage-school-sort">
                 <option value="az">A–Z</option>
-                <option value="dayFees">Day fees</option>
-                <option value="boardingFees">Boarding fees</option>
+                <option value="dayFeesDesc">Day fees: high to low</option>
+                <option value="dayFeesAsc">Day fees: low to high</option>
+                <option value="boardingFeesDesc">Boarding fees: high to low</option>
+                <option value="boardingFeesAsc">Boarding fees: low to high</option>
               </select>
             </div>
 
@@ -314,5 +316,5 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script defer src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js" crossorigin=""></script>
   <script defer src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js" crossorigin=""></script>
-  <script defer src="/assets/js/homepage.js?v=20260407-homepage-results-refresh"></script>
+  <script defer src="/assets/js/homepage.js?v=20260408-fee-sort-map-refresh"></script>
 </BaseLayout>

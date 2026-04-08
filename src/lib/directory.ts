@@ -382,6 +382,11 @@ export function formatPercent(value: unknown): string {
   return `${Math.round(num * 100)}%`;
 }
 
+export function formatMiles(value: number): string {
+  if (!Number.isFinite(value)) return '0';
+  return value < 10 ? value.toFixed(1) : String(Math.round(value));
+}
+
 export function formatInteger(value: unknown): string {
   const num = toNumber(value);
   if (num === null) return '—';
@@ -1120,21 +1125,21 @@ export async function getHomepageMapSchools(): Promise<MapSchool[]> {
   return mapSchools;
 }
 
-let globalLinkedSchoolsPromise: Promise<Array<{ id: string; slug: string; name: string; locationSlug: string; latitude: number; longitude: number }>> | null = null;
+let globalLinkedSchoolsPromise: Promise<Array<{ id: string; slug: string; name: string; locationSlug: string; locationName: string; latitude: number; longitude: number }>> | null = null;
 
 async function getGlobalLinkedSchools() {
   if (!globalLinkedSchoolsPromise) {
     globalLinkedSchoolsPromise = (async () => {
       const liveLocations = await getLiveLocations();
-      const locationSlugById = new Map(liveLocations.map((location) => [String(location.id), location.slug]));
+      const locationById = new Map(liveLocations.map((location) => [String(location.id), { slug: location.slug, name: location.name }]));
       const links = await getLocationSchoolPathLinks(liveLocations.map((location) => location.id));
-      const firstLocationBySchoolId = new Map<string, string>();
+      const firstLocationBySchoolId = new Map<string, { slug: string; name: string }>();
 
       links.forEach((link) => {
         const schoolKey = String(link.school_id);
-        const locationSlug = locationSlugById.get(String(link.location_id));
-        if (!locationSlug || firstLocationBySchoolId.has(schoolKey)) return;
-        firstLocationBySchoolId.set(schoolKey, locationSlug);
+        const locationInfo = locationById.get(String(link.location_id));
+        if (!locationInfo || firstLocationBySchoolId.has(schoolKey)) return;
+        firstLocationBySchoolId.set(schoolKey, locationInfo);
       });
 
       const schools = await getSchoolsByIds(Array.from(firstLocationBySchoolId.keys()));
@@ -1142,18 +1147,19 @@ async function getGlobalLinkedSchools() {
         .map((school) => {
           const lat = toNumber(school.latitude);
           const lng = toNumber(school.longitude);
-          const locationSlug = firstLocationBySchoolId.get(String(school.id));
-          if (lat === null || lng === null || !locationSlug) return null;
+          const locationInfo = firstLocationBySchoolId.get(String(school.id));
+          if (lat === null || lng === null || !locationInfo) return null;
           return {
             id: String(school.id),
             slug: school.slug,
             name: school.name,
-            locationSlug,
+            locationSlug: locationInfo.slug,
+            locationName: locationInfo.name,
             latitude: lat,
             longitude: lng
           };
         })
-        .filter((row): row is { id: string; slug: string; name: string; locationSlug: string; latitude: number; longitude: number } => Boolean(row));
+        .filter((row): row is { id: string; slug: string; name: string; locationSlug: string; locationName: string; latitude: number; longitude: number } => Boolean(row));
     })();
   }
 
@@ -1326,7 +1332,7 @@ function buildHomepageFeeMap(rows: AnnualFeeRecord[], feeTypes: string[]): Recor
   return Object.fromEntries(ANNUAL_FEE_COLUMNS.map(({ label, key }) => {
     const values = activeRows
       .map((row) => toNumber(row[key]))
-      .filter((value): value is number => value !== null);
+      .filter((value): value is number => value !== null && value > 0);
 
     if (!values.length) return [label, ''];
     const min = Math.min(...values);
@@ -1345,7 +1351,7 @@ function getHomepageAverageAnnualFee(rows: AnnualFeeRecord[], feeTypes: string[]
   const values = activeRows.flatMap((row) =>
     ANNUAL_FEE_COLUMNS
       .map(({ key }) => toNumber(row[key]))
-      .filter((value): value is number => value !== null)
+      .filter((value): value is number => value !== null && value > 0)
   );
 
   if (!values.length) return null;
@@ -1417,8 +1423,8 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
     const boardingFeeAverage = getHomepageAverageAnnualFee(schoolFeeRows, ['weekly_boarding', 'full_boarding']);
     const dayFeesByYear = buildHomepageFeeMap(schoolFeeRows, ['day']);
     const boardingFeesByYear = buildHomepageFeeMap(schoolFeeRows, ['weekly_boarding', 'full_boarding']);
-    const hasDayFees = Object.values(dayFeesByYear).some(Boolean);
-    const hasBoardingFees = Object.values(boardingFeesByYear).some(Boolean);
+    const hasDayFees = dayFeeAverage !== null || Object.values(dayFeesByYear).some(Boolean);
+    const hasBoardingFees = boardingFeeAverage !== null || Object.values(boardingFeesByYear).some(Boolean);
     const latestExam = latestExamBySchool.get(schoolId) || null;
     const subjectRows = latestExam
       ? subjectRowsRaw.filter((row) => String(row.school_id) === schoolId && Number(row.result_year) === Number(latestExam.result_year))
@@ -2038,19 +2044,47 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const religionLabel = getSchoolReligionLabel(school);
   const yearFoundedLabel = getYearFoundedLabel(school as Record<string, unknown>, content as Record<string, unknown> | null);
 
-  const compareLinks = coordinates
+  const globalNearbyCandidates = coordinates
     ? (await getGlobalLinkedSchools())
         .filter((candidate) => candidate.slug !== school.slug)
         .map((candidate) => ({
           slug: candidate.slug,
           name: candidate.name,
           locationSlug: candidate.locationSlug,
+          locationName: candidate.locationName,
+          latitude: candidate.latitude,
+          longitude: candidate.longitude,
           distanceMiles: haversineMiles(coordinates.lat, coordinates.lng, candidate.latitude, candidate.longitude)
         }))
         .sort((a, b) => a.distanceMiles - b.distanceMiles || a.name.localeCompare(b.name, 'en'))
+    : [];
+
+  const compareLinks = coordinates
+    ? globalNearbyCandidates
         .slice(0, 8)
         .map((candidate) => ({ slug: candidate.slug, name: candidate.name, locationSlug: candidate.locationSlug, href: `/schools/${candidate.slug}/` }))
     : fallbackCompareLinks.map((row) => ({ ...row, href: `/schools/${row.slug}/` }));
+
+  const nearbyMapSchools = coordinates
+    ? globalNearbyCandidates
+        .filter((candidate) => candidate.distanceMiles <= 12)
+        .slice(0, 10)
+        .map((candidate) => ({
+          name: candidate.name,
+          slug: candidate.slug,
+          href: `/schools/${candidate.slug}/`,
+          path: `/schools/${candidate.slug}/`,
+          lat: candidate.latitude,
+          lng: candidate.longitude,
+          latitude: candidate.latitude,
+          longitude: candidate.longitude,
+          note: candidate.locationName ? `${candidate.locationName} · ${formatMiles(candidate.distanceMiles)} miles away` : `${formatMiles(candidate.distanceMiles)} miles away`
+        }))
+    : [];
+
+  const parentLocationHref = options.allowUnlinkedSchool ? null : `/${location.slug}/`;
+  const parentLocationName = options.allowUnlinkedSchool ? null : location.name;
+  const changeSearchHref = `/?location=${encodeURIComponent(location.name)}&map=centered&zoom=14`;
 
   const mapData = coordinates
     ? {
@@ -2120,6 +2154,10 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
     currentAcademicYear,
     allFeesIncludeVat,
     compareLinks,
+    nearbyMapSchools,
+    parentLocationHref,
+    parentLocationName,
+    changeSearchHref,
     atGlanceRows,
     parentLikes,
     schoolVoice,

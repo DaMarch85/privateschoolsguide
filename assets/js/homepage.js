@@ -79,25 +79,47 @@
     return String(a && a.name || '').localeCompare(String(b && b.name || ''), 'en');
   }
 
-  function getSortFeeValue(school, sortMode) {
-    if (sortMode === 'dayFees') return school.dayFeeAverage;
-    if (sortMode === 'boardingFees') return school.boardingFeeAverage;
-    return null;
+  function normalizeFeeValue(value) {
+    const num = Number(value);
+    return Number.isFinite(num) && num > 0 ? num : null;
   }
 
-  function schoolMatchesSortMode(school, sortMode) {
-    if (sortMode === 'dayFees') return Number.isFinite(school.dayFeeAverage);
-    if (sortMode === 'boardingFees') return Number.isFinite(school.boardingFeeAverage);
-    return true;
+  function isDayFeeSort(sortMode) {
+    return sortMode === 'dayFeesDesc' || sortMode === 'dayFeesAsc' || sortMode === 'dayFees';
+  }
+
+  function isBoardingFeeSort(sortMode) {
+    return sortMode === 'boardingFeesDesc' || sortMode === 'boardingFeesAsc' || sortMode === 'boardingFees';
+  }
+
+  function isFeeSort(sortMode) {
+    return isDayFeeSort(sortMode) || isBoardingFeeSort(sortMode);
+  }
+
+  function getSortFeeValue(school, sortMode) {
+    if (isDayFeeSort(sortMode)) return normalizeFeeValue(school.dayFeeAverage);
+    if (isBoardingFeeSort(sortMode)) return normalizeFeeValue(school.boardingFeeAverage);
+    return null;
   }
 
   function sortSchools(schools, sortMode) {
     return schools.slice().sort(function (a, b) {
-      if (sortMode === 'dayFees' || sortMode === 'boardingFees') {
+      if (isFeeSort(sortMode)) {
         const aValue = getSortFeeValue(a, sortMode);
         const bValue = getSortFeeValue(b, sortMode);
-        const delta = (aValue || 0) - (bValue || 0);
-        if (delta !== 0) return delta;
+        const aMissing = aValue === null;
+        const bMissing = bValue === null;
+
+        if (aMissing !== bMissing) {
+          return aMissing ? 1 : -1;
+        }
+
+        if (aValue !== null && bValue !== null && aValue !== bValue) {
+          if (sortMode === 'dayFeesDesc' || sortMode === 'boardingFeesDesc') {
+            return bValue - aValue;
+          }
+          return aValue - bValue;
+        }
       }
 
       return compareByName(a, b);
@@ -141,6 +163,9 @@
         const lng = Number(item && (item.lng ?? item.longitude));
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
 
+        const dayFeeAverage = normalizeFeeValue(item.dayFeeAverage);
+        const boardingFeeAverage = normalizeFeeValue(item.boardingFeeAverage);
+
         return {
           id: item.id ? String(item.id) : '',
           slug: item.slug || '',
@@ -165,14 +190,10 @@
           religion: item.religion || '',
           studentsLabel: item.studentsLabel || '',
           boyGirlSplit: item.boyGirlSplit || '',
-          hasDayFees: Boolean(item.hasDayFees),
-          hasBoardingFees: Boolean(item.hasBoardingFees),
-          dayFeeAverage: item.dayFeeAverage !== null && item.dayFeeAverage !== '' && Number.isFinite(Number(item.dayFeeAverage))
-            ? Number(item.dayFeeAverage)
-            : null,
-          boardingFeeAverage: item.boardingFeeAverage !== null && item.boardingFeeAverage !== '' && Number.isFinite(Number(item.boardingFeeAverage))
-            ? Number(item.boardingFeeAverage)
-            : null,
+          hasDayFees: dayFeeAverage !== null || Boolean(item.hasDayFees),
+          hasBoardingFees: boardingFeeAverage !== null || Boolean(item.hasBoardingFees),
+          dayFeeAverage: dayFeeAverage,
+          boardingFeeAverage: boardingFeeAverage,
           dayFeesByYear: item.dayFeesByYear || {},
           boardingFeesByYear: item.boardingFeesByYear || {},
           packageSlug: item.packageSlug || 'organic',
@@ -407,7 +428,6 @@
         if (filters.nurseryOnly && !school.hasNursery) return false;
         if (religions.size && !religions.has(school.religion)) return false;
         if (resolvedLocation && (!Number.isFinite(school.distanceMiles) || school.distanceMiles > filters.radiusMiles)) return false;
-        if (!schoolMatchesSortMode(school, state.sortMode)) return false;
         return true;
       });
 
@@ -438,6 +458,8 @@
     const eyebrow = point.distanceMiles !== null && Number.isFinite(point.distanceMiles)
       ? (point.displayLocation ? escapeHtml(point.displayLocation) + ' · ' : '') + escapeHtml(formatDistanceLabel(point.distanceMiles))
       : escapeHtml(point.displayLocation || '');
+    const sortFeeValue = getSortFeeValue(point, state.sortMode);
+    const showNoFeeDataLabel = isFeeSort(state.sortMode) && sortFeeValue === null;
     const sharedAttributes = ' class="homepage-school-card homepage-school-card--' + escapeHtml(point.type) + (point.href ? '' : ' homepage-school-card--static') + '" data-school-id="' + escapeHtml(point.id) + '"';
     const wrapperStart = point.href
       ? '<a' + sharedAttributes + ' href="' + escapeHtml(point.href) + '">'
@@ -451,6 +473,7 @@
       '<h3 class="homepage-school-card__title">' + escapeHtml(point.name) + '</h3>' +
       '<p class="homepage-school-card__meta">' + escapeHtml(point.genderLabel + ' · ' + point.boardingLabel + ' · Ages ' + point.ageLabel) + '</p>' +
       (extras.length ? '<p class="homepage-school-card__meta homepage-school-card__meta--secondary">' + escapeHtml(extras.join(' · ')) + '</p>' : '') +
+      (showNoFeeDataLabel ? '<p class="homepage-school-card__status homepage-school-card__status--neutral">No fee data</p>' : '') +
       (!point.href ? '<p class="homepage-school-card__status">Profile coming soon</p>' : '') +
       '</div>' + wrapperEnd;
   }
@@ -515,6 +538,11 @@
     errorTarget.textContent = message || '';
   }
 
+  function getCountryBounds() {
+    if (!window.L) return null;
+    return window.L.latLngBounds([[49.45, -11.75], [61.25, 3.25]]);
+  }
+
   function ensureMap() {
     const mapTarget = document.getElementById('homepage-map');
     if (!mapTarget || !window.L) return null;
@@ -528,13 +556,17 @@
       markerZoomAnimation: false,
       preferCanvas: true,
       minZoom: UK_DEFAULT_ZOOM,
-      maxBoundsViscosity: 1
+      maxBoundsViscosity: 0.65
     });
 
     state.tileLayer = createBaseLayer().addTo(state.map);
 
     state.markerLayer = window.L.layerGroup().addTo(state.map);
     state.searchLayer = window.L.layerGroup().addTo(state.map);
+    const countryBounds = getCountryBounds();
+    if (countryBounds && typeof state.map.setMaxBounds === 'function') {
+      state.map.setMaxBounds(countryBounds);
+    }
     state.map.setView(UK_DEFAULT_CENTER, UK_DEFAULT_ZOOM);
     state.map.on('moveend zoomend resize', updateVisibleSchoolsFromMap);
     state.mapReady = true;
@@ -564,19 +596,6 @@
     state.searchLayer.clearLayers();
     state.markersBySchoolId = new Map();
     const boundsLayers = [];
-
-    if (typeof map.setMinZoom === 'function') {
-      map.setMinZoom(0);
-    }
-    if (typeof map.setMaxBounds === 'function') {
-      try {
-        map.setMaxBounds(null);
-      } catch (error) {
-        try {
-          map.setMaxBounds(window.L.latLngBounds([[-90, -180], [90, 180]]));
-        } catch (innerError) {}
-      }
-    }
 
     if (resolvedLocation) {
       const radiusCircle = window.L.circle([resolvedLocation.lat, resolvedLocation.lng], {
@@ -625,17 +644,6 @@
       map.setView(UK_DEFAULT_CENTER, UK_DEFAULT_ZOOM, { animate: false });
     }
 
-    const constrainedBounds = map.getBounds();
-    const constrainedZoom = map.getZoom();
-    if (constrainedBounds && typeof constrainedBounds.isValid === 'function' && constrainedBounds.isValid()) {
-      if (typeof map.setMinZoom === 'function' && Number.isFinite(constrainedZoom)) {
-        map.setMinZoom(constrainedZoom);
-      }
-      if (typeof map.setMaxBounds === 'function') {
-        map.setMaxBounds(constrainedBounds.pad(0.2));
-      }
-    }
-
     if (state.hoveredSchoolId) {
       setHoveredSchoolId(state.hoveredSchoolId);
     }
@@ -660,12 +668,6 @@
       return !state.hiddenTableSchoolIds.has(school.id);
     });
 
-    if (state.tableSection === 'dayFees') {
-      return base.filter(function (school) { return school.hasDayFees; });
-    }
-    if (state.tableSection === 'boardingFees') {
-      return base.filter(function (school) { return school.hasBoardingFees; });
-    }
     if (state.tableSection === 'alevel') {
       return base.filter(function (school) { return school.alevel; });
     }
