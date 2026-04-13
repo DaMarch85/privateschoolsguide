@@ -90,10 +90,18 @@ const heroSlides = Array.from(
       ) : null}
       <h1 class="school-profile-title" id="school-page-title">{profile.school.name}</h1>
       <p class="school-profile-subhead">{profile.subhead}</p>
-      {(profile.officialWebsiteUrl || profile.contactFormUrl) ? (
+      {(profile.officialWebsiteUrl || profile.contactFormUrl || profile.school.id) ? (
         <div class="school-profile-actions">
           {profile.officialWebsiteUrl ? <a class="button school-profile-website-link" href={profile.officialWebsiteUrl} rel="noopener noreferrer" target="_blank">Visit school website</a> : null}
           {profile.contactFormUrl ? <a class="button-outline school-profile-contact-link" href={profile.contactFormUrl} rel="noopener noreferrer" target="_blank">Admissions / contact form</a> : null}
+          <button
+            class="button-outline school-profile-shortlist-button"
+            data-shortlist-add-label="Add to shortlist"
+            data-shortlist-button
+            data-shortlist-remove-label="Remove from shortlist"
+            data-shortlist-school-id={profile.school.id}
+            type="button"
+          >Add to shortlist</button>
         </div>
       ) : null}
     </div>

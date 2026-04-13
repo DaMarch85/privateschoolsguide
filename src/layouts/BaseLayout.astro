@@ -33,37 +33,17 @@ const canonical = new URL(canonicalPath, Astro.site);
     <meta name="theme-color" content="#2a2520" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
-
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BDP9V8TPZZ"></script>
-    <script is:inline>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-BDP9V8TPZZ');
-    </script>
-
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
     {includeLeaflet && (
-      <>
-        <link
-          rel="stylesheet"
-          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-          crossorigin=""
-        />
-        <link
-          rel="stylesheet"
-          href="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.css"
-          crossorigin=""
-        />
-      </>
+      <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""
+      />
     )}
     <slot name="head" />
+    <script defer src="/assets/js/site.js?v=20260413a-shortlist"></script>
   </head>
   <body class={bodyClass} data-location-slug={dataLocationSlug} data-school-slug={dataSchoolSlug}>
     <slot />

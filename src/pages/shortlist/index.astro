@@ -1,9 +1,9 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import SiteFooter from '../components/SiteFooter.astro';
-import { supabase } from '../lib/supabase';
-import { getHomepageSearchSchools } from '../lib/directory';
-import { getLocationPresentation } from '../lib/location-config';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import { supabase } from '../../lib/supabase';
+import { getHomepageSearchSchools } from '../../lib/directory';
+import { getLocationPresentation } from '../../lib/location-config';
 
 type HomepageLocationRow = {
   name: string;
@@ -80,31 +80,24 @@ const boardingOptions = [
 const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.stringify(homepageSchools)};`;
 ---
 <BaseLayout
-  title="The Private School Guide"
-  description="Search private schools by UK location, distance and core filters."
-  canonicalPath="/"
+  title="Your shortlist | The Private School Guide"
+  description="Browse and compare the schools you have shortlisted."
+  canonicalPath="/shortlist/"
   includeLeaflet={true}
-  bodyClass="home-minimal"
+  bodyClass="home-minimal shortlist-page"
 >
   <Fragment slot="head">
     <link rel="stylesheet" href="/assets/css/homepage.css?v=20260413a-shortlist-filters" />
   </Fragment>
 
   <main id="main">
-    <section aria-labelledby="home-title" class="home-hero" data-home-hero>
-      <video autoplay class="hero-video hero-video-desktop" data-home-hero-video muted playsinline poster="/assets/video/home-hero-poster.jpg" preload="metadata">
-        <source src="/assets/video/home-hero-desktop.mp4" type="video/mp4" />
-      </video>
-      <video autoplay class="hero-video hero-video-mobile" data-home-hero-video muted playsinline poster="/assets/video/home-hero-mobile-poster.jpg" preload="metadata">
-        <source src="/assets/video/home-hero-mobile.mp4" type="video/mp4" />
-      </video>
-      <div aria-hidden="true" class="hero-wash"></div>
-      <div class="hero-centre shell">
-        <h1 class="hero-title" id="home-title">
-          <span>THE</span>
-          <span>PRIVATE SCHOOL</span>
-          <span>GUIDE</span>
+    <section aria-labelledby="home-title" class="home-hero home-hero--shortlist">
+      <div class="hero-centre shell hero-centre--shortlist">
+        <p class="home-hero-kicker">Your shortlist</p>
+        <h1 class="hero-title hero-title--shortlist" id="home-title">
+          <span>Your shortlisted schools</span>
         </h1>
+        <p class="home-hero-shortlist-copy">Apply the same filters and map tools, but only across the schools you have saved.</p>
       </div>
     </section>
 
@@ -271,7 +264,7 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
             <div class="finder-panel finder-map-panel">
               <div class="finder-results-head finder-results-head--map">
                 <div>
-                  <h3 class="finder-results-title">School locations</h3>
+                  <h3 class="finder-results-title">Shortlisted school locations</h3>
                 </div>
               </div>
               <div aria-label="Private school map" class="homepage-map" id="homepage-map"></div>
@@ -306,9 +299,9 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
         <div class="finder-panel finder-cards-panel">
           <div class="finder-results-head finder-results-head--results">
             <div>
-              <h2 class="finder-results-title">Schools</h2>
+              <h2 class="finder-results-title">Shortlist</h2>
             </div>
-            <p aria-live="polite" class="finder-results-summary" id="homepage-results-summary">Showing all {initialSchoolCount} schools with map coordinates.</p>
+            <p aria-live="polite" class="finder-results-summary" id="homepage-results-summary">Showing your shortlisted schools.</p>
           </div>
 
           <div class="homepage-results-toolbar">
@@ -331,10 +324,7 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
               </select>
             </div>
 
-            <a class="homepage-shortlist-link" href="/shortlist/">
-              View shortlist
-              <span class="homepage-shortlist-link__count" data-shortlist-count>0</span>
-            </a>
+            <a class="homepage-shortlist-link homepage-shortlist-link--back" href="/">Browse all schools</a>
 
             <div class="homepage-table-controls" id="homepage-table-controls" hidden>
               <div class="homepage-table-nav">

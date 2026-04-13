@@ -40,6 +40,8 @@ a:hover{text-decoration:none}
   min-height:82px;
   display:flex;
   align-items:center;
+  justify-content:space-between;
+  gap:16px;
 }
 .brand{
   display:inline-flex;
@@ -64,6 +66,34 @@ a:hover{text-decoration:none}
   font-weight:500;
   letter-spacing:.08em;
   text-transform:uppercase;
+}
+.header-shortlist-link{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 14px;
+  border:1px solid var(--psg-line);
+  color:var(--psg-dark);
+  background:var(--psg-paper);
+  font:600 .78rem/1.1 "Inter",sans-serif;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.header-shortlist-link:hover,.header-shortlist-link:focus-visible{
+  border-color:rgba(179,91,46,.45);
+  color:var(--psg-accent);
+}
+.header-shortlist-link__count{
+  display:inline-grid;
+  place-items:center;
+  min-width:1.85rem;
+  min-height:1.85rem;
+  padding:0 .35rem;
+  border-radius:999px;
+  background:var(--psg-dark);
+  color:var(--psg-white);
+  font:700 .76rem/1 "Inter",sans-serif;
+  letter-spacing:.04em;
 }
 .nav-toggle,.site-nav,.main-nav,.menu-toggle{display:none!important}
 
@@ -135,4 +165,4 @@ th{background:rgba(179,91,46,.07);color:var(--psg-dark);font:600 .82rem/1.2 "Int
 .footer-bottom{border-top:1px solid var(--psg-line);padding:14px 0 28px;color:var(--psg-muted);font-size:.92rem}
 
 @media (max-width:980px){.grid-2,.cards,.profile-grid,.school-list,.kpi-grid{grid-template-columns:1fr}}
-@media (max-width:720px){.header-simple{min-height:72px}.brand-text,.brand-name{font-size:1.28rem}.hero{padding:22px}.facts dl{grid-template-columns:1fr}.footer-grid{grid-template-columns:1fr}}
+@media (max-width:720px){.header-simple{min-height:72px;align-items:flex-start;flex-direction:column;justify-content:center;padding-top:12px;padding-bottom:12px}.brand-text,.brand-name{font-size:1.28rem}.header-shortlist-link{width:100%;justify-content:space-between}.hero{padding:22px}.facts dl{grid-template-columns:1fr}.footer-grid{grid-template-columns:1fr}}

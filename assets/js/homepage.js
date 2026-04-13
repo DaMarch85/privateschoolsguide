@@ -32,7 +32,16 @@
     markersBySchoolId: new Map(),
     hoveredSchoolId: null,
     initialMapFocus: null,
-    mapFocusLocation: null
+    mapFocusLocation: null,
+    rangeBounds: {
+      fee: {
+        day: { min: 0, max: 1000, step: 1000 },
+        boarding: { min: 0, max: 1000, step: 1000 }
+      },
+      alevel: { min: 0, max: 100, step: 1 }
+    },
+    feeMode: 'day',
+    shortlistPage: false
   };
 
   function escapeHtml(str) {
@@ -389,16 +398,254 @@
     refreshFilterDropdownLabels();
   }
 
+  function parseFiniteNumber(value, fallback) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+
+  function formatCurrencyRangeValue(value) {
+    return '£' + formatCount(Math.round(parseFiniteNumber(value, 0)));
+  }
+
+  function formatPercentRangeValue(value) {
+    return Math.round(parseFiniteNumber(value, 0)) + '%';
+  }
+
+  function getAlevelAStarAValue(school) {
+    const value = school && school.alevel ? Number(school.alevel.pctAStarA) : NaN;
+    return Number.isFinite(value) && value >= 0 ? value * 100 : null;
+  }
+
+  function buildFeeBounds(values) {
+    const valid = values.filter(function (value) { return Number.isFinite(Number(value)) && Number(value) > 0; }).map(Number);
+    if (!valid.length) return { min: 0, max: 1000, step: 1000 };
+    const maxValue = Math.max.apply(null, valid);
+    const minValue = Math.min.apply(null, valid);
+    const step = maxValue >= 30000 ? 1000 : 500;
+    const min = Math.floor(minValue / step) * step;
+    let max = Math.ceil(maxValue / step) * step;
+    if (max <= min) max = min + step;
+    return { min: min, max: max, step: step };
+  }
+
+  function clampRangePair(low, high, bounds) {
+    const minBound = parseFiniteNumber(bounds && bounds.min, 0);
+    const maxBound = parseFiniteNumber(bounds && bounds.max, minBound);
+    let nextLow = parseFiniteNumber(low, minBound);
+    let nextHigh = parseFiniteNumber(high, maxBound);
+    nextLow = Math.max(minBound, Math.min(nextLow, maxBound));
+    nextHigh = Math.max(minBound, Math.min(nextHigh, maxBound));
+    if (nextLow > nextHigh) {
+      const middle = nextLow;
+      nextLow = nextHigh;
+      nextHigh = middle;
+    }
+    return [nextLow, nextHigh];
+  }
+
+  function setRangeTrackBackground(track, bounds, low, high) {
+    if (!track) return;
+    const minBound = parseFiniteNumber(bounds && bounds.min, 0);
+    const maxBound = parseFiniteNumber(bounds && bounds.max, 100);
+    const span = Math.max(1, maxBound - minBound);
+    const safe = clampRangePair(low, high, bounds);
+    const start = ((safe[0] - minBound) / span) * 100;
+    const end = ((safe[1] - minBound) / span) * 100;
+    track.style.background = 'linear-gradient(90deg, rgba(41,36,33,.12) 0%, rgba(41,36,33,.12) ' + start + '%, rgba(179,91,46,.92) ' + start + '%, rgba(179,91,46,.92) ' + end + '%, rgba(41,36,33,.12) ' + end + '%, rgba(41,36,33,.12) 100%)';
+  }
+
+  function getShortlistIds() {
+    if (!window.PSGShortlist || typeof window.PSGShortlist.getAll !== 'function') return [];
+    return window.PSGShortlist.getAll().map(String);
+  }
+
+  function syncFeeRangeUi() {
+    const form = getFilterForm();
+    if (!form) return;
+    const bounds = (state.rangeBounds.fee && state.rangeBounds.fee[state.feeMode]) || { min: 0, max: 1000, step: 1000 };
+    const minInput = form.querySelector('[data-fee-min]');
+    const maxInput = form.querySelector('[data-fee-max]');
+    const minDisplay = form.querySelector('[data-fee-min-display]');
+    const maxDisplay = form.querySelector('[data-fee-max-display]');
+    const track = form.querySelector('[data-fee-filter] .school-range-filter__slider-wrap');
+    if (!minInput || !maxInput) return;
+
+    const pair = clampRangePair(minInput.value, maxInput.value, bounds);
+    minInput.value = String(pair[0]);
+    maxInput.value = String(pair[1]);
+    minInput.min = String(bounds.min);
+    minInput.max = String(bounds.max);
+    minInput.step = String(bounds.step);
+    maxInput.min = String(bounds.min);
+    maxInput.max = String(bounds.max);
+    maxInput.step = String(bounds.step);
+
+    if (minDisplay) minDisplay.textContent = formatCurrencyRangeValue(pair[0]);
+    if (maxDisplay) maxDisplay.textContent = formatCurrencyRangeValue(pair[1]);
+    setRangeTrackBackground(track, bounds, pair[0], pair[1]);
+  }
+
+  function applyFeeMode(mode, resetValues) {
+    const nextMode = mode === 'boarding' ? 'boarding' : 'day';
+    state.feeMode = nextMode;
+    const form = getFilterForm();
+    if (!form) return;
+    form.querySelectorAll('[data-fee-mode]').forEach(function (button) {
+      button.classList.toggle('is-active', button.getAttribute('data-fee-mode') === nextMode);
+      button.setAttribute('aria-pressed', button.getAttribute('data-fee-mode') === nextMode ? 'true' : 'false');
+    });
+    const bounds = (state.rangeBounds.fee && state.rangeBounds.fee[nextMode]) || { min: 0, max: 1000, step: 1000 };
+    const minInput = form.querySelector('[data-fee-min]');
+    const maxInput = form.querySelector('[data-fee-max]');
+    if (minInput && maxInput) {
+      if (resetValues) {
+        minInput.value = String(bounds.min);
+        maxInput.value = String(bounds.max);
+      } else {
+        const pair = clampRangePair(minInput.value, maxInput.value, bounds);
+        minInput.value = String(pair[0]);
+        maxInput.value = String(pair[1]);
+      }
+    }
+    syncFeeRangeUi();
+  }
+
+  function syncAlevelRangeUi(resetValues) {
+    const form = getFilterForm();
+    if (!form) return;
+    const bounds = state.rangeBounds.alevel || { min: 0, max: 100, step: 1 };
+    const minInput = form.querySelector('[data-alevel-min]');
+    const maxInput = form.querySelector('[data-alevel-max]');
+    const minDisplay = form.querySelector('[data-alevel-min-display]');
+    const maxDisplay = form.querySelector('[data-alevel-max-display]');
+    const track = form.querySelector('[data-alevel-filter] .school-range-filter__slider-wrap');
+    if (!minInput || !maxInput) return;
+
+    if (resetValues) {
+      minInput.value = String(bounds.min);
+      maxInput.value = String(bounds.max);
+    }
+
+    const pair = clampRangePair(minInput.value, maxInput.value, bounds);
+    minInput.value = String(pair[0]);
+    maxInput.value = String(pair[1]);
+    minInput.min = String(bounds.min);
+    minInput.max = String(bounds.max);
+    minInput.step = String(bounds.step);
+    maxInput.min = String(bounds.min);
+    maxInput.max = String(bounds.max);
+    maxInput.step = String(bounds.step);
+
+    if (minDisplay) minDisplay.textContent = formatPercentRangeValue(pair[0]);
+    if (maxDisplay) maxDisplay.textContent = formatPercentRangeValue(pair[1]);
+    setRangeTrackBackground(track, bounds, pair[0], pair[1]);
+  }
+
+  function initializeAdvancedFilterControls() {
+    const dayValues = state.schools.map(function (school) { return school.dayFeeAverage; }).filter(function (value) { return value !== null; });
+    const boardingValues = state.schools.map(function (school) { return school.boardingFeeAverage; }).filter(function (value) { return value !== null; });
+    state.rangeBounds = {
+      fee: {
+        day: buildFeeBounds(dayValues),
+        boarding: buildFeeBounds(boardingValues)
+      },
+      alevel: { min: 0, max: 100, step: 1 }
+    };
+    state.feeMode = 'day';
+    applyFeeMode('day', true);
+    syncAlevelRangeUi(true);
+  }
+
+  function bindAdvancedFilterControls() {
+    const form = getFilterForm();
+    if (!form) return;
+
+    form.querySelectorAll('[data-fee-mode]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        applyFeeMode(button.getAttribute('data-fee-mode') || 'day', true);
+        applyFilters();
+      });
+    });
+
+    ['[data-fee-min]', '[data-fee-max]'].forEach(function (selector) {
+      const input = form.querySelector(selector);
+      if (!input) return;
+      input.addEventListener('input', function () {
+        syncFeeRangeUi();
+        scheduleApplyFilters(60);
+      });
+      input.addEventListener('change', function () {
+        syncFeeRangeUi();
+        applyFilters();
+      });
+    });
+
+    ['[data-alevel-min]', '[data-alevel-max]'].forEach(function (selector) {
+      const input = form.querySelector(selector);
+      if (!input) return;
+      input.addEventListener('input', function () {
+        syncAlevelRangeUi(false);
+        scheduleApplyFilters(60);
+      });
+      input.addEventListener('change', function () {
+        syncAlevelRangeUi(false);
+        applyFilters();
+      });
+    });
+  }
+
+  function bindHomeHeroPlayback() {
+    const hero = document.querySelector('[data-home-hero]');
+    if (!hero) return;
+    const videos = Array.from(hero.querySelectorAll('[data-home-hero-video]'));
+    if (!videos.length) return;
+
+    function collapseHero() {
+      hero.classList.add('is-condensed');
+      videos.forEach(function (video) {
+        try {
+          video.pause();
+        } catch (error) {}
+      });
+    }
+
+    videos.forEach(function (video) {
+      try { video.loop = false; } catch (error) {}
+      video.addEventListener('ended', collapseHero, { once: true });
+    });
+  }
+
   function readFilters() {
     const form = getFilterForm();
+    const feeBounds = (state.rangeBounds.fee && state.rangeBounds.fee[state.feeMode]) || { min: 0, max: 1000, step: 1000 };
+    const alevelBounds = state.rangeBounds.alevel || { min: 0, max: 100, step: 1 };
     if (!form) {
       return {
-        locationQuery: '', radiusMiles: DEFAULT_RADIUS_MILES, genders: [], boarding: [], religions: [], sixthFormOnly: false, nurseryOnly: false
+        locationQuery: '',
+        radiusMiles: DEFAULT_RADIUS_MILES,
+        genders: [],
+        boarding: [],
+        religions: [],
+        sixthFormOnly: false,
+        nurseryOnly: false,
+        feeMode: state.feeMode || 'day',
+        feeMin: feeBounds.min,
+        feeMax: feeBounds.max,
+        feeActive: false,
+        alevelMin: alevelBounds.min,
+        alevelMax: alevelBounds.max,
+        alevelActive: false
       };
     }
 
     const locationInput = form.querySelector('#school-filter-location');
     const radiusInput = form.querySelector('#school-filter-radius');
+    const feeMinInput = form.querySelector('[data-fee-min]');
+    const feeMaxInput = form.querySelector('[data-fee-max]');
+    const alevelMinInput = form.querySelector('[data-alevel-min]');
+    const alevelMaxInput = form.querySelector('[data-alevel-max]');
+    const feePair = clampRangePair(feeMinInput ? feeMinInput.value : feeBounds.min, feeMaxInput ? feeMaxInput.value : feeBounds.max, feeBounds);
+    const alevelPair = clampRangePair(alevelMinInput ? alevelMinInput.value : alevelBounds.min, alevelMaxInput ? alevelMaxInput.value : alevelBounds.max, alevelBounds);
 
     return {
       locationQuery: locationInput ? locationInput.value.trim() : '',
@@ -407,7 +654,14 @@
       boarding: Array.from(form.querySelectorAll('input[name="boarding"]:checked')).map(function (input) { return input.value; }),
       religions: Array.from(form.querySelectorAll('input[name="religion"]:checked')).map(function (input) { return input.value; }),
       sixthFormOnly: Boolean(form.querySelector('#school-filter-sixth-form:checked')),
-      nurseryOnly: Boolean(form.querySelector('#school-filter-nursery:checked'))
+      nurseryOnly: Boolean(form.querySelector('#school-filter-nursery:checked')),
+      feeMode: state.feeMode || 'day',
+      feeMin: feePair[0],
+      feeMax: feePair[1],
+      feeActive: feePair[0] > feeBounds.min || feePair[1] < feeBounds.max,
+      alevelMin: alevelPair[0],
+      alevelMax: alevelPair[1],
+      alevelActive: alevelPair[0] > alevelBounds.min || alevelPair[1] < alevelBounds.max
     };
   }
 
@@ -415,8 +669,12 @@
     const genders = new Set(filters.genders || []);
     const boarding = new Set(filters.boarding || []);
     const religions = new Set(filters.religions || []);
+    const shortlistIds = state.shortlistPage ? new Set(getShortlistIds()) : null;
+    const sourceSchools = shortlistIds
+      ? state.schools.filter(function (school) { return shortlistIds.has(String(school.id)); })
+      : state.schools;
 
-    const filtered = state.schools
+    const filtered = sourceSchools
       .map(function (school) {
         const distanceMiles = resolvedLocation ? haversineMiles(resolvedLocation.lat, resolvedLocation.lng, school.lat, school.lng) : null;
         return Object.assign({}, school, { distanceMiles: distanceMiles });
@@ -427,6 +685,19 @@
         if (filters.sixthFormOnly && !school.hasSixthForm) return false;
         if (filters.nurseryOnly && !school.hasNursery) return false;
         if (religions.size && !religions.has(school.religion)) return false;
+
+        if (filters.feeActive) {
+          const feeValue = filters.feeMode === 'boarding'
+            ? normalizeFeeValue(school.boardingFeeAverage)
+            : normalizeFeeValue(school.dayFeeAverage);
+          if (feeValue === null || feeValue < filters.feeMin || feeValue > filters.feeMax) return false;
+        }
+
+        if (filters.alevelActive) {
+          const alevelValue = getAlevelAStarAValue(school);
+          if (alevelValue === null || alevelValue < filters.alevelMin || alevelValue > filters.alevelMax) return false;
+        }
+
         if (resolvedLocation && (!Number.isFinite(school.distanceMiles) || school.distanceMiles > filters.radiusMiles)) return false;
         return true;
       });
@@ -460,13 +731,16 @@
       : escapeHtml(point.displayLocation || '');
     const sortFeeValue = getSortFeeValue(point, state.sortMode);
     const showNoFeeDataLabel = isFeeSort(state.sortMode) && sortFeeValue === null;
-    const sharedAttributes = ' class="homepage-school-card homepage-school-card--' + escapeHtml(point.type) + (point.href ? '' : ' homepage-school-card--static') + '" data-school-id="' + escapeHtml(point.id) + '"';
-    const wrapperStart = point.href
-      ? '<a' + sharedAttributes + ' href="' + escapeHtml(point.href) + '">'
-      : '<article' + sharedAttributes + '>';
-    const wrapperEnd = point.href ? '</a>' : '</article>';
-
-    return wrapperStart +
+    const articleClasses = 'homepage-school-card homepage-school-card--' + escapeHtml(point.type) + (point.href ? '' : ' homepage-school-card--static');
+    const mainStart = point.href
+      ? '<a class="homepage-school-card__main" href="' + escapeHtml(point.href) + '">'
+      : '<div class="homepage-school-card__main">';
+    const mainEnd = point.href ? '</a>' : '</div>';
+    const actionLink = point.href
+      ? '<a class="homepage-school-card__action-link" href="' + escapeHtml(point.href) + '">View school</a>'
+      : '<span class="homepage-school-card__action-link" aria-hidden="true">No profile yet</span>';
+    return '<article class="' + articleClasses + '" data-school-id="' + escapeHtml(point.id) + '">' +
+      mainStart +
       '<div class="homepage-school-card__body">' +
       (eyebrow ? '<p class="homepage-school-card__eyebrow">' + eyebrow + '</p>' : '') +
       (point.badgeLabel ? '<p class="homepage-school-card__badge">' + escapeHtml(point.badgeLabel) + '</p>' : '') +
@@ -475,7 +749,12 @@
       (extras.length ? '<p class="homepage-school-card__meta homepage-school-card__meta--secondary">' + escapeHtml(extras.join(' · ')) + '</p>' : '') +
       (showNoFeeDataLabel ? '<p class="homepage-school-card__status homepage-school-card__status--neutral">No fee data</p>' : '') +
       (!point.href ? '<p class="homepage-school-card__status">Profile coming soon</p>' : '') +
-      '</div>' + wrapperEnd;
+      '</div>' + mainEnd +
+      '<div class="homepage-school-card__actions">' +
+      actionLink +
+      '<button class="homepage-school-card__shortlist" data-shortlist-add-label="Add to shortlist" data-shortlist-button data-shortlist-remove-label="Shortlisted" data-shortlist-school-id="' + escapeHtml(point.id) + '" type="button">Add to shortlist</button>' +
+      '</div>' +
+      '</article>';
   }
 
   function setHoveredSchoolId(nextSchoolId) {
@@ -627,10 +906,10 @@
 
     if (emptyState) {
       emptyState.hidden = results.length > 0 || Boolean(resolvedLocation);
-      if (!emptyState.hidden) emptyState.textContent = 'No schools match these filters.';
+      if (!emptyState.hidden) emptyState.textContent = state.shortlistPage ? 'No shortlisted schools match these filters.' : 'No schools match these filters.';
       if (resolvedLocation && results.length === 0) {
         emptyState.hidden = false;
-        emptyState.textContent = 'No schools were found within ' + formatMiles(filters.radiusMiles) + ' miles of ' + resolvedLocation.label + '.';
+        emptyState.textContent = (state.shortlistPage ? 'No shortlisted schools were found within ' : 'No schools were found within ') + formatMiles(filters.radiusMiles) + ' miles of ' + resolvedLocation.label + '.';
       }
     }
 
@@ -785,6 +1064,9 @@
     const shown = state.visibleSchools.slice(0, MAX_VISIBLE_TILES);
     cardGrid.innerHTML = shown.map(schoolCardHtml).join('');
     bindCardHoverStates();
+    if (window.PSGShortlist && typeof window.PSGShortlist.refreshUi === 'function') {
+      window.PSGShortlist.refreshUi(document);
+    }
   }
 
   function updateResultsSummary() {
@@ -792,8 +1074,18 @@
     if (!target) return;
     const filteredCount = state.filteredSchools.length;
     const visibleCount = state.visibleSchools.length;
+    const shortlistCount = state.shortlistPage ? getShortlistIds().length : 0;
+
+    if (state.shortlistPage && !shortlistCount) {
+      target.textContent = 'You have not added any schools to your shortlist yet.';
+      return;
+    }
 
     if (!filteredCount) {
+      if (state.shortlistPage) {
+        target.textContent = 'No shortlisted schools match these filters.';
+        return;
+      }
       if (state.resolvedLocation && state.currentFilters) {
         target.textContent = 'No schools found within ' + formatMiles(state.currentFilters.radiusMiles) + ' miles of ' + state.resolvedLocation.label + '.';
       } else {
@@ -803,21 +1095,28 @@
     }
 
     if (visibleCount === filteredCount) {
-      target.textContent = 'Showing ' + formatCount(visibleCount) + ' ' + pluralize(visibleCount, 'school') + ' in the current map view.';
+      target.textContent = 'Showing ' + formatCount(visibleCount) + ' ' + pluralize(visibleCount, state.shortlistPage ? 'shortlisted school' : 'school') + ' in the current map view.';
       return;
     }
 
-    target.textContent = 'Showing ' + formatCount(visibleCount) + ' of ' + formatCount(filteredCount) + ' matching schools in the current map view.';
+    target.textContent = 'Showing ' + formatCount(visibleCount) + ' of ' + formatCount(filteredCount) + ' ' + (state.shortlistPage ? 'shortlisted schools' : 'matching schools') + ' in the current map view.';
   }
 
   function updateEmptyState() {
     const empty = document.getElementById('homepage-visible-school-empty');
     if (!empty) return;
+    const shortlistCount = state.shortlistPage ? getShortlistIds().length : 0;
+
+    if (state.shortlistPage && !shortlistCount) {
+      empty.hidden = false;
+      empty.textContent = 'Shortlist schools from the directory or from any school page to see them here.';
+      return;
+    }
 
     if (state.viewMode === 'tiles') {
       if (!state.visibleSchools.length) {
         empty.hidden = false;
-        empty.textContent = 'No schools are currently visible on the map.';
+        empty.textContent = state.shortlistPage ? 'No shortlisted schools are currently visible on the map.' : 'No schools are currently visible on the map.';
         return;
       }
 
@@ -835,15 +1134,15 @@
     const sectionSchools = getSectionSchools();
     if (!state.visibleSchools.length) {
       empty.hidden = false;
-      empty.textContent = 'No schools are currently visible on the map.';
+      empty.textContent = state.shortlistPage ? 'No shortlisted schools are currently visible on the map.' : 'No schools are currently visible on the map.';
       return;
     }
     if (!sectionSchools.length) {
       const labels = {
-        glance: 'No visible schools are available for this view.',
-        dayFees: 'No visible schools currently show annual day fees.',
-        boardingFees: 'No visible schools currently show annual boarding fees.',
-        alevel: 'No visible schools currently show A-level data.'
+        glance: state.shortlistPage ? 'No visible shortlisted schools are available for this view.' : 'No visible schools are available for this view.',
+        dayFees: state.shortlistPage ? 'No visible shortlisted schools currently show annual day fees.' : 'No visible schools currently show annual day fees.',
+        boardingFees: state.shortlistPage ? 'No visible shortlisted schools currently show annual boarding fees.' : 'No visible schools currently show annual boarding fees.',
+        alevel: state.shortlistPage ? 'No visible shortlisted schools currently show A-level data.' : 'No visible schools currently show A-level data.'
       };
       empty.hidden = false;
       empty.textContent = labels[state.tableSection] || labels.glance;
@@ -945,6 +1244,8 @@
     const resetButton = document.getElementById('homepage-school-filter-reset');
     if (!form) return;
 
+    bindAdvancedFilterControls();
+
     const locationInput = form.querySelector('#school-filter-location');
     const radiusInput = form.querySelector('#school-filter-radius');
 
@@ -985,6 +1286,8 @@
         state.tablePage = 0;
         closeFilterDropdowns();
         refreshFilterDropdownLabels();
+        applyFeeMode('day', true);
+        syncAlevelRangeUi(true);
         updateError('');
         applyFilters();
       });
@@ -1183,7 +1486,9 @@
   }
 
   function initHomepage() {
+    state.shortlistPage = document.body.classList.contains('shortlist-page');
     state.schools = getSchoolData();
+    initializeAdvancedFilterControls();
     bindResponsiveFinderLayout();
     bindLocationPanelToggle();
     bindGuideLocationSearch();
@@ -1191,9 +1496,18 @@
     bindFilterForm();
     bindFilterPanelToggle();
     bindResultViewControls();
+    bindHomeHeroPlayback();
     applyInitialQueryParams();
     bootHomepageMap(0);
     applyFilters();
+
+    window.addEventListener('psg:shortlist-change', function () {
+      if (state.shortlistPage) {
+        applyFilters();
+      } else if (window.PSGShortlist && typeof window.PSGShortlist.refreshUi === 'function') {
+        window.PSGShortlist.refreshUi(document);
+      }
+    });
   }
 
   if (document.readyState === 'loading') {
