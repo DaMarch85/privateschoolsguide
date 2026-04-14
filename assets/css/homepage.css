@@ -133,6 +133,14 @@ body.home-minimal a{color:inherit;text-decoration:none}
 
 .school-filter-field{margin:0;padding:0;border:0;min-width:0}
 
+.school-filter-range-row{
+  grid-column:1 / -1;
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:1rem;
+  align-items:end;
+}
+
 .school-filter-label{
   display:block;
   margin:0 0 .45rem;
@@ -803,9 +811,7 @@ body.home-minimal a{color:inherit;text-decoration:none}
   text-align:center;
 }
 
-.school-filter-field--fee{grid-column:span 3}
-.school-filter-field--alevel{grid-column:span 2}
-.school-filter-field--must-have{grid-column:span 1}
+.school-filter-field--must-have{grid-column:1 / span 2}
 
 .school-range-filter,
 .school-filter-checklist{
@@ -1046,10 +1052,9 @@ body.home-minimal a{color:inherit;text-decoration:none}
 }
 
 @media (max-width: 1220px){
-  .school-filter-field--religion,
-  .school-filter-field--fee,
-  .school-filter-field--alevel{grid-column:1 / -1}
-  .school-filter-field--must-have{grid-column:span 3}
+  .school-filter-field--religion{grid-column:1 / -1}
+  .school-filter-range-row{grid-template-columns:repeat(3, minmax(0, 1fr))}
+  .school-filter-field--must-have{grid-column:1 / -1}
 }
 
 @media (max-width: 900px){
@@ -1057,11 +1062,10 @@ body.home-minimal a{color:inherit;text-decoration:none}
   .home-hero.is-condensed .hero-centre{min-height:24svh;padding:1rem}
   .home-hero--shortlist,
   .hero-centre--shortlist{min-height:28svh}
-  .school-filter-field--fee,
-  .school-filter-field--alevel,
   .school-filter-field--must-have,
   .school-filter-field--religion,
   .school-filter-field--location{grid-column:1 / -1}
+  .school-filter-range-row{grid-template-columns:1fr}
   .homepage-shortlist-link{width:100%;justify-content:space-between}
 }
 
