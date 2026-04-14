@@ -87,7 +87,7 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
   bodyClass="home-minimal"
 >
   <Fragment slot="head">
-    <link rel="stylesheet" href="/assets/css/homepage.css?v=20260413c-histograms" />
+    <link rel="stylesheet" href="/assets/css/homepage.css?v=20260414b-fee-split" />
   </Fragment>
 
   <main id="main">
@@ -193,27 +193,45 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
               </details>
             </div>
 
-            <div class="school-filter-field school-filter-field--range school-filter-field--fee">
-              <span class="school-filter-label">Average fees</span>
-              <div class="school-range-filter" data-fee-filter>
-                <div class="school-range-filter__switch" role="group" aria-label="Fee type">
-                  <button class="is-active" data-fee-mode="day" type="button">Day fees</button>
-                  <button data-fee-mode="boarding" type="button">Boarding fees</button>
-                </div>
-                <p class="school-range-filter__count" data-fee-histogram-count>Loading fee data…</p>
-                <div aria-hidden="true" class="school-range-filter__histogram" data-fee-histogram></div>
+            <div class="school-filter-field school-filter-field--range school-filter-field--day-fee">
+              <span class="school-filter-label">Average day fees</span>
+              <div class="school-range-filter school-range-filter--fee" data-day-fee-filter>
+                <p class="school-range-filter__count" data-day-fee-histogram-count>Loading day-fee data…</p>
+                <div aria-hidden="true" class="school-range-filter__histogram" data-day-fee-histogram></div>
                 <div class="school-range-filter__slider-wrap">
-                  <input class="school-range-filter__slider" data-fee-min id="school-filter-fee-min" type="range" />
-                  <input class="school-range-filter__slider" data-fee-max id="school-filter-fee-max" type="range" />
+                  <input class="school-range-filter__slider" data-day-fee-min id="school-filter-day-fee-min" type="range" />
+                  <input class="school-range-filter__slider" data-day-fee-max id="school-filter-day-fee-max" type="range" />
                 </div>
                 <div class="school-range-filter__display">
                   <div class="school-range-filter__display-box">
                     <span class="school-range-filter__display-label">Minimum</span>
-                    <strong data-fee-min-display>£1,000</strong>
+                    <strong data-day-fee-min-display>£1,000</strong>
                   </div>
                   <div class="school-range-filter__display-box">
                     <span class="school-range-filter__display-label">Maximum</span>
-                    <strong data-fee-max-display>£0</strong>
+                    <strong data-day-fee-max-display>£0</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="school-filter-field school-filter-field--range school-filter-field--boarding-fee">
+              <span class="school-filter-label">Average boarding fees</span>
+              <div class="school-range-filter school-range-filter--fee" data-boarding-fee-filter>
+                <p class="school-range-filter__count" data-boarding-fee-histogram-count>Loading boarding-fee data…</p>
+                <div aria-hidden="true" class="school-range-filter__histogram" data-boarding-fee-histogram></div>
+                <div class="school-range-filter__slider-wrap">
+                  <input class="school-range-filter__slider" data-boarding-fee-min id="school-filter-boarding-fee-min" type="range" />
+                  <input class="school-range-filter__slider" data-boarding-fee-max id="school-filter-boarding-fee-max" type="range" />
+                </div>
+                <div class="school-range-filter__display">
+                  <div class="school-range-filter__display-box">
+                    <span class="school-range-filter__display-label">Minimum</span>
+                    <strong data-boarding-fee-min-display>£1,000</strong>
+                  </div>
+                  <div class="school-range-filter__display-box">
+                    <span class="school-range-filter__display-label">Maximum</span>
+                    <strong data-boarding-fee-max-display>£0</strong>
                   </div>
                 </div>
               </div>
@@ -368,5 +386,5 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script defer src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js" crossorigin=""></script>
   <script defer src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js" crossorigin=""></script>
-  <script defer src="/assets/js/homepage.js?v=20260413c-histograms"></script>
+  <script defer src="/assets/js/homepage.js?v=20260414c-fee-bugfixes"></script>
 </BaseLayout>
