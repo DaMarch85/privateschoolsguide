@@ -35,8 +35,8 @@
     mapFocusLocation: null,
     rangeBounds: {
       fee: {
-        day: { min: 0, max: 1000, step: 1000 },
-        boarding: { min: 0, max: 1000, step: 1000 }
+        day: { min: 1000, max: 1000, step: 100 },
+        boarding: { min: 1000, max: 1000, step: 100 }
       },
       alevel: { min: 0, max: 100, step: 1 }
     },
@@ -418,14 +418,12 @@
 
   function buildFeeBounds(values) {
     const valid = values.filter(function (value) { return Number.isFinite(Number(value)) && Number(value) > 0; }).map(Number);
-    if (!valid.length) return { min: 0, max: 1000, step: 1000 };
+    if (!valid.length) return { min: 1000, max: 1000, step: 100 };
     const maxValue = Math.max.apply(null, valid);
-    const minValue = Math.min.apply(null, valid);
-    const step = maxValue >= 30000 ? 1000 : 500;
-    const min = Math.floor(minValue / step) * step;
-    let max = Math.ceil(maxValue / step) * step;
-    if (max <= min) max = min + step;
-    return { min: min, max: max, step: step };
+    const minimumFloor = maxValue > 1000 ? 1000 : 0;
+    const step = maxValue >= 30000 ? 1000 : (maxValue >= 10000 ? 500 : 100);
+    const max = Math.max(minimumFloor + step, Math.round(maxValue));
+    return { min: minimumFloor, max: max, step: step };
   }
 
   function clampRangePair(low, high, bounds) {
@@ -459,10 +457,188 @@
     return window.PSGShortlist.getAll().map(String);
   }
 
+  function buildHistogramCounts(values, bounds, binCount) {
+    const safeValues = Array.isArray(values)
+      ? values.map(function (value) { return Number(value); }).filter(function (value) { return Number.isFinite(value); })
+      : [];
+    const minBound = parseFiniteNumber(bounds && bounds.min, 0);
+    const maxBound = parseFiniteNumber(bounds && bounds.max, minBound + 1);
+    const safeMax = maxBound > minBound ? maxBound : minBound + 1;
+    const bins = Math.max(8, Math.min(24, Number(binCount) || 16));
+    const span = safeMax - minBound;
+    const counts = new Array(bins).fill(0);
+
+    safeValues.forEach(function (value) {
+      const clamped = Math.max(minBound, Math.min(value, safeMax));
+      const position = span <= 0 ? 0 : ((clamped - minBound) / span) * bins;
+      const index = Math.max(0, Math.min(bins - 1, Math.floor(position === bins ? bins - 1 : position)));
+      counts[index] += 1;
+    });
+
+    return {
+      counts: counts,
+      maxCount: Math.max.apply(null, counts.concat([1])),
+      minBound: minBound,
+      maxBound: safeMax,
+      bins: bins,
+      valueCount: safeValues.length
+    };
+  }
+
+  function renderHistogram(container, histogram, selectedLow, selectedHigh) {
+    if (!container) return;
+    const counts = histogram && Array.isArray(histogram.counts) ? histogram.counts : [];
+    const maxCount = histogram && Number(histogram.maxCount) > 0 ? Number(histogram.maxCount) : 1;
+    const minBound = histogram ? histogram.minBound : 0;
+    const maxBound = histogram ? histogram.maxBound : 1;
+    const span = Math.max(1, maxBound - minBound);
+    const safeLow = parseFiniteNumber(selectedLow, minBound);
+    const safeHigh = parseFiniteNumber(selectedHigh, maxBound);
+    const binSize = counts.length ? span / counts.length : span;
+
+    container.innerHTML = counts.map(function (count, index) {
+      const height = count > 0 ? Math.max(10, Math.round((count / maxCount) * 100)) : 8;
+      const start = minBound + (index * binSize);
+      const end = index === counts.length - 1 ? maxBound : start + binSize;
+      const isSelected = end > safeLow && start <= safeHigh;
+      return '<span class="school-range-filter__histogram-bar' +
+        (isSelected ? ' is-selected' : '') +
+        (count === 0 ? ' is-empty' : '') +
+        '" style="height:' + height + '%" aria-hidden="true"></span>';
+    }).join('');
+  }
+
+  function refreshRangeHistograms(filters) {
+    const form = getFilterForm();
+    if (!form) return;
+    const activeFilters = filters || readFilters();
+
+    const feeContainer = form.querySelector('[data-fee-histogram]');
+    const feeCount = form.querySelector('[data-fee-histogram-count]');
+    if (feeContainer) {
+      const feeFilters = Object.assign({}, activeFilters, { feeActive: false });
+      const feeSchools = filterSchools(feeFilters, state.resolvedLocation);
+      const feeBounds = (state.rangeBounds.fee && state.rangeBounds.fee[state.feeMode]) || { min: 1000, max: 1000, step: 100 };
+      const feeValues = feeSchools.map(function (school) {
+        return state.feeMode === 'boarding' ? normalizeFeeValue(school.boardingFeeAverage) : normalizeFeeValue(school.dayFeeAverage);
+      }).filter(function (value) { return value !== null; });
+      const feeHistogram = buildHistogramCounts(feeValues, feeBounds, 16);
+      renderHistogram(feeContainer, feeHistogram, activeFilters.feeMin, activeFilters.feeMax);
+      if (feeCount) {
+        feeCount.textContent = feeHistogram.valueCount
+          ? formatCount(feeHistogram.valueCount) + ' schools with published ' + (state.feeMode === 'boarding' ? 'boarding' : 'day') + ' fees'
+          : 'No published ' + (state.feeMode === 'boarding' ? 'boarding' : 'day') + ' fees in this search';
+      }
+    }
+
+    const alevelContainer = form.querySelector('[data-alevel-histogram]');
+    const alevelCount = form.querySelector('[data-alevel-histogram-count]');
+    if (alevelContainer) {
+      const alevelFilters = Object.assign({}, activeFilters, { alevelActive: false });
+      const alevelSchools = filterSchools(alevelFilters, state.resolvedLocation);
+      const alevelBounds = state.rangeBounds.alevel || { min: 0, max: 100, step: 1 };
+      const alevelValues = alevelSchools.map(getAlevelAStarAValue).filter(function (value) { return value !== null; });
+      const alevelHistogram = buildHistogramCounts(alevelValues, alevelBounds, 16);
+      renderHistogram(alevelContainer, alevelHistogram, activeFilters.alevelMin, activeFilters.alevelMax);
+      if (alevelCount) {
+        alevelCount.textContent = alevelHistogram.valueCount
+          ? formatCount(alevelHistogram.valueCount) + ' schools with published A*–A results'
+          : 'No published A-level results in this search';
+      }
+    }
+  }
+
+  function saveHomepageSearchState(filters) {
+    if (state.shortlistPage || window.location.pathname !== '/' || !window.PSGSearchState || typeof window.PSGSearchState.save !== 'function') return;
+    const activeFilters = filters || readFilters();
+    window.PSGSearchState.save({
+      mode: 'form',
+      restoreUrl: '/?restoreSearch=1',
+      locationLabel: (state.resolvedLocation && state.resolvedLocation.label) || activeFilters.locationQuery || '',
+      locationQuery: activeFilters.locationQuery || '',
+      resolvedLocationLabel: (state.resolvedLocation && state.resolvedLocation.label) || '',
+      radiusMiles: activeFilters.radiusMiles,
+      genders: activeFilters.genders || [],
+      boarding: activeFilters.boarding || [],
+      religions: activeFilters.religions || [],
+      sixthFormOnly: Boolean(activeFilters.sixthFormOnly),
+      nurseryOnly: Boolean(activeFilters.nurseryOnly),
+      feeMode: activeFilters.feeMode || state.feeMode || 'day',
+      feeMin: activeFilters.feeMin,
+      feeMax: activeFilters.feeMax,
+      alevelMin: activeFilters.alevelMin,
+      alevelMax: activeFilters.alevelMax,
+      sortMode: state.sortMode || 'dayFeesDesc',
+      centeredMap: Boolean(state.mapFocusLocation && activeFilters.locationQuery),
+      centeredMapZoom: state.mapFocusLocation && state.mapFocusLocation.zoom ? state.mapFocusLocation.zoom : null
+    });
+  }
+
+  function applyRestoredSearchStateFromStorage() {
+    if (state.shortlistPage || window.location.pathname !== '/' || !window.PSGSearchState || typeof window.PSGSearchState.get !== 'function') return;
+    const params = new URLSearchParams(window.location.search || '');
+    if (params.get('restoreSearch') !== '1') return;
+
+    const savedState = window.PSGSearchState.get();
+    const form = getFilterForm();
+    if (!savedState || savedState.mode !== 'form' || !form) return;
+
+    const locationInput = form.querySelector('#school-filter-location');
+    const radiusInput = form.querySelector('#school-filter-radius');
+    if (locationInput) locationInput.value = savedState.locationQuery || '';
+    if (radiusInput) radiusInput.value = String(savedState.radiusMiles || DEFAULT_RADIUS_MILES);
+
+    form.querySelectorAll('input[name="gender"]').forEach(function (input) {
+      input.checked = (savedState.genders || []).includes(input.value);
+    });
+    form.querySelectorAll('input[name="boarding"]').forEach(function (input) {
+      input.checked = (savedState.boarding || []).includes(input.value);
+    });
+    form.querySelectorAll('input[name="religion"]').forEach(function (input) {
+      input.checked = (savedState.religions || []).includes(input.value);
+    });
+
+    const sixthFormInput = form.querySelector('#school-filter-sixth-form');
+    const nurseryInput = form.querySelector('#school-filter-nursery');
+    if (sixthFormInput) sixthFormInput.checked = Boolean(savedState.sixthFormOnly);
+    if (nurseryInput) nurseryInput.checked = Boolean(savedState.nurseryOnly);
+
+    applyFeeMode(savedState.feeMode || 'day', true);
+    const feeMinInput = form.querySelector('[data-fee-min]');
+    const feeMaxInput = form.querySelector('[data-fee-max]');
+    if (feeMinInput && savedState.feeMin !== null) feeMinInput.value = String(savedState.feeMin);
+    if (feeMaxInput && savedState.feeMax !== null) feeMaxInput.value = String(savedState.feeMax);
+    syncFeeRangeUi();
+
+    const alevelMinInput = form.querySelector('[data-alevel-min]');
+    const alevelMaxInput = form.querySelector('[data-alevel-max]');
+    if (alevelMinInput && savedState.alevelMin !== null) alevelMinInput.value = String(savedState.alevelMin);
+    if (alevelMaxInput && savedState.alevelMax !== null) alevelMaxInput.value = String(savedState.alevelMax);
+    syncAlevelRangeUi(false);
+
+    state.sortMode = savedState.sortMode || 'dayFeesDesc';
+    const sortSelect = document.getElementById('homepage-school-sort');
+    if (sortSelect) sortSelect.value = state.sortMode;
+
+    refreshFilterDropdownLabels();
+    state.initialMapFocus = savedState.centeredMap && savedState.locationQuery ? {
+      key: normalizeSearchQuery(savedState.locationQuery),
+      zoom: savedState.centeredMapZoom || 14
+    } : null;
+
+    if (window.history && typeof window.history.replaceState === 'function') {
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.delete('restoreSearch');
+      const nextSearch = nextUrl.searchParams.toString();
+      const nextPath = nextUrl.pathname + (nextSearch ? '?' + nextSearch : '') + nextUrl.hash;
+      window.history.replaceState({}, '', nextPath);
+    }
+  }
+
   function syncFeeRangeUi() {
     const form = getFilterForm();
     if (!form) return;
-    const bounds = (state.rangeBounds.fee && state.rangeBounds.fee[state.feeMode]) || { min: 0, max: 1000, step: 1000 };
+    const bounds = (state.rangeBounds.fee && state.rangeBounds.fee[state.feeMode]) || { min: 1000, max: 1000, step: 100 };
     const minInput = form.querySelector('[data-fee-min]');
     const maxInput = form.querySelector('[data-fee-max]');
     const minDisplay = form.querySelector('[data-fee-min-display]');
@@ -483,6 +659,7 @@
     if (minDisplay) minDisplay.textContent = formatCurrencyRangeValue(pair[0]);
     if (maxDisplay) maxDisplay.textContent = formatCurrencyRangeValue(pair[1]);
     setRangeTrackBackground(track, bounds, pair[0], pair[1]);
+    refreshRangeHistograms(readFilters());
   }
 
   function applyFeeMode(mode, resetValues) {
@@ -494,7 +671,7 @@
       button.classList.toggle('is-active', button.getAttribute('data-fee-mode') === nextMode);
       button.setAttribute('aria-pressed', button.getAttribute('data-fee-mode') === nextMode ? 'true' : 'false');
     });
-    const bounds = (state.rangeBounds.fee && state.rangeBounds.fee[nextMode]) || { min: 0, max: 1000, step: 1000 };
+    const bounds = (state.rangeBounds.fee && state.rangeBounds.fee[nextMode]) || { min: 1000, max: 1000, step: 100 };
     const minInput = form.querySelector('[data-fee-min]');
     const maxInput = form.querySelector('[data-fee-max]');
     if (minInput && maxInput) {
@@ -539,6 +716,7 @@
     if (minDisplay) minDisplay.textContent = formatPercentRangeValue(pair[0]);
     if (maxDisplay) maxDisplay.textContent = formatPercentRangeValue(pair[1]);
     setRangeTrackBackground(track, bounds, pair[0], pair[1]);
+    refreshRangeHistograms(readFilters());
   }
 
   function initializeAdvancedFilterControls() {
@@ -601,12 +779,30 @@
     if (!videos.length) return;
 
     function collapseHero() {
+      if (hero.classList.contains('is-condensed')) return;
+      const beforeHeight = hero.offsetHeight || 0;
+      const heroTop = hero.getBoundingClientRect().top + window.scrollY;
+      const scrolledPastHero = window.scrollY > heroTop + beforeHeight - 24;
+
+      if (scrolledPastHero) hero.classList.add('is-condensing-instant');
       hero.classList.add('is-condensed');
+
       videos.forEach(function (video) {
         try {
           video.pause();
         } catch (error) {}
       });
+
+      if (scrolledPastHero) {
+        const afterHeight = hero.offsetHeight || 0;
+        const delta = Math.max(0, beforeHeight - afterHeight);
+        if (delta > 0) {
+          window.scrollTo({ top: Math.max(0, window.scrollY - delta), left: window.scrollX, behavior: 'auto' });
+        }
+        window.requestAnimationFrame(function () {
+          hero.classList.remove('is-condensing-instant');
+        });
+      }
     }
 
     videos.forEach(function (video) {
@@ -617,7 +813,7 @@
 
   function readFilters() {
     const form = getFilterForm();
-    const feeBounds = (state.rangeBounds.fee && state.rangeBounds.fee[state.feeMode]) || { min: 0, max: 1000, step: 1000 };
+    const feeBounds = (state.rangeBounds.fee && state.rangeBounds.fee[state.feeMode]) || { min: 1000, max: 1000, step: 100 }
     const alevelBounds = state.rangeBounds.alevel || { min: 0, max: 100, step: 1 };
     if (!form) {
       return {
@@ -736,9 +932,6 @@
       ? '<a class="homepage-school-card__main" href="' + escapeHtml(point.href) + '">'
       : '<div class="homepage-school-card__main">';
     const mainEnd = point.href ? '</a>' : '</div>';
-    const actionLink = point.href
-      ? '<a class="homepage-school-card__action-link" href="' + escapeHtml(point.href) + '">View school</a>'
-      : '<span class="homepage-school-card__action-link" aria-hidden="true">No profile yet</span>';
     return '<article class="' + articleClasses + '" data-school-id="' + escapeHtml(point.id) + '">' +
       mainStart +
       '<div class="homepage-school-card__body">' +
@@ -751,8 +944,7 @@
       (!point.href ? '<p class="homepage-school-card__status">Profile coming soon</p>' : '') +
       '</div>' + mainEnd +
       '<div class="homepage-school-card__actions">' +
-      actionLink +
-      '<button class="homepage-school-card__shortlist" data-shortlist-add-label="Add to shortlist" data-shortlist-button data-shortlist-remove-label="Shortlisted" data-shortlist-school-id="' + escapeHtml(point.id) + '" type="button">Add to shortlist</button>' +
+      '<button class="homepage-school-card__shortlist homepage-school-card__shortlist--banner" data-shortlist-add-label="Add to shortlist" data-shortlist-button data-shortlist-remove-label="Shortlisted" data-shortlist-school-id="' + escapeHtml(point.id) + '" type="button">Add to shortlist</button>' +
       '</div>' +
       '</article>';
   }
@@ -1176,6 +1368,7 @@
   function renderResultsOnly() {
     syncViewControls();
     updateResultsSummary();
+    refreshRangeHistograms(state.currentFilters || readFilters());
     if (state.viewMode === 'tiles') {
       renderSchoolCards();
     } else {
@@ -1235,6 +1428,7 @@
     state.tablePage = 0;
     state.filteredSchools = filterSchools(filters, state.resolvedLocation);
     state.visibleSchools = state.filteredSchools.slice();
+    saveHomepageSearchState(filters);
     renderResultsOnly();
     redrawMap(state.filteredSchools, filters, state.resolvedLocation, state.mapFocusLocation);
   }
@@ -1498,6 +1692,7 @@
     bindResultViewControls();
     bindHomeHeroPlayback();
     applyInitialQueryParams();
+    applyRestoredSearchStateFromStorage();
     bootHomepageMap(0);
     applyFilters();
 

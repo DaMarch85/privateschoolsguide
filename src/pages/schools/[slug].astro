@@ -106,7 +106,7 @@ const heroSlides = Array.from(
       ) : null}
     </div>
   </section>
-  <div class="school-back-strip"><div class="shell"><a class="school-back-link" href={`/${profile.location.slug}/`}>← Back to {profile.location.name}</a></div></div>
+  <div class="school-back-strip"><div class="shell"><a class="school-back-link" data-restore-search-link href={profile.changeSearchHref}>← Back to {profile.location.name}</a></div></div>
   <div class="school-compare-floating-bar" data-compare-floating-bar hidden>
     <div class="shell school-compare-floating-bar__inner">
       <p class="school-compare-floating-bar__text" data-compare-floating-label>Comparing schools</p>
@@ -351,7 +351,7 @@ const heroSlides = Array.from(
         <div aria-label={`Map showing ${profile.school.name}`} class="bath-location-map school-page-map" id="school-page-map"></div>
         <p class="map-caption">{profile.address}</p>
         <div class="school-map-actions">
-          {profile.parentLocationHref ? <a class="school-map-action school-map-action--secondary" href={profile.parentLocationHref}>Back to {profile.parentLocationName || profile.location.name}</a> : null}
+          {profile.parentLocationHref ? <a class="school-map-action school-map-action--secondary" data-restore-search-link href={profile.changeSearchHref}>Back to {profile.parentLocationName || profile.location.name}</a> : null}
           <a class="school-map-action school-map-action--primary" href={profile.changeSearchHref}>Change search area</a>
         </div>
       </aside>
@@ -364,7 +364,6 @@ const heroSlides = Array.from(
   <script is:inline set:html={schoolNearbyMapScript}></script>
   <script id="school-map-data" is:inline set:html={schoolMapJson} type="application/json"></script>
   <script id="school-nearby-map-data" is:inline set:html={schoolNearbyMapJson} type="application/json"></script>
-  <script defer src="/assets/js/site.js"></script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script defer src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js" crossorigin=""></script>
   <script defer src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js" crossorigin=""></script>

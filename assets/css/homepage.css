@@ -1075,3 +1075,128 @@ body.home-minimal a{color:inherit;text-decoration:none}
   .homepage-school-card__action-link,
   .homepage-school-card__shortlist{width:100%}
 }
+
+/* --- 2026-04-13 fee histogram, shortlist page tidy-up, tile shortlist banner --- */
+.home-hero.is-condensing-instant,
+.home-hero.is-condensing-instant .hero-centre,
+.home-hero.is-condensing-instant .hero-video,
+.home-hero.is-condensing-instant .hero-wash,
+.home-hero.is-condensing-instant .hero-title{
+  transition:none !important;
+}
+
+.school-range-filter__count{
+  margin:0;
+  color:var(--home-muted);
+  font-size:.78rem;
+  font-weight:600;
+  letter-spacing:.04em;
+}
+
+.school-range-filter__histogram{
+  display:flex;
+  align-items:flex-end;
+  gap:3px;
+  min-height:90px;
+  height:90px;
+  padding:.15rem 0 .45rem;
+  border-bottom:1px solid rgba(41,36,33,.14);
+}
+
+.school-range-filter__histogram-bar{
+  flex:1 1 0;
+  min-width:0;
+  border-radius:6px 6px 0 0;
+  background:rgba(41,36,33,.12);
+}
+
+.school-range-filter__histogram-bar.is-selected{
+  background:rgba(179,91,46,.92);
+}
+
+.school-range-filter__histogram-bar.is-empty{
+  opacity:.45;
+}
+
+.homepage-school-card__main{
+  padding-bottom:.55rem;
+}
+
+.homepage-school-card__actions{
+  display:block;
+  padding:0;
+  margin-top:auto;
+}
+
+.homepage-school-card__action-link{
+  display:none !important;
+}
+
+.homepage-school-card__shortlist--banner,
+.homepage-school-card__shortlist.homepage-school-card__shortlist--banner{
+  display:flex;
+  width:100%;
+  min-height:48px;
+  padding:.95rem 1rem;
+  border:0;
+  border-top:1px solid var(--home-border);
+  border-radius:0;
+  background:#f8f4ee;
+  color:var(--home-dark);
+}
+
+.homepage-school-card__shortlist--banner.is-active,
+.homepage-school-card__shortlist.homepage-school-card__shortlist--banner.is-active{
+  background:var(--home-dark);
+  border-top-color:var(--home-dark);
+  color:#fff;
+}
+
+.home-hero--shortlist{
+  min-height:22svh;
+}
+
+.hero-centre--shortlist{
+  min-height:22svh;
+  padding:1.5rem 1rem;
+}
+
+.home-hero--shortlist .hero-title--shortlist{
+  font-size:clamp(1.55rem, 3vw, 2.35rem);
+  letter-spacing:.11em;
+}
+
+.finder-grid--shortlist .finder-left-column,
+.finder-grid--shortlist .finder-left-inner,
+.finder-grid--shortlist .finder-map-panel{
+  min-height:0;
+}
+
+@media (max-width: 900px){
+  .school-range-filter__histogram{
+    min-height:82px;
+    height:82px;
+  }
+
+  .home-hero--shortlist,
+  .hero-centre--shortlist{
+    min-height:18svh;
+  }
+}
+
+@media (max-width: 560px){
+  .school-range-filter__histogram{
+    gap:2px;
+    min-height:74px;
+    height:74px;
+  }
+
+  .homepage-school-card__actions{
+    display:block;
+  }
+
+  .homepage-school-card__shortlist--banner,
+  .homepage-school-card__shortlist.homepage-school-card__shortlist--banner{
+    width:100%;
+  }
+}

@@ -1,82 +1,9 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
-import { supabase } from '../../lib/supabase';
 import { getHomepageSearchSchools } from '../../lib/directory';
-import { getLocationPresentation } from '../../lib/location-config';
-
-type HomepageLocationRow = {
-  name: string;
-  slug: string;
-  homepage_order: number | null;
-};
-
-const { data: homepageLocationsRaw, error: homepageLocationsError } = await supabase
-  .from('locations')
-  .select('name, slug, homepage_order')
-  .eq('is_live', true)
-  .eq('show_on_homepage', true)
-  .order('homepage_order', { ascending: true, nullsFirst: false })
-  .order('name', { ascending: true });
-
-if (homepageLocationsError) {
-  throw new Error(`Could not load homepage locations: ${homepageLocationsError.message}`);
-}
-
-const homepageLocations = (homepageLocationsRaw || []) as HomepageLocationRow[];
-
-const locations = homepageLocations.map((location) => {
-  const presentation = getLocationPresentation(location.slug, location.name);
-  const subtitle = presentation.heroSubtitle;
-
-  return {
-    name: location.name,
-    href: `/${location.slug}/`,
-    subtitle,
-    searchText: [location.name, subtitle].filter(Boolean).join(' ')
-  };
-}).sort((a, b) => a.name.localeCompare(b.name, 'en'));
 
 const homepageSchools = await getHomepageSearchSchools();
-const initialSchoolCount = new Intl.NumberFormat('en-GB').format(homepageSchools.length);
-const religionSortOrder = [
-  'Church of England',
-  'Christian',
-  'Roman Catholic',
-  'Jewish',
-  'Muslim',
-  'Non-denominational',
-  'Multi-faith',
-  'Methodist',
-  'Plymouth Brethren Christian Church',
-  'Quaker',
-  'Seventh-day Adventist',
-  'Hindu',
-  'Sikh',
-  'United Reformed Church'
-];
-const religionOptions = Array.from(new Set(homepageSchools.map((school) => school.religion).filter(Boolean) as string[]))
-  .sort((a, b) => {
-    const aIndex = religionSortOrder.indexOf(a);
-    const bIndex = religionSortOrder.indexOf(b);
-    const safeA = aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex;
-    const safeB = bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex;
-    if (safeA !== safeB) return safeA - safeB;
-    return a.localeCompare(b, 'en');
-  });
-
-const genderOptions = [
-  { value: 'boys', label: 'Boys' },
-  { value: 'girls', label: 'Girls' },
-  { value: 'mixed', label: 'Mixed' }
-];
-
-const boardingOptions = [
-  { value: 'day', label: 'Day only' },
-  { value: 'boarding', label: 'Boarding only' },
-  { value: 'both', label: 'Both' }
-];
-
 const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.stringify(homepageSchools)};`;
 ---
 <BaseLayout
@@ -87,178 +14,21 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
   bodyClass="home-minimal shortlist-page"
 >
   <Fragment slot="head">
-    <link rel="stylesheet" href="/assets/css/homepage.css?v=20260413a-shortlist-filters" />
+    <link rel="stylesheet" href="/assets/css/homepage.css?v=20260413c-histograms" />
   </Fragment>
 
   <main id="main">
     <section aria-labelledby="home-title" class="home-hero home-hero--shortlist">
       <div class="hero-centre shell hero-centre--shortlist">
-        <p class="home-hero-kicker">Your shortlist</p>
         <h1 class="hero-title hero-title--shortlist" id="home-title">
-          <span>Your shortlisted schools</span>
+          <span>Shortlisted schools</span>
         </h1>
-        <p class="home-hero-shortlist-copy">Apply the same filters and map tools, but only across the schools you have saved.</p>
-      </div>
-    </section>
-
-    <section aria-labelledby="school-filter-title" class="home-school-filter-bar">
-      <div class="shell">
-        <form class="school-filter-form" id="homepage-school-filters" novalidate>
-          <h2 class="visually-hidden" id="school-filter-title">School filters</h2>
-
-          <div class="school-filter-mobile-actions">
-            <button aria-controls="homepage-school-filter-collapsible" aria-expanded="true" class="school-filter-mobile-button" data-filter-toggle type="button">Hide filters</button>
-          </div>
-
-          <div class="school-filter-collapsible" data-filter-collapsible id="homepage-school-filter-collapsible">
-          <div class="school-filter-grid">
-            <div class="school-filter-field school-filter-field--location">
-              <label class="school-filter-label" for="school-filter-location">Location</label>
-              <input
-                autocomplete="postal-code"
-                class="school-filter-input"
-                id="school-filter-location"
-                name="location"
-                placeholder="Postcode or UK location"
-                type="text"
-              />
-            </div>
-
-            <div class="school-filter-field school-filter-field--radius">
-              <label class="school-filter-label" for="school-filter-radius">Radius (miles)</label>
-              <input class="school-filter-input" id="school-filter-radius" min="1" name="radius" step="1" type="number" value="10" />
-            </div>
-
-            <div class="school-filter-field school-filter-field--compact">
-              <span class="school-filter-label">Gender</span>
-              <details class="school-filter-dropdown" data-dropdown>
-                <summary class="school-filter-dropdown__summary">
-                  <span class="school-filter-dropdown__value" data-default-label="Any" data-dropdown-value>Any</span>
-                </summary>
-                <div class="school-filter-dropdown__panel">
-                  <div class="school-filter-options school-filter-options--stacked">
-                    {genderOptions.map((option) => (
-                      <label class="school-filter-option school-filter-option--dropdown">
-                        <input data-option-label={option.label} name="gender" type="checkbox" value={option.value} />
-                        <span>{option.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </details>
-            </div>
-
-            <div class="school-filter-field school-filter-field--compact">
-              <span class="school-filter-label">Boarding</span>
-              <details class="school-filter-dropdown" data-dropdown>
-                <summary class="school-filter-dropdown__summary">
-                  <span class="school-filter-dropdown__value" data-default-label="Any" data-dropdown-value>Any</span>
-                </summary>
-                <div class="school-filter-dropdown__panel">
-                  <div class="school-filter-options school-filter-options--stacked">
-                    {boardingOptions.map((option) => (
-                      <label class="school-filter-option school-filter-option--dropdown">
-                        <input data-option-label={option.label} name="boarding" type="checkbox" value={option.value} />
-                        <span>{option.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </details>
-            </div>
-
-            <div class="school-filter-field school-filter-field--compact school-filter-field--religion">
-              <span class="school-filter-label">Religion</span>
-              <details class="school-filter-dropdown school-filter-dropdown--wide" data-dropdown>
-                <summary class="school-filter-dropdown__summary">
-                  <span class="school-filter-dropdown__value" data-default-label="Any" data-dropdown-value>Any</span>
-                </summary>
-                <div class="school-filter-dropdown__panel school-filter-dropdown__panel--religion">
-                  <div class="school-filter-options school-filter-options--grid">
-                    {religionOptions.map((religion) => (
-                      <label class="school-filter-option school-filter-option--dropdown">
-                        <input data-option-label={religion} name="religion" type="checkbox" value={religion} />
-                        <span>{religion}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </details>
-            </div>
-
-            <div class="school-filter-field school-filter-field--range school-filter-field--fee">
-              <span class="school-filter-label">Average fees</span>
-              <div class="school-range-filter" data-fee-filter>
-                <div class="school-range-filter__switch" role="group" aria-label="Fee type">
-                  <button class="is-active" data-fee-mode="day" type="button">Day fees</button>
-                  <button data-fee-mode="boarding" type="button">Boarding fees</button>
-                </div>
-                <div class="school-range-filter__display">
-                  <div class="school-range-filter__display-box">
-                    <span class="school-range-filter__display-label">Minimum</span>
-                    <strong data-fee-min-display>£0</strong>
-                  </div>
-                  <div class="school-range-filter__display-box">
-                    <span class="school-range-filter__display-label">Maximum</span>
-                    <strong data-fee-max-display>£0</strong>
-                  </div>
-                </div>
-                <div class="school-range-filter__slider-wrap">
-                  <input class="school-range-filter__slider" data-fee-min id="school-filter-fee-min" type="range" />
-                  <input class="school-range-filter__slider" data-fee-max id="school-filter-fee-max" type="range" />
-                </div>
-              </div>
-            </div>
-
-            <div class="school-filter-field school-filter-field--range school-filter-field--alevel">
-              <span class="school-filter-label">A*–A at A-level</span>
-              <div class="school-range-filter school-range-filter--alevel" data-alevel-filter>
-                <div class="school-range-filter__display">
-                  <div class="school-range-filter__display-box">
-                    <span class="school-range-filter__display-label">Minimum</span>
-                    <strong data-alevel-min-display>0%</strong>
-                  </div>
-                  <div class="school-range-filter__display-box">
-                    <span class="school-range-filter__display-label">Maximum</span>
-                    <strong data-alevel-max-display>100%</strong>
-                  </div>
-                </div>
-                <div class="school-range-filter__slider-wrap">
-                  <input class="school-range-filter__slider" data-alevel-min id="school-filter-alevel-min" type="range" />
-                  <input class="school-range-filter__slider" data-alevel-max id="school-filter-alevel-max" type="range" />
-                </div>
-              </div>
-            </div>
-
-            <div class="school-filter-field school-filter-field--must-have">
-              <span class="school-filter-label">Must have</span>
-              <div class="school-filter-checklist">
-                <label class="school-filter-check">
-                  <input id="school-filter-sixth-form" name="sixthForm" type="checkbox" />
-                  <span>Sixth form</span>
-                </label>
-                <label class="school-filter-check">
-                  <input id="school-filter-nursery" name="nursery" type="checkbox" />
-                  <span>Nursery</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div class="school-filter-actions">
-            <p aria-live="polite" class="school-filter-error" hidden id="homepage-school-filter-error"></p>
-            <div class="school-filter-button-row">
-              <button class="school-filter-reset" id="homepage-school-filter-reset" type="button">Clear filters</button>
-            </div>
-          </div>
-          </div>
-        </form>
       </div>
     </section>
 
     <section aria-labelledby="finder-title" class="home-finder shell">
-      <h2 class="visually-hidden" id="finder-title">Find schools and locations</h2>
-      <div class="finder-grid">
+      <h2 class="visually-hidden" id="finder-title">Shortlisted schools</h2>
+      <div class="finder-grid finder-grid--shortlist">
         <div class="finder-left-column">
           <div class="finder-left-inner">
             <div class="finder-panel finder-map-panel">
@@ -267,31 +37,8 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
                   <h3 class="finder-results-title">Shortlisted school locations</h3>
                 </div>
               </div>
-              <div aria-label="Private school map" class="homepage-map" id="homepage-map"></div>
+              <div aria-label="Shortlisted private school map" class="homepage-map" id="homepage-map"></div>
               <p class="finder-note" id="homepage-map-empty" hidden>School locations are being updated.</p>
-            </div>
-
-            <div class="finder-panel finder-locations">
-              <div class="finder-locations-head">
-                <div>
-                  <h3 class="finder-results-title">Browse locations</h3>
-                </div>
-                <button class="finder-locations-toggle" data-location-toggle aria-controls="guide-location-panel" aria-expanded="true" type="button">Hide locations</button>
-              </div>
-              <div class="finder-locations-body" data-location-panel id="guide-location-panel">
-                <label class="visually-hidden" for="guide-location-search">Search location guides</label>
-                <input autocomplete="off" class="location-search" id="guide-location-search" placeholder="Browse locations" type="search" />
-                <ul class="location-list" id="guide-location-list">
-                  {locations.map((location) => (
-                    <li>
-                      <a class="location-link is-live" data-location-item data-name={location.name} data-search={location.searchText} href={location.href}>
-                        <span class="location-name">{location.name}</span>
-                        <span class="location-state">{location.subtitle || 'Private school guide'}</span>
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
             </div>
           </div>
         </div>
@@ -299,13 +46,13 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
         <div class="finder-panel finder-cards-panel">
           <div class="finder-results-head finder-results-head--results">
             <div>
-              <h2 class="finder-results-title">Shortlist</h2>
+              <h2 class="finder-results-title">Shortlisted schools</h2>
             </div>
             <p aria-live="polite" class="finder-results-summary" id="homepage-results-summary">Showing your shortlisted schools.</p>
           </div>
 
           <div class="homepage-results-toolbar">
-            <div class="homepage-view-toggle" role="tablist" aria-label="Homepage result view">
+            <div class="homepage-view-toggle" role="tablist" aria-label="Shortlisted school result view">
               <button class="homepage-view-button is-active" data-result-view="tiles" type="button">Schools</button>
               <button class="homepage-view-button" data-result-view="glance" type="button">At a glance</button>
               <button class="homepage-view-button" data-result-view="dayFees" type="button">Day fees</button>
@@ -324,13 +71,13 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
               </select>
             </div>
 
-            <a class="homepage-shortlist-link homepage-shortlist-link--back" href="/">Browse all schools</a>
+            <a class="homepage-shortlist-link homepage-shortlist-link--back" data-restore-search-dynamic-label data-restore-search-link href="/">← Back to search</a>
 
             <div class="homepage-table-controls" id="homepage-table-controls" hidden>
               <div class="homepage-table-nav">
-                <button class="homepage-table-nav__button" id="homepage-table-prev" type="button" aria-label="Previous schools">←</button>
+                <button aria-label="Previous schools" class="homepage-table-nav__button" id="homepage-table-prev" type="button">←</button>
                 <p class="homepage-table-nav__label" id="homepage-table-page-label">Schools 1–6</p>
-                <button class="homepage-table-nav__button" id="homepage-table-next" type="button" aria-label="Next schools">→</button>
+                <button aria-label="Next schools" class="homepage-table-nav__button" id="homepage-table-next" type="button">→</button>
                 <button class="homepage-table-show-all" id="homepage-table-show-all" type="button">Show all</button>
               </div>
             </div>
@@ -354,5 +101,5 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script defer src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js" crossorigin=""></script>
   <script defer src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js" crossorigin=""></script>
-  <script defer src="/assets/js/homepage.js?v=20260413a-shortlist-filters"></script>
+  <script defer src="/assets/js/homepage.js?v=20260413c-histograms"></script>
 </BaseLayout>

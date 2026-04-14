@@ -128,6 +128,7 @@ const nearbyLocations = liveLocations
 
 const changeSearchHref = `/?location=${encodeURIComponent(location.name)}&map=centered&zoom=14`;
 const locationSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.stringify(locationSchools)};`;
+const locationSearchStateScript = `window.PSGInitialSearchState = ${JSON.stringify({ mode: 'url', restoreUrl: changeSearchHref, locationLabel: location.name })};`;
 const initialSchoolCount = formatCount(locationSchools.length);
 ---
 <BaseLayout
@@ -140,7 +141,7 @@ const initialSchoolCount = formatCount(locationSchools.length);
 >
   <Fragment slot="head">
     <link rel="stylesheet" href="/assets/css/styles.css" />
-    <link rel="stylesheet" href="/assets/css/homepage.css?v=20260408b-location-map-actions" />
+    <link rel="stylesheet" href="/assets/css/homepage.css?v=20260413c-histograms" />
   </Fragment>
 
   <a class="skip-link" href="#main">Skip to content</a>
@@ -319,7 +320,8 @@ const initialSchoolCount = formatCount(locationSchools.length);
 
   <SiteFooter />
 
+  <script is:inline set:html={locationSearchStateScript}></script>
   <script is:inline set:html={locationSchoolSearchScript}></script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script defer src="/assets/js/homepage.js?v=20260408b-location-map-actions"></script>
+  <script defer src="/assets/js/homepage.js?v=20260413c-histograms"></script>
 </BaseLayout>
