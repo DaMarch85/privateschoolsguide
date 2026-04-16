@@ -95,6 +95,10 @@
     const radiusMiles = Number(value.radiusMiles);
     const feeMin = Number(value.feeMin);
     const feeMax = Number(value.feeMax);
+    const dayFeeMin = Number(value.dayFeeMin ?? value.feeMin);
+    const dayFeeMax = Number(value.dayFeeMax ?? value.feeMax);
+    const boardingFeeMin = Number(value.boardingFeeMin);
+    const boardingFeeMax = Number(value.boardingFeeMax);
     const alevelMin = Number(value.alevelMin);
     const alevelMax = Number(value.alevelMax);
     const centeredMapZoom = Number(value.centeredMapZoom);
@@ -104,7 +108,7 @@
 
     return {
       mode: 'form',
-      restoreUrl: '/?restoreSearch=1',
+      restoreUrl: restoreUrl,
       locationLabel: locationLabel,
       locationQuery: cleanString(value.locationQuery),
       radiusMiles: Number.isFinite(radiusMiles) && radiusMiles > 0 ? radiusMiles : 10,
@@ -119,6 +123,10 @@
       feeMode: value.feeMode === 'boarding' ? 'boarding' : 'day',
       feeMin: Number.isFinite(feeMin) ? feeMin : null,
       feeMax: Number.isFinite(feeMax) ? feeMax : null,
+      dayFeeMin: Number.isFinite(dayFeeMin) ? dayFeeMin : null,
+      dayFeeMax: Number.isFinite(dayFeeMax) ? dayFeeMax : null,
+      boardingFeeMin: Number.isFinite(boardingFeeMin) ? boardingFeeMin : null,
+      boardingFeeMax: Number.isFinite(boardingFeeMax) ? boardingFeeMax : null,
       alevelMin: Number.isFinite(alevelMin) ? alevelMin : null,
       alevelMax: Number.isFinite(alevelMax) ? alevelMax : null,
       sortMode: cleanString(value.sortMode) || 'dayFeesDesc',

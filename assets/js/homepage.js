@@ -6,6 +6,7 @@
   const POSTCODE_REGEX = /^([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})$/i;
   const OPENFREEMAP_BRIGHT_STYLE = 'https://tiles.openfreemap.org/styles/bright';
   const OSM_FALLBACK_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const MIN_SIGNIFICANT_AGE_RANGE_OVERLAP_YEARS = 2;
   const YEAR_LABELS = [
     'Pre-Reception', 'Reception', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6',
     'Year 7', 'Year 8', 'Year 9', 'Year 10', 'Year 11', 'Year 12', 'Year 13'
@@ -427,7 +428,13 @@
     const safeMin = Number.isFinite(ageMin) ? ageMin : ageMax;
     const safeMax = Number.isFinite(ageMax) ? ageMax : ageMin;
     if (!Number.isFinite(safeMin) || !Number.isFinite(safeMax)) return false;
-    return safeMin <= bandMax && safeMax >= bandMin;
+
+    const overlapStart = Math.max(safeMin, bandMin);
+    const overlapEnd = Math.min(safeMax, bandMax);
+    if (overlapEnd < overlapStart) return false;
+
+    const overlapYears = (overlapEnd - overlapStart) + 1;
+    return overlapYears >= MIN_SIGNIFICANT_AGE_RANGE_OVERLAP_YEARS;
   }
 
   function getAlevelAStarAValue(school) {
@@ -948,8 +955,8 @@
         if (ageRanges.size) {
           let ageMatch = false;
           if (ageRanges.has('preprep') && schoolSupportsAgeRange(school, 3, 7)) ageMatch = true;
-          if (ageRanges.has('prep') && schoolSupportsAgeRange(school, 7, 13)) ageMatch = true;
-          if (ageRanges.has('senior') && schoolSupportsAgeRange(school, 11, 18)) ageMatch = true;
+          if (ageRanges.has('prep') && schoolSupportsAgeRange(school, 7, 11)) ageMatch = true;
+          if (ageRanges.has('senior') && schoolSupportsAgeRange(school, 13, 18)) ageMatch = true;
           if (!ageMatch) return false;
         }
 
@@ -1644,6 +1651,17 @@
     }
   }
 
+  function seedHomepageSearchStateFromCurrentForm() {
+    if (state.shortlistPage || window.location.pathname !== '/' || !window.PSGSearchState || typeof window.PSGSearchState.save !== 'function') return;
+
+    const params = new URLSearchParams(window.location.search || '');
+    if (params.get('restoreSearch') === '1') return;
+
+    state.resolvedLocation = null;
+    state.mapFocusLocation = null;
+    saveHomepageSearchState(readFilters());
+  }
+
   function bindResultViewControls() {
     document.querySelectorAll('[data-result-view]').forEach(function (button) {
       button.addEventListener('click', function () {
@@ -1818,6 +1836,7 @@
     bindResultViewControls();
     bindHomeHeroPlayback();
     applyInitialQueryParams();
+    seedHomepageSearchStateFromCurrentForm();
     applyRestoredSearchStateFromStorage();
     bootHomepageMap(0);
     applyFilters();

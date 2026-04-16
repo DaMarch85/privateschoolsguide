@@ -447,17 +447,16 @@ export function getBoardingFilterValue(
     if (hasDayFees) return 'day';
     return 'day';
   }
-  if (value === 'day' || value === 'day only' || value === 'day school' || value === 'no boarders') return 'day';
-  if (value.includes('day') && value.includes('board')) return 'both';
-  if (value === 'boarding school') {
-    if (hasDayFees && !hasBoardingFees) return 'day';
-    if (hasBoardingFees && !hasDayFees) return 'boarding';
-    return 'both';
-  }
-  if (value.includes('boarding')) {
-    if (hasDayFees) return 'both';
-    return 'boarding';
-  }
+
+  if (/^(day|day only|day school|no boarders?)$/.test(value)) return 'day';
+
+  const mentionsDay = /\bday\b/.test(value);
+  const mentionsBoarding = /\bboard(?:ing|er|ers)?\b/.test(value);
+
+  if (mentionsDay && mentionsBoarding) return 'both';
+  if (mentionsBoarding) return 'boarding';
+  if (mentionsDay) return 'day';
+
   if (hasDayFees && hasBoardingFees) return 'both';
   if (hasBoardingFees) return 'boarding';
   if (hasDayFees) return 'day';
