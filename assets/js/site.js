@@ -98,6 +98,9 @@
     const alevelMin = Number(value.alevelMin);
     const alevelMax = Number(value.alevelMax);
     const centeredMapZoom = Number(value.centeredMapZoom);
+    const mapCenterLat = Number(value.mapCenterLat);
+    const mapCenterLng = Number(value.mapCenterLng);
+    const mapZoom = Number(value.mapZoom);
 
     return {
       mode: 'form',
@@ -106,10 +109,13 @@
       locationQuery: cleanString(value.locationQuery),
       radiusMiles: Number.isFinite(radiusMiles) && radiusMiles > 0 ? radiusMiles : 10,
       genders: normalizeStringArray(value.genders),
+      ageRanges: normalizeStringArray(value.ageRanges),
       boarding: normalizeStringArray(value.boarding),
       religions: normalizeStringArray(value.religions),
       sixthFormOnly: Boolean(value.sixthFormOnly),
       nurseryOnly: Boolean(value.nurseryOnly),
+      bursariesOnly: Boolean(value.bursariesOnly),
+      scholarshipsOnly: Boolean(value.scholarshipsOnly),
       feeMode: value.feeMode === 'boarding' ? 'boarding' : 'day',
       feeMin: Number.isFinite(feeMin) ? feeMin : null,
       feeMax: Number.isFinite(feeMax) ? feeMax : null,
@@ -118,7 +124,10 @@
       sortMode: cleanString(value.sortMode) || 'dayFeesDesc',
       resolvedLocationLabel: cleanString(value.resolvedLocationLabel),
       centeredMap: Boolean(value.centeredMap),
-      centeredMapZoom: Number.isFinite(centeredMapZoom) && centeredMapZoom > 0 ? centeredMapZoom : null
+      centeredMapZoom: Number.isFinite(centeredMapZoom) && centeredMapZoom > 0 ? centeredMapZoom : null,
+      mapCenterLat: Number.isFinite(mapCenterLat) ? mapCenterLat : null,
+      mapCenterLng: Number.isFinite(mapCenterLng) ? mapCenterLng : null,
+      mapZoom: Number.isFinite(mapZoom) && mapZoom > 0 ? mapZoom : null
     };
   }
 

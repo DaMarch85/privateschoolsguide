@@ -33,6 +33,7 @@ const heroSlides = Array.from(
       .map((image) => [image.url, image])
   ).values()
 );
+const hasHeroMedia = heroSlides.length > 0;
 ---
 <BaseLayout
   title={`${profile.school.name} | ${profile.location.name} school profile`}
@@ -45,42 +46,44 @@ const heroSlides = Array.from(
 >
   <Fragment slot="head">
     <link rel="stylesheet" href="/assets/css/styles.css" />
-    <link rel="stylesheet" href="/assets/css/bath-refined.css?v=20260408b-school-page-refresh" />
+    <link rel="stylesheet" href="/assets/css/bath-refined.css?v=20260416a-school-hero-search-back" />
   </Fragment>
 
   <a class="skip-link" href="#main">Skip to content</a>
   <SiteHeader minimal={true} />
 
-  <section aria-labelledby="school-page-title" class={`school-profile-hero ${heroSlides.length > 1 ? 'school-profile-hero--slideshow' : ''}`}>
-    <div class="school-profile-hero-media" data-hero-slideshow={heroSlides.length > 1 ? 'true' : undefined}>
-      {heroSlides.map((image, index) => (
-        <img
-          alt={image.alt || `${profile.school.name} image ${index + 1}`}
-          class={`school-profile-hero-slide ${index === 0 ? 'is-active' : ''}`}
-          data-hero-slide
-          loading={index === 0 ? 'eager' : 'lazy'}
-          src={image.url}
-        />
-      ))}
+  <section aria-labelledby="school-page-title" class={`school-profile-hero ${heroSlides.length > 1 ? 'school-profile-hero--slideshow' : ''} ${!hasHeroMedia ? 'school-profile-hero--compact' : ''}`}>
+    {hasHeroMedia ? (
+      <div class="school-profile-hero-media" data-hero-slideshow={heroSlides.length > 1 ? 'true' : undefined}>
+        {heroSlides.map((image, index) => (
+          <img
+            alt={image.alt || `${profile.school.name} image ${index + 1}`}
+            class={`school-profile-hero-slide ${index === 0 ? 'is-active' : ''}`}
+            data-hero-slide
+            loading={index === 0 ? 'eager' : 'lazy'}
+            src={image.url}
+          />
+        ))}
 
-      {heroSlides.length > 1 ? (
-        <div class="school-profile-hero-controls" aria-label="School image gallery controls">
-          <button aria-label="Previous school image" class="school-profile-hero-control" data-hero-prev type="button">←</button>
-          <div class="school-profile-hero-dots" role="tablist" aria-label="School image slides">
-            {heroSlides.map((image, index) => (
-              <button
-                aria-label={`Show image ${index + 1}`}
-                class={`school-profile-hero-dot ${index === 0 ? 'is-active' : ''}`}
-                data-hero-dot
-                data-hero-index={index}
-                type="button"
-              ></button>
-            ))}
+        {heroSlides.length > 1 ? (
+          <div class="school-profile-hero-controls" aria-label="School image gallery controls">
+            <button aria-label="Previous school image" class="school-profile-hero-control" data-hero-prev type="button">←</button>
+            <div class="school-profile-hero-dots" role="tablist" aria-label="School image slides">
+              {heroSlides.map((image, index) => (
+                <button
+                  aria-label={`Show image ${index + 1}`}
+                  class={`school-profile-hero-dot ${index === 0 ? 'is-active' : ''}`}
+                  data-hero-dot
+                  data-hero-index={index}
+                  type="button"
+                ></button>
+              ))}
+            </div>
+            <button aria-label="Next school image" class="school-profile-hero-control" data-hero-next type="button">→</button>
           </div>
-          <button aria-label="Next school image" class="school-profile-hero-control" data-hero-next type="button">→</button>
-        </div>
-      ) : null}
-    </div>
+        ) : null}
+      </div>
+    ) : null}
     <div class="school-profile-hero-copy">
       {(profile.profileBadgeLabel || profile.profileManagedLabel) ? (
         <div class="school-profile-status-row">
@@ -106,7 +109,7 @@ const heroSlides = Array.from(
       ) : null}
     </div>
   </section>
-  <div class="school-back-strip"><div class="shell"><a class="school-back-link" data-restore-search-link href={profile.changeSearchHref}>← Back to {profile.location.name}</a></div></div>
+  <div class="school-back-strip"><div class="shell"><a class="school-back-link" data-restore-search-link href={profile.changeSearchHref}>← Back to search results</a></div></div>
   <div class="school-compare-floating-bar" data-compare-floating-bar hidden>
     <div class="shell school-compare-floating-bar__inner">
       <p class="school-compare-floating-bar__text" data-compare-floating-label>Comparing schools</p>
@@ -213,6 +216,7 @@ const heroSlides = Array.from(
             <article class={`school-feature-tile ${profile.subjectExtraRows.length ? 'tile-expandable' : ''}`}>
               <h2>Popular subjects</h2>
               <div class="school-feature-body">
+                <p class="tile-note">By percentage of all A-level exams taken.</p>
                 <div class="metric-list">
                   {profile.subjectTopRows.map((subject) => (
                     <div class="metric-row"><span class="metric-name">{subject.subject_name}</span><span class="metric-value">{formatPercent(subject.share_of_entries)}</span></div>
@@ -351,7 +355,7 @@ const heroSlides = Array.from(
         <div aria-label={`Map showing ${profile.school.name}`} class="bath-location-map school-page-map" id="school-page-map"></div>
         <p class="map-caption">{profile.address}</p>
         <div class="school-map-actions">
-          {profile.parentLocationHref ? <a class="school-map-action school-map-action--secondary" data-restore-search-link href={profile.changeSearchHref}>Back to {profile.parentLocationName || profile.location.name}</a> : null}
+          {profile.parentLocationHref ? <a class="school-map-action school-map-action--secondary" data-restore-search-link href={profile.changeSearchHref}>Back to search results</a> : null}
           <a class="school-map-action school-map-action--primary" href={profile.changeSearchHref}>Change search area</a>
         </div>
       </aside>

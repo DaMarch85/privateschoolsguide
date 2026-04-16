@@ -1873,3 +1873,48 @@
     min-width:0;
   }
 }
+
+
+/* --- 2026-04-16 school hero fallback and back-to-search label --- */
+.school-profile-page .school-profile-hero--compact{
+  min-height:22svh;
+  background:#000;
+  border-top:1px solid rgba(250,247,242,.18);
+  border-bottom:1px solid rgba(250,247,242,.18);
+}
+
+.school-profile-page .school-profile-hero--compact::after{
+  display:none;
+}
+
+.school-profile-page .school-profile-hero--compact .school-profile-hero-copy{
+  padding:18px 28px 20px;
+}
+
+.school-profile-page .school-profile-hero--compact .school-profile-title{
+  max-width:none;
+  font-size:clamp(1.55rem, 3vw, 2.3rem);
+  letter-spacing:.12em;
+  line-height:1.08;
+}
+
+.school-profile-page .school-profile-hero--compact .school-profile-subhead{
+  margin-top:10px;
+  max-width:56ch;
+  color:rgba(250,247,242,.88);
+  font-size:1rem;
+}
+
+@media (max-width:900px){
+  .school-profile-page .school-profile-hero--compact{
+    min-height:18svh;
+  }
+
+  .school-profile-page .school-profile-hero--compact .school-profile-hero-copy{
+    padding:16px 18px 18px;
+  }
+
+  .school-profile-page .school-profile-hero--compact .school-profile-title{
+    font-size:clamp(1.35rem, 5.5vw, 1.9rem);
+  }
+}

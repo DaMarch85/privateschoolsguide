@@ -245,12 +245,18 @@ export type HomepageSearchSchool = {
   note: string;
   displayLocation: string;
   ageLabel: string;
+  ageMin: number | null;
+  ageMax: number | null;
   genderLabel: string;
   genderFilter: 'boys' | 'girls' | 'mixed';
   boardingLabel: string;
   boardingFilter: 'day' | 'boarding' | 'both' | null;
+  hasDayProvision: boolean;
+  hasBoardingProvision: boolean;
   hasSixthForm: boolean;
   hasNursery: boolean;
+  hasBursaries: boolean;
+  hasScholarships: boolean;
   religion: string | null;
   studentsLabel: string | null;
   boyGirlSplit: string | null;
@@ -429,14 +435,33 @@ export function getGenderFilterValue(gender: string | null): 'boys' | 'girls' | 
   return 'mixed';
 }
 
-export function getBoardingFilterValue(dayBoarding: string | null): 'day' | 'boarding' | 'both' | null {
+export function getBoardingFilterValue(
+  dayBoarding: string | null,
+  hasDayFees = false,
+  hasBoardingFees = false
+): 'day' | 'boarding' | 'both' | null {
   const value = String(dayBoarding || '').replace(/[_\s]+/g, ' ').trim().toLowerCase();
-  if (!value) return null;
+  if (!value) {
+    if (hasDayFees && hasBoardingFees) return 'both';
+    if (hasBoardingFees) return 'boarding';
+    if (hasDayFees) return 'day';
+    return 'day';
+  }
   if (value === 'day' || value === 'day only' || value === 'day school' || value === 'no boarders') return 'day';
   if (value.includes('day') && value.includes('board')) return 'both';
-  if (value === 'boarding school') return 'both';
-  if (value.includes('boarding')) return 'boarding';
-  return null;
+  if (value === 'boarding school') {
+    if (hasDayFees && !hasBoardingFees) return 'day';
+    if (hasBoardingFees && !hasDayFees) return 'boarding';
+    return 'both';
+  }
+  if (value.includes('boarding')) {
+    if (hasDayFees) return 'both';
+    return 'boarding';
+  }
+  if (hasDayFees && hasBoardingFees) return 'both';
+  if (hasBoardingFees) return 'boarding';
+  if (hasDayFees) return 'day';
+  return 'day';
 }
 
 export function getFormatLabel(dayBoarding: string | null): string {
@@ -1367,9 +1392,11 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
   const feeRowsRaw: Array<AnnualFeeRecord & { school_id: string | number }> = [];
   const examRowsRaw: Array<ExamResultRecord & { school_id: string | number }> = [];
   const subjectRowsRaw: Array<SubjectRecord & { school_id: string | number; result_year: number }> = [];
+  const contentRowsRaw: Array<{ school_id: string | number; scholarships: string | null }> = [];
+  const bursaryRowsRaw: Array<{ school_id: string | number; has_bursaries: boolean | null }> = [];
 
   for (const batch of chunkArray(schoolIds, 400)) {
-    const [feeRes, examRes, subjectRes] = await Promise.all([
+    const [feeRes, examRes, subjectRes, contentRes, bursaryRes] = await Promise.all([
       supabase
         .from('school_fee_profiles_annual')
         .select(ANNUAL_FEE_SELECT_WITH_SCHOOL_ID)
@@ -1385,16 +1412,28 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
         .select('school_id, result_year, subject_name, share_of_entries, sort_order')
         .in('school_id', batch)
         .eq('exam_type', 'alevel')
-        .order('sort_order', { ascending: true })
+        .order('sort_order', { ascending: true }),
+      supabase
+        .from('school_content')
+        .select('school_id, scholarships')
+        .in('school_id', batch),
+      supabase
+        .from('school_bursaries')
+        .select('school_id, has_bursaries')
+        .in('school_id', batch)
     ]);
 
     if (feeRes.error) fail('Could not load homepage fees', feeRes.error);
     if (examRes.error) fail('Could not load homepage exam rows', examRes.error);
     if (subjectRes.error) fail('Could not load homepage subject rows', subjectRes.error);
+    if (contentRes.error) fail('Could not load homepage content rows', contentRes.error);
+    if (bursaryRes.error) fail('Could not load homepage bursary rows', bursaryRes.error);
 
     feeRowsRaw.push(...((feeRes.data || []) as unknown as Array<AnnualFeeRecord & { school_id: string | number }>));
     examRowsRaw.push(...((examRes.data || []) as Array<ExamResultRecord & { school_id: string | number }>));
     subjectRowsRaw.push(...((subjectRes.data || []) as Array<SubjectRecord & { school_id: string | number; result_year: number }>));
+    contentRowsRaw.push(...((contentRes.data || []) as Array<{ school_id: string | number; scholarships: string | null }>));
+    bursaryRowsRaw.push(...((bursaryRes.data || []) as Array<{ school_id: string | number; has_bursaries: boolean | null }>));
   }
 
   const latestExamBySchool = new Map<string, ExamResultRecord & { school_id: string | number }>();
@@ -1403,13 +1442,28 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
     if (!latestExamBySchool.has(key)) latestExamBySchool.set(key, row);
   });
 
+  const scholarshipBySchool = new Map<string, boolean>();
+  contentRowsRaw.forEach((row) => {
+    const key = String(row.school_id);
+    const hasScholarships = String(row.scholarships || '').replace(/\s+/g, ' ').trim().length > 0;
+    if (hasScholarships) scholarshipBySchool.set(key, true);
+    else if (!scholarshipBySchool.has(key)) scholarshipBySchool.set(key, false);
+  });
+
+  const bursaryBySchool = new Map<string, boolean>();
+  bursaryRowsRaw.forEach((row) => {
+    const key = String(row.school_id);
+    if (!bursaryBySchool.has(key)) bursaryBySchool.set(key, row.has_bursaries === true);
+  });
+
   return schools.map((school) => {
     const schoolId = String(school.id);
     const lat = toNumber(school.latitude) || 0;
     const lng = toNumber(school.longitude) || 0;
+    const ageMin = toNumber(school.age_min);
+    const ageMax = toNumber(school.age_max);
     const ageLabel = getAgeLabel(school.age_min, school.age_max);
     const genderLabel = getGenderLabel(school.gender);
-    const boardingLabel = getFormatLabel(school.day_boarding);
     const religion = getSchoolReligionLabel(school);
     const hasSixthForm = schoolHasSixthForm(school);
     const hasNursery = schoolHasNursery(school);
@@ -1425,6 +1479,12 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
     const boardingFeesByYear = buildHomepageFeeMap(schoolFeeRows, ['weekly_boarding', 'full_boarding']);
     const hasDayFees = dayFeeAverage !== null || Object.values(dayFeesByYear).some(Boolean);
     const hasBoardingFees = boardingFeeAverage !== null || Object.values(boardingFeesByYear).some(Boolean);
+    const boardingFilter = getBoardingFilterValue(school.day_boarding, hasDayFees, hasBoardingFees);
+    const boardingLabel = getFormatLabel(school.day_boarding);
+    const hasDayProvision = boardingFilter === 'day' || boardingFilter === 'both';
+    const hasBoardingProvision = boardingFilter === 'boarding' || boardingFilter === 'both';
+    const hasBursaries = bursaryBySchool.get(schoolId) === true;
+    const hasScholarships = scholarshipBySchool.get(schoolId) === true;
     const latestExam = latestExamBySchool.get(schoolId) || null;
     const subjectRows = latestExam
       ? subjectRowsRaw.filter((row) => String(row.school_id) === schoolId && Number(row.result_year) === Number(latestExam.result_year))
@@ -1445,12 +1505,18 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
       note: `${genderLabel} · ${boardingLabel} · Ages ${ageLabel}`,
       displayLocation: getSchoolLocationLabel(school),
       ageLabel,
+      ageMin,
+      ageMax,
       genderLabel,
       genderFilter: getGenderFilterValue(school.gender),
       boardingLabel,
-      boardingFilter: getBoardingFilterValue(school.day_boarding),
+      boardingFilter,
+      hasDayProvision,
+      hasBoardingProvision,
       hasSixthForm,
       hasNursery,
+      hasBursaries,
+      hasScholarships,
       religion,
       studentsLabel,
       boyGirlSplit,
@@ -1963,7 +2029,7 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const locationPresentation = getLocationPresentation(location.slug, location.name);
   const imageRows = ((imageRowsRes.data || []) as Array<{ image_url: string; alt_text: string | null; image_type: 'hero' | 'gallery'; sort_order: number | null }>);
   const primaryImage = imageRows.find((row) => row.image_type === 'hero') || imageRows[0] || null;
-  const heroImageUrl = primaryImage?.image_url || locationPresentation.defaultSchoolHeroImage;
+  const heroImageUrl = primaryImage?.image_url || null;
   const heroImageAlt = primaryImage?.alt_text || '';
   const galleryImages: SchoolGalleryImage[] = imageRows
     .filter((row, index) => !(primaryImage && row.image_url === primaryImage.image_url && index === imageRows.indexOf(primaryImage)))

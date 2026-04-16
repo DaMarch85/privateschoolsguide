@@ -33,6 +33,7 @@
     hoveredSchoolId: null,
     initialMapFocus: null,
     mapFocusLocation: null,
+    restoredMapView: null,
     rangeBounds: {
       fee: {
         day: { min: 1000, max: 1000, step: 1 },
@@ -195,8 +196,14 @@
           genderFilter: item.genderFilter || 'mixed',
           boardingLabel: item.boardingLabel || 'Day only',
           boardingFilter: item.boardingFilter || null,
+          ageMin: Number.isFinite(Number(item.ageMin)) ? Number(item.ageMin) : null,
+          ageMax: Number.isFinite(Number(item.ageMax)) ? Number(item.ageMax) : null,
           hasSixthForm: Boolean(item.hasSixthForm),
           hasNursery: Boolean(item.hasNursery),
+          hasDayProvision: Boolean(item.hasDayProvision),
+          hasBoardingProvision: Boolean(item.hasBoardingProvision),
+          hasBursaries: Boolean(item.hasBursaries),
+          hasScholarships: Boolean(item.hasScholarships),
           religion: item.religion || '',
           studentsLabel: item.studentsLabel || '',
           boyGirlSplit: item.boyGirlSplit || '',
@@ -413,6 +420,16 @@
     return Math.round(parseFiniteNumber(value, 0)) + '%';
   }
 
+  function schoolSupportsAgeRange(school, bandMin, bandMax) {
+    const ageMin = Number(school && school.ageMin);
+    const ageMax = Number(school && school.ageMax);
+    if (!Number.isFinite(ageMin) && !Number.isFinite(ageMax)) return false;
+    const safeMin = Number.isFinite(ageMin) ? ageMin : ageMax;
+    const safeMax = Number.isFinite(ageMax) ? ageMax : ageMin;
+    if (!Number.isFinite(safeMin) || !Number.isFinite(safeMax)) return false;
+    return safeMin <= bandMax && safeMax >= bandMin;
+  }
+
   function getAlevelAStarAValue(school) {
     const value = school && school.alevel ? Number(school.alevel.pctAStarA) : NaN;
     return Number.isFinite(value) && value >= 0 ? value * 100 : null;
@@ -575,6 +592,9 @@
   function saveHomepageSearchState(filters) {
     if (state.shortlistPage || window.location.pathname !== '/' || !window.PSGSearchState || typeof window.PSGSearchState.save !== 'function') return;
     const activeFilters = filters || readFilters();
+    const mapCenter = state.map && typeof state.map.getCenter === 'function' ? state.map.getCenter() : null;
+    const mapZoom = state.map && typeof state.map.getZoom === 'function' ? state.map.getZoom() : null;
+
     window.PSGSearchState.save({
       mode: 'form',
       restoreUrl: '/?restoreSearch=1',
@@ -583,10 +603,13 @@
       resolvedLocationLabel: (state.resolvedLocation && state.resolvedLocation.label) || '',
       radiusMiles: activeFilters.radiusMiles,
       genders: activeFilters.genders || [],
+      ageRanges: activeFilters.ageRanges || [],
       boarding: activeFilters.boarding || [],
       religions: activeFilters.religions || [],
       sixthFormOnly: Boolean(activeFilters.sixthFormOnly),
       nurseryOnly: Boolean(activeFilters.nurseryOnly),
+      bursariesOnly: Boolean(activeFilters.bursariesOnly),
+      scholarshipsOnly: Boolean(activeFilters.scholarshipsOnly),
       feeMode: 'day',
       feeMin: activeFilters.dayFeeMin,
       feeMax: activeFilters.dayFeeMax,
@@ -598,7 +621,10 @@
       alevelMax: activeFilters.alevelMax,
       sortMode: state.sortMode || 'dayFeesDesc',
       centeredMap: Boolean(state.mapFocusLocation && activeFilters.locationQuery),
-      centeredMapZoom: state.mapFocusLocation && state.mapFocusLocation.zoom ? state.mapFocusLocation.zoom : null
+      centeredMapZoom: state.mapFocusLocation && state.mapFocusLocation.zoom ? state.mapFocusLocation.zoom : null,
+      mapCenterLat: mapCenter && Number.isFinite(mapCenter.lat) ? mapCenter.lat : null,
+      mapCenterLng: mapCenter && Number.isFinite(mapCenter.lng) ? mapCenter.lng : null,
+      mapZoom: Number.isFinite(mapZoom) ? mapZoom : null
     });
   }
 
@@ -619,6 +645,9 @@
     form.querySelectorAll('input[name="gender"]').forEach(function (input) {
       input.checked = (savedState.genders || []).includes(input.value);
     });
+    form.querySelectorAll('input[name="ageRange"]').forEach(function (input) {
+      input.checked = (savedState.ageRanges || []).includes(input.value);
+    });
     form.querySelectorAll('input[name="boarding"]').forEach(function (input) {
       input.checked = (savedState.boarding || []).includes(input.value);
     });
@@ -628,8 +657,12 @@
 
     const sixthFormInput = form.querySelector('#school-filter-sixth-form');
     const nurseryInput = form.querySelector('#school-filter-nursery');
+    const bursariesInput = form.querySelector('#school-filter-bursaries');
+    const scholarshipsInput = form.querySelector('#school-filter-scholarships');
     if (sixthFormInput) sixthFormInput.checked = Boolean(savedState.sixthFormOnly);
     if (nurseryInput) nurseryInput.checked = Boolean(savedState.nurseryOnly);
+    if (bursariesInput) bursariesInput.checked = Boolean(savedState.bursariesOnly);
+    if (scholarshipsInput) scholarshipsInput.checked = Boolean(savedState.scholarshipsOnly);
 
     const dayFeeMinInput = form.querySelector('[data-day-fee-min]');
     const dayFeeMaxInput = form.querySelector('[data-day-fee-max]');
@@ -659,6 +692,13 @@
       key: normalizeSearchQuery(savedState.locationQuery),
       zoom: savedState.centeredMapZoom || 14
     } : null;
+
+    const restoredLat = Number(savedState.mapCenterLat);
+    const restoredLng = Number(savedState.mapCenterLng);
+    const restoredZoom = Number(savedState.mapZoom);
+    state.restoredMapView = (Number.isFinite(restoredLat) && Number.isFinite(restoredLng))
+      ? { lat: restoredLat, lng: restoredLng, zoom: Number.isFinite(restoredZoom) ? restoredZoom : null }
+      : null;
 
     if (window.history && typeof window.history.replaceState === 'function') {
       const nextUrl = new URL(window.location.href);
@@ -832,10 +872,13 @@
         locationQuery: '',
         radiusMiles: DEFAULT_RADIUS_MILES,
         genders: [],
+        ageRanges: [],
         boarding: [],
         religions: [],
         sixthFormOnly: false,
         nurseryOnly: false,
+        bursariesOnly: false,
+        scholarshipsOnly: false,
         dayFeeMin: dayFeeBounds.min,
         dayFeeMax: dayFeeBounds.max,
         dayFeeActive: false,
@@ -865,10 +908,13 @@
       locationQuery: locationInput ? locationInput.value.trim() : '',
       radiusMiles: parsePositiveNumber(radiusInput ? radiusInput.value : DEFAULT_RADIUS_MILES, DEFAULT_RADIUS_MILES),
       genders: Array.from(form.querySelectorAll('input[name="gender"]:checked')).map(function (input) { return input.value; }),
+      ageRanges: Array.from(form.querySelectorAll('input[name="ageRange"]:checked')).map(function (input) { return input.value; }),
       boarding: Array.from(form.querySelectorAll('input[name="boarding"]:checked')).map(function (input) { return input.value; }),
       religions: Array.from(form.querySelectorAll('input[name="religion"]:checked')).map(function (input) { return input.value; }),
       sixthFormOnly: Boolean(form.querySelector('#school-filter-sixth-form:checked')),
       nurseryOnly: Boolean(form.querySelector('#school-filter-nursery:checked')),
+      bursariesOnly: Boolean(form.querySelector('#school-filter-bursaries:checked')),
+      scholarshipsOnly: Boolean(form.querySelector('#school-filter-scholarships:checked')),
       dayFeeMin: dayFeePair[0],
       dayFeeMax: dayFeePair[1],
       dayFeeActive: dayFeePair[0] > dayFeeBounds.min || dayFeePair[1] < dayFeeBounds.max,
@@ -883,6 +929,7 @@
 
   function filterSchools(filters, resolvedLocation) {
     const genders = new Set(filters.genders || []);
+    const ageRanges = new Set(filters.ageRanges || []);
     const boarding = new Set(filters.boarding || []);
     const religions = new Set(filters.religions || []);
     const shortlistIds = state.shortlistPage ? new Set(getShortlistIds()) : null;
@@ -897,9 +944,25 @@
       })
       .filter(function (school) {
         if (genders.size && !genders.has(school.genderFilter)) return false;
-        if (boarding.size && !boarding.has(school.boardingFilter)) return false;
+
+        if (ageRanges.size) {
+          let ageMatch = false;
+          if (ageRanges.has('preprep') && schoolSupportsAgeRange(school, 3, 7)) ageMatch = true;
+          if (ageRanges.has('prep') && schoolSupportsAgeRange(school, 7, 13)) ageMatch = true;
+          if (ageRanges.has('senior') && schoolSupportsAgeRange(school, 11, 18)) ageMatch = true;
+          if (!ageMatch) return false;
+        }
+
+        if (boarding.size) {
+          const matchesDayProvision = boarding.has('dayProvision') && school.hasDayProvision;
+          const matchesBoardingProvision = boarding.has('boardingProvision') && school.hasBoardingProvision;
+          if (!matchesDayProvision && !matchesBoardingProvision) return false;
+        }
+
         if (filters.sixthFormOnly && !school.hasSixthForm) return false;
         if (filters.nurseryOnly && !school.hasNursery) return false;
+        if (filters.bursariesOnly && !school.hasBursaries) return false;
+        if (filters.scholarshipsOnly && !school.hasScholarships) return false;
         if (religions.size && !religions.has(school.religion)) return false;
 
         const dayFeeValue = normalizeFeeValue(school.dayFeeAverage);
@@ -1070,7 +1133,10 @@
       state.map.setMaxBounds(countryBounds);
     }
     state.map.setView(UK_DEFAULT_CENTER, UK_DEFAULT_ZOOM);
-    state.map.on('moveend zoomend resize', updateVisibleSchoolsFromMap);
+    state.map.on('moveend zoomend resize', function () {
+      updateVisibleSchoolsFromMap();
+      if (state.currentFilters) saveHomepageSearchState(state.currentFilters);
+    });
     state.mapReady = true;
     return state.map;
   }
@@ -1150,6 +1216,9 @@
 
     if (preserveView && preservedCenter && Number.isFinite(preservedZoom)) {
       map.setView(preservedCenter, preservedZoom, { animate: false });
+    } else if (state.restoredMapView && Number.isFinite(state.restoredMapView.lat) && Number.isFinite(state.restoredMapView.lng)) {
+      map.setView([state.restoredMapView.lat, state.restoredMapView.lng], state.restoredMapView.zoom || UK_DEFAULT_ZOOM, { animate: false });
+      state.restoredMapView = null;
     } else if (resolvedLocation && boundsLayers.length) {
       map.fitBounds(window.L.featureGroup(boundsLayers).getBounds(), { padding: [28, 28], maxZoom: 11, animate: false });
     } else if (mapFocusLocation) {

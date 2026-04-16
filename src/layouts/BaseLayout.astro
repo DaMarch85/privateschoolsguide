@@ -35,6 +35,7 @@ const canonical = new URL(canonicalPath, Astro.site);
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 
+
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-BDP9V8TPZZ"></script>
     <script is:inline>
@@ -44,7 +45,6 @@ const canonical = new URL(canonicalPath, Astro.site);
 
       gtag('config', 'G-BDP9V8TPZZ');
     </script>
-
     {includeLeaflet && (
       <link
         rel="stylesheet"
@@ -54,7 +54,7 @@ const canonical = new URL(canonicalPath, Astro.site);
       />
     )}
     <slot name="head" />
-    <script defer src="/assets/js/site.js?v=20260413c-search-restore"></script>
+    <script defer src="/assets/js/site.js?v=20260416a-search-state"></script>
   </head>
   <body class={bodyClass} data-location-slug={dataLocationSlug} data-school-slug={dataSchoolSlug}>
     <slot />
