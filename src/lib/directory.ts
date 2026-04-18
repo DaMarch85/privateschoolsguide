@@ -435,18 +435,9 @@ export function getGenderFilterValue(gender: string | null): 'boys' | 'girls' | 
   return 'mixed';
 }
 
-export function getBoardingFilterValue(
-  dayBoarding: string | null,
-  hasDayFees = false,
-  hasBoardingFees = false
-): 'day' | 'boarding' | 'both' | null {
+function getBoardingCategoryFromText(dayBoarding: string | null): 'day' | 'boarding' | 'both' | null {
   const value = String(dayBoarding || '').replace(/[_\s]+/g, ' ').trim().toLowerCase();
-  if (!value) {
-    if (hasDayFees && hasBoardingFees) return 'both';
-    if (hasBoardingFees) return 'boarding';
-    if (hasDayFees) return 'day';
-    return 'day';
-  }
+  if (!value) return null;
 
   if (/^(day|day only|day school|no boarders?)$/.test(value)) return 'day';
 
@@ -456,15 +447,44 @@ export function getBoardingFilterValue(
   if (mentionsDay && mentionsBoarding) return 'both';
   if (mentionsBoarding) return 'boarding';
   if (mentionsDay) return 'day';
-
-  if (hasDayFees && hasBoardingFees) return 'both';
-  if (hasBoardingFees) return 'boarding';
-  if (hasDayFees) return 'day';
-  return 'day';
+  return null;
 }
 
-export function getFormatLabel(dayBoarding: string | null): string {
-  const category = getBoardingFilterValue(dayBoarding);
+function getBoardingCategoryFromFees(
+  hasDayFees = false,
+  hasBoardingFees = false
+): 'day' | 'boarding' | 'both' | null {
+  if (hasDayFees && hasBoardingFees) return 'both';
+  if (hasDayFees) return 'day';
+  if (hasBoardingFees) return 'boarding';
+  return null;
+}
+
+export function getBoardingFilterValue(
+  dayBoarding: string | null,
+  hasDayFees = false,
+  hasBoardingFees = false
+): 'day' | 'boarding' | 'both' | null {
+  const textCategory = getBoardingCategoryFromText(dayBoarding);
+  const feeCategory = getBoardingCategoryFromFees(hasDayFees, hasBoardingFees);
+
+  // Published fee rows are stronger evidence when they clearly contradict a stale
+  // or narrowly-encoded day_boarding value, but we keep an explicit “day & boarding”
+  // text classification if a school only publishes one fee side.
+  if (feeCategory === 'both') return 'both';
+  if (textCategory === 'both') return 'both';
+  if (textCategory === 'boarding' && feeCategory === 'day') return 'day';
+  if (textCategory === 'day' && feeCategory === 'boarding') return 'boarding';
+
+  return textCategory || feeCategory || 'day';
+}
+
+export function getFormatLabel(
+  dayBoarding: string | null,
+  hasDayFees = false,
+  hasBoardingFees = false
+): string {
+  const category = getBoardingFilterValue(dayBoarding, hasDayFees, hasBoardingFees);
   if (category === 'day') return 'Day only';
   if (category === 'boarding') return 'Boarding only';
   if (category === 'both') return 'Day & boarding';
@@ -1479,7 +1499,7 @@ export async function getHomepageSearchSchools(): Promise<HomepageSearchSchool[]
     const hasDayFees = dayFeeAverage !== null || Object.values(dayFeesByYear).some(Boolean);
     const hasBoardingFees = boardingFeeAverage !== null || Object.values(boardingFeesByYear).some(Boolean);
     const boardingFilter = getBoardingFilterValue(school.day_boarding, hasDayFees, hasBoardingFees);
-    const boardingLabel = getFormatLabel(school.day_boarding);
+    const boardingLabel = getFormatLabel(school.day_boarding, hasDayFees, hasBoardingFees);
     const hasDayProvision = boardingFilter === 'day' || boardingFilter === 'both';
     const hasBoardingProvision = boardingFilter === 'boarding' || boardingFilter === 'both';
     const hasBursaries = bursaryBySchool.get(schoolId) === true;
@@ -1609,7 +1629,9 @@ export async function getLocationCompareData(locationSlug: string): Promise<{ lo
 
     const phaseLabel = getPhaseLabel(school.phase, school.age_max);
     const genderLabel = getGenderLabel(school.gender);
-    const formatLabel = getFormatLabel(school.day_boarding);
+    const hasDayFees = currentFeeRows.some((row) => row.fee_type === 'day');
+    const hasBoardingFees = currentFeeRows.some((row) => row.fee_type === 'weekly_boarding' || row.fee_type === 'full_boarding');
+    const formatLabel = getFormatLabel(school.day_boarding, hasDayFees, hasBoardingFees);
     const ageLabel = getAgeLabel(school.age_min, school.age_max);
 
     return {
@@ -2091,7 +2113,9 @@ export async function getLocationSchoolProfile(locationSlug: string, schoolSlug:
   const allFeesIncludeVat = feeRows.length ? feeRows.every((row) => row.includes_vat) : false;
   const phaseLabel = getPhaseLabel(school.phase, school.age_max);
   const genderLabel = getGenderLabel(school.gender);
-  const formatLabel = getFormatLabel(school.day_boarding);
+  const hasDayFees = feeRows.some((row) => row.fee_type === 'day');
+  const hasBoardingFees = feeRows.some((row) => row.fee_type === 'weekly_boarding' || row.fee_type === 'full_boarding');
+  const formatLabel = getFormatLabel(school.day_boarding, hasDayFees, hasBoardingFees);
   const ageLabel = getAgeLabel(school.age_min, school.age_max);
   const address = buildAddress(school);
   const subhead = school.description || `${phaseLabel} in ${school.town || location.name}.`;
