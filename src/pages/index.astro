@@ -93,7 +93,7 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
 >
   <Fragment slot="head">
     <link rel="stylesheet" href="/assets/css/homepage.css?v=20260414d-range-row" />
-    <link rel="stylesheet" href="/assets/css/mobile-redesign.css?v=20260418a-mobile-redesign" />
+    <link rel="stylesheet" href="/assets/css/mobile-redesign.css?v=20260418b-mobile-compact" />
   </Fragment>
 
   <main id="main">
@@ -116,9 +116,7 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
 
     <section class="home-mobile-intro shell" aria-label="Mobile search intro">
       <div class="home-mobile-intro__copy">
-        <h2 class="home-mobile-intro__title">Find the right school</h2>
-        <p class="home-mobile-intro__text">Search by town or postcode, then narrow by distance, age, fees, and essentials.</p>
-        <button class="home-mobile-intro__button" data-view-full-results type="button">View full list</button>
+        <h2 class="home-mobile-intro__title">Search by town or postcode and filters</h2>
       </div>
     </section>
 
@@ -127,23 +125,23 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
         <form class="school-filter-form" id="homepage-school-filters" novalidate>
           <h2 class="visually-hidden" id="school-filter-title">School filters</h2>
 
-          <div class="school-filter-grid">
+          <div class="school-filter-grid school-filter-grid--mobile-compact">
             <div class="school-filter-field school-filter-field--location">
-              <label class="school-filter-label" for="school-filter-location">Location</label>
+              <label class="visually-hidden" for="school-filter-location">Town or postcode</label>
               <input
                 autocomplete="postal-code"
                 class="school-filter-input"
                 id="school-filter-location"
                 name="location"
-                placeholder="Postcode or town"
+                placeholder="Enter postcode or town location"
                 type="text"
               />
             </div>
 
-            <div class="school-filter-field school-filter-field--radius-buttons">
-              <span class="school-filter-label">Distance</span>
+            <div class="school-filter-field school-filter-field--distance">
+              <span class="visually-hidden">Distance in miles</span>
               <input id="school-filter-radius" name="radius" type="hidden" value="5" />
-              <div aria-label="Distance in miles" class="school-filter-chip-group" data-radius-group role="group">
+              <div aria-label="Distance in miles" class="school-filter-chip-group school-filter-chip-group--distance" data-radius-group role="group">
                 <button class="school-filter-chip" data-radius-option data-value="2" type="button">2</button>
                 <button class="school-filter-chip is-active" data-radius-option data-value="5" type="button">5</button>
                 <button class="school-filter-chip" data-radius-option data-value="10" type="button">10</button>
@@ -154,17 +152,25 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
               </div>
             </div>
 
-            <div class="school-filter-field school-filter-field--compact">
-              <span class="school-filter-label">Gender</span>
+            <div class="school-filter-field school-filter-field--half school-filter-field--gender school-filter-field--panel-left">
               <details class="school-filter-dropdown" data-dropdown>
-                <summary class="school-filter-dropdown__summary">
-                  <span class="school-filter-dropdown__value" data-default-label="Any" data-dropdown-value>Any</span>
+                <summary class="school-filter-dropdown__summary school-filter-dropdown__summary--compact">
+                  <span
+                    class="school-filter-dropdown__value"
+                    data-default-label="Any"
+                    data-dropdown-value
+                    data-filter-label="Gender"
+                  >Gender: Any</span>
                 </summary>
                 <div class="school-filter-dropdown__panel">
                   <div class="school-filter-options school-filter-options--stacked">
+                    <label class="school-filter-option school-filter-option--dropdown">
+                      <input checked data-option-label="Any" name="gender" type="radio" value="" />
+                      <span>Any</span>
+                    </label>
                     {genderOptions.map((option) => (
                       <label class="school-filter-option school-filter-option--dropdown">
-                        <input data-option-label={option.label} name="gender" type="checkbox" value={option.value} />
+                        <input data-option-label={option.label} name="gender" type="radio" value={option.value} />
                         <span>{option.label}</span>
                       </label>
                     ))}
@@ -173,32 +179,26 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
               </details>
             </div>
 
-            <div class="school-filter-field school-filter-field--compact">
-              <span class="school-filter-label">Day / boarding</span>
-              <details class="school-filter-dropdown" data-dropdown>
-                <summary class="school-filter-dropdown__summary">
-                  <span class="school-filter-dropdown__value" data-default-label="Any" data-dropdown-value>Any</span>
-                </summary>
-                <div class="school-filter-dropdown__panel">
-                  <div class="school-filter-options school-filter-options--stacked">
-                    {boardingOptions.map((option) => (
-                      <label class="school-filter-option school-filter-option--dropdown">
-                        <input data-option-label={option.label} name="boarding" type="checkbox" value={option.value} />
-                        <span>{option.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </details>
+            <div class="school-filter-field school-filter-field--half school-filter-field--boarding-toggle">
+              <label class="visually-hidden" for="school-filter-boarding-mode">Day or boarding</label>
+              <input id="school-filter-boarding-mode" name="boardingMode" type="hidden" value="dayProvision" />
+              <div aria-label="Day or boarding" class="school-filter-segmented" role="group">
+                <button class="school-filter-segmented__button is-active" data-boarding-option data-value="dayProvision" type="button">Day</button>
+                <button class="school-filter-segmented__button" data-boarding-option data-value="boardingProvision" type="button">Boarding</button>
+              </div>
             </div>
 
-            <div class="school-filter-field school-filter-field--compact">
-              <span class="school-filter-label">Age range</span>
+            <div class="school-filter-field school-filter-field--half school-filter-field--age school-filter-field--panel-left">
               <details class="school-filter-dropdown" data-dropdown>
-                <summary class="school-filter-dropdown__summary">
-                  <span class="school-filter-dropdown__value" data-default-label="Any" data-dropdown-value>Any</span>
+                <summary class="school-filter-dropdown__summary school-filter-dropdown__summary--compact">
+                  <span
+                    class="school-filter-dropdown__value"
+                    data-default-label="Any"
+                    data-dropdown-value
+                    data-filter-label="Age range"
+                  >Age range: Any</span>
                 </summary>
-                <div class="school-filter-dropdown__panel">
+                <div class="school-filter-dropdown__panel school-filter-dropdown__panel--double">
                   <div class="school-filter-options school-filter-options--stacked">
                     {ageRangeOptions.map((option) => (
                       <label class="school-filter-option school-filter-option--dropdown">
@@ -211,13 +211,17 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
               </details>
             </div>
 
-            <div class="school-filter-field school-filter-field--compact school-filter-field--religion">
-              <span class="school-filter-label">Religion</span>
-              <details class="school-filter-dropdown school-filter-dropdown--wide" data-dropdown>
-                <summary class="school-filter-dropdown__summary">
-                  <span class="school-filter-dropdown__value" data-default-label="Any" data-dropdown-value>Any</span>
+            <div class="school-filter-field school-filter-field--half school-filter-field--religion school-filter-field--panel-right">
+              <details class="school-filter-dropdown" data-dropdown>
+                <summary class="school-filter-dropdown__summary school-filter-dropdown__summary--compact">
+                  <span
+                    class="school-filter-dropdown__value"
+                    data-default-label="Any"
+                    data-dropdown-value
+                    data-filter-label="Religion"
+                  >Religion: Any</span>
                 </summary>
-                <div class="school-filter-dropdown__panel school-filter-dropdown__panel--religion">
+                <div class="school-filter-dropdown__panel school-filter-dropdown__panel--religion school-filter-dropdown__panel--double">
                   <div class="school-filter-options school-filter-options--grid">
                     {religionOptions.map((religion) => (
                       <label class="school-filter-option school-filter-option--dropdown">
@@ -230,77 +234,60 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
               </details>
             </div>
 
-            <div class="school-filter-range-row">
-              <div class="school-filter-field school-filter-field--range school-filter-field--day-fee" data-fee-panel="day">
-                <span class="school-filter-label">Average day fees</span>
-                <div class="school-range-filter school-range-filter--fee" data-day-fee-filter>
-                  <p class="school-range-filter__count" data-day-fee-histogram-count>Loading day-fee data…</p>
-                  <div aria-hidden="true" class="school-range-filter__histogram" data-day-fee-histogram></div>
-                  <div class="school-range-filter__slider-wrap">
-                    <input class="school-range-filter__slider" data-day-fee-min id="school-filter-day-fee-min" type="range" />
-                    <input class="school-range-filter__slider" data-day-fee-max id="school-filter-day-fee-max" type="range" />
-                  </div>
-                  <div class="school-range-filter__display">
-                    <div class="school-range-filter__display-box">
-                      <span class="school-range-filter__display-label">Minimum</span>
-                      <strong data-day-fee-min-display>£1,000</strong>
-                    </div>
-                    <div class="school-range-filter__display-box">
-                      <span class="school-range-filter__display-label">Maximum</span>
-                      <strong data-day-fee-max-display>£0</strong>
-                    </div>
-                  </div>
+            <div class="school-filter-field school-filter-field--range school-filter-field--day-fee" data-fee-panel="day">
+              <div class="school-range-filter school-range-filter--fee school-range-filter--compact" data-day-fee-filter>
+                <div class="school-range-filter__header">
+                  <span class="school-range-filter__title">Day fees</span>
+                  <span class="school-range-filter__value-pair">
+                    <strong data-day-fee-min-display>£1,000</strong>
+                    <span>–</span>
+                    <strong data-day-fee-max-display>£0</strong>
+                  </span>
                 </div>
-              </div>
-
-              <div class="school-filter-field school-filter-field--range school-filter-field--boarding-fee" data-fee-panel="boarding">
-                <span class="school-filter-label">Average boarding fees</span>
-                <div class="school-range-filter school-range-filter--fee" data-boarding-fee-filter>
-                  <p class="school-range-filter__count" data-boarding-fee-histogram-count>Loading boarding-fee data…</p>
-                  <div aria-hidden="true" class="school-range-filter__histogram" data-boarding-fee-histogram></div>
-                  <div class="school-range-filter__slider-wrap">
-                    <input class="school-range-filter__slider" data-boarding-fee-min id="school-filter-boarding-fee-min" type="range" />
-                    <input class="school-range-filter__slider" data-boarding-fee-max id="school-filter-boarding-fee-max" type="range" />
-                  </div>
-                  <div class="school-range-filter__display">
-                    <div class="school-range-filter__display-box">
-                      <span class="school-range-filter__display-label">Minimum</span>
-                      <strong data-boarding-fee-min-display>£1,000</strong>
-                    </div>
-                    <div class="school-range-filter__display-box">
-                      <span class="school-range-filter__display-label">Maximum</span>
-                      <strong data-boarding-fee-max-display>£0</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="school-filter-field school-filter-field--range school-filter-field--alevel" data-conditional-alevel>
-                <span class="school-filter-label">A*–A at A-level</span>
-                <div class="school-range-filter school-range-filter--alevel" data-alevel-filter>
-                  <p class="school-range-filter__count" data-alevel-histogram-count>Loading A-level data…</p>
-                  <div aria-hidden="true" class="school-range-filter__histogram" data-alevel-histogram></div>
-                  <div class="school-range-filter__slider-wrap">
-                    <input class="school-range-filter__slider" data-alevel-min id="school-filter-alevel-min" type="range" />
-                    <input class="school-range-filter__slider" data-alevel-max id="school-filter-alevel-max" type="range" />
-                  </div>
-                  <div class="school-range-filter__display">
-                    <div class="school-range-filter__display-box">
-                      <span class="school-range-filter__display-label">Minimum</span>
-                      <strong data-alevel-min-display>0%</strong>
-                    </div>
-                    <div class="school-range-filter__display-box">
-                      <span class="school-range-filter__display-label">Maximum</span>
-                      <strong data-alevel-max-display>100%</strong>
-                    </div>
-                  </div>
+                <div class="school-range-filter__slider-wrap">
+                  <input class="school-range-filter__slider" data-day-fee-min id="school-filter-day-fee-min" type="range" />
+                  <input class="school-range-filter__slider" data-day-fee-max id="school-filter-day-fee-max" type="range" />
                 </div>
               </div>
             </div>
 
-            <div class="school-filter-field school-filter-field--must-have">
-              <span class="school-filter-label">Must have</span>
-              <div class="school-filter-checklist">
+            <div class="school-filter-field school-filter-field--range school-filter-field--boarding-fee" data-fee-panel="boarding">
+              <div class="school-range-filter school-range-filter--fee school-range-filter--compact" data-boarding-fee-filter>
+                <div class="school-range-filter__header">
+                  <span class="school-range-filter__title">Boarding fees</span>
+                  <span class="school-range-filter__value-pair">
+                    <strong data-boarding-fee-min-display>£1,000</strong>
+                    <span>–</span>
+                    <strong data-boarding-fee-max-display>£0</strong>
+                  </span>
+                </div>
+                <div class="school-range-filter__slider-wrap">
+                  <input class="school-range-filter__slider" data-boarding-fee-min id="school-filter-boarding-fee-min" type="range" />
+                  <input class="school-range-filter__slider" data-boarding-fee-max id="school-filter-boarding-fee-max" type="range" />
+                </div>
+              </div>
+            </div>
+
+            <div class="school-filter-field school-filter-field--range school-filter-field--alevel" data-conditional-alevel>
+              <div class="school-range-filter school-range-filter--alevel school-range-filter--compact" data-alevel-filter>
+                <div class="school-range-filter__header">
+                  <span class="school-range-filter__title">A*–A at A-level</span>
+                  <span class="school-range-filter__value-pair">
+                    <strong data-alevel-min-display>0%</strong>
+                    <span>–</span>
+                    <strong data-alevel-max-display>100%</strong>
+                  </span>
+                </div>
+                <div class="school-range-filter__slider-wrap">
+                  <input class="school-range-filter__slider" data-alevel-min id="school-filter-alevel-min" type="range" />
+                  <input class="school-range-filter__slider" data-alevel-max id="school-filter-alevel-max" type="range" />
+                </div>
+              </div>
+            </div>
+
+            <div class="school-filter-field school-filter-field--must-have school-filter-field--must-have-inline">
+              <div class="school-filter-checklist school-filter-checklist--inline">
+                <span class="school-filter-checklist__label">Must have</span>
                 <label class="school-filter-check">
                   <input id="school-filter-sixth-form" name="sixthForm" type="checkbox" />
                   <span>Sixth form</span>
@@ -313,11 +300,10 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
             </div>
           </div>
 
-          <div class="school-filter-actions">
+          <div class="school-filter-actions school-filter-actions--compact">
             <p aria-live="polite" class="school-filter-error" hidden id="homepage-school-filter-error"></p>
-            <div class="school-filter-button-row">
-              <button class="school-filter-reset" id="homepage-school-filter-reset" type="button">Clear filters</button>
-              <button class="school-filter-open-first" data-open-first-result type="button">Show schools</button>
+            <div class="school-filter-button-row school-filter-button-row--single">
+              <button class="school-filter-open-first school-filter-open-first--full" data-open-first-result type="button">Show schools</button>
             </div>
           </div>
         </form>
@@ -426,5 +412,5 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script defer src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js" crossorigin=""></script>
   <script defer src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js" crossorigin=""></script>
-  <script defer src="/assets/js/homepage.js?v=20260418a-mobile-redesign"></script>
+  <script defer src="/assets/js/homepage.js?v=20260418b-mobile-compact"></script>
 </BaseLayout>

@@ -249,10 +249,22 @@
     return Array.from(form.querySelectorAll('input[name="ageRange"]:checked')).map(function (input) { return input.value; });
   }
 
-  function getSelectedBoardingFilters() {
+  function getSelectedBoardingMode() {
     const form = getFilterForm();
-    if (!form) return [];
-    return Array.from(form.querySelectorAll('input[name="boarding"]:checked')).map(function (input) { return input.value; });
+    if (!form) return 'dayProvision';
+    const input = form.querySelector('#school-filter-boarding-mode');
+    const value = input ? String(input.value || '').trim() : '';
+    return value === 'boardingProvision' ? 'boardingProvision' : 'dayProvision';
+  }
+
+  function updateBoardingToggleButtons() {
+    const mode = getSelectedBoardingMode();
+    document.querySelectorAll('[data-boarding-option]').forEach(function (button) {
+      const value = String(button.getAttribute('data-value') || '').trim();
+      const active = value === mode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
   }
 
   function updateConditionalFilterPanels() {
@@ -267,19 +279,21 @@
       alevelPanel.classList.toggle('is-hidden', !showAlevel);
     }
 
-    const boardingSelections = getSelectedBoardingFilters();
-    const showDayOnly = boardingSelections.length === 1 && boardingSelections[0] === 'dayProvision';
-    const showBoardingOnly = boardingSelections.length === 1 && boardingSelections[0] === 'boardingProvision';
+    const boardingMode = getSelectedBoardingMode();
+    const showDayFees = boardingMode !== 'boardingProvision';
+    const showBoardingFees = boardingMode === 'boardingProvision';
     const dayPanel = form.querySelector('[data-fee-panel="day"]');
     const boardingPanel = form.querySelector('[data-fee-panel="boarding"]');
     if (dayPanel) {
-      dayPanel.hidden = showBoardingOnly;
-      dayPanel.classList.toggle('is-hidden', showBoardingOnly);
+      dayPanel.hidden = !showDayFees;
+      dayPanel.classList.toggle('is-hidden', !showDayFees);
     }
     if (boardingPanel) {
-      boardingPanel.hidden = showDayOnly;
-      boardingPanel.classList.toggle('is-hidden', showDayOnly);
+      boardingPanel.hidden = !showBoardingFees;
+      boardingPanel.classList.toggle('is-hidden', !showBoardingFees);
     }
+
+    updateBoardingToggleButtons();
   }
 
   function getFirstNavigableSchool() {
@@ -558,10 +572,13 @@
   function updateFilterDropdownLabel(dropdown) {
     const valueTarget = dropdown && dropdown.querySelector('[data-dropdown-value]');
     if (!valueTarget) return;
-    const checkedLabels = Array.from(dropdown.querySelectorAll('input[type="checkbox"]:checked')).map(function (input) {
+    const checkedLabels = Array.from(dropdown.querySelectorAll('input:checked')).map(function (input) {
       return input.dataset.optionLabel || '';
     }).filter(Boolean);
-    valueTarget.textContent = getDropdownSelectionLabel(checkedLabels, valueTarget.dataset.defaultLabel || 'Any');
+    const visibleLabels = checkedLabels.filter(function (label) { return label !== 'Any'; });
+    const selectionLabel = getDropdownSelectionLabel(visibleLabels, valueTarget.dataset.defaultLabel || 'Any');
+    const prefixLabel = String(valueTarget.dataset.filterLabel || '').trim();
+    valueTarget.textContent = prefixLabel ? prefixLabel + ': ' + selectionLabel : selectionLabel;
   }
 
   function refreshFilterDropdownLabels() {
@@ -577,7 +594,9 @@
         if (dropdown.open) closeFilterDropdowns(dropdown);
       });
       dropdown.addEventListener('change', function (event) {
-        if (event.target && event.target.matches('input[type="checkbox"]')) updateFilterDropdownLabel(dropdown);
+        if (!(event.target && event.target.matches('input[type="checkbox"], input[type="radio"]'))) return;
+        updateFilterDropdownLabel(dropdown);
+        if (event.target.matches('input[type="radio"]')) dropdown.open = false;
       });
     });
 
@@ -786,6 +805,7 @@
     const activeFilters = filters || readFilters();
     const mapCenter = state.map && typeof state.map.getCenter === 'function' ? state.map.getCenter() : null;
     const mapZoom = state.map && typeof state.map.getZoom === 'function' ? state.map.getZoom() : null;
+    const feeMode = Array.isArray(activeFilters.boarding) && activeFilters.boarding[0] === 'boardingProvision' ? 'boarding' : 'day';
 
     window.PSGSearchState.save({
       mode: 'form',
@@ -802,9 +822,9 @@
       nurseryOnly: Boolean(activeFilters.nurseryOnly),
       bursariesOnly: Boolean(activeFilters.bursariesOnly),
       scholarshipsOnly: Boolean(activeFilters.scholarshipsOnly),
-      feeMode: 'day',
-      feeMin: activeFilters.dayFeeMin,
-      feeMax: activeFilters.dayFeeMax,
+      feeMode: feeMode,
+      feeMin: feeMode === 'boarding' ? activeFilters.boardingFeeMin : activeFilters.dayFeeMin,
+      feeMax: feeMode === 'boarding' ? activeFilters.boardingFeeMax : activeFilters.dayFeeMax,
       dayFeeMin: activeFilters.dayFeeMin,
       dayFeeMax: activeFilters.dayFeeMax,
       boardingFeeMin: activeFilters.boardingFeeMin,
@@ -839,15 +859,28 @@
         : String(restoredRadius || DEFAULT_RADIUS_MILES);
     }
 
+    const savedGender = Array.isArray(savedState.genders) && savedState.genders.length ? String(savedState.genders[0] || '') : '';
+    let matchedGender = false;
     form.querySelectorAll('input[name="gender"]').forEach(function (input) {
-      input.checked = (savedState.genders || []).includes(input.value);
+      const isMatch = String(input.value || '') === savedGender;
+      input.checked = isMatch;
+      if (isMatch) matchedGender = true;
     });
+    if (!matchedGender) {
+      const anyGenderInput = form.querySelector('input[name="gender"][value=""]');
+      if (anyGenderInput) anyGenderInput.checked = true;
+    }
+
     form.querySelectorAll('input[name="ageRange"]').forEach(function (input) {
       input.checked = (savedState.ageRanges || []).includes(input.value);
     });
-    form.querySelectorAll('input[name="boarding"]').forEach(function (input) {
-      input.checked = (savedState.boarding || []).includes(input.value);
-    });
+
+    const savedBoardingMode = Array.isArray(savedState.boarding) && savedState.boarding[0] === 'boardingProvision'
+      ? 'boardingProvision'
+      : 'dayProvision';
+    const boardingModeInput = form.querySelector('#school-filter-boarding-mode');
+    if (boardingModeInput) boardingModeInput.value = savedBoardingMode;
+
     form.querySelectorAll('input[name="religion"]').forEach(function (input) {
       input.checked = (savedState.religions || []).includes(input.value);
     });
@@ -1072,7 +1105,7 @@
         radiusMiles: DEFAULT_RADIUS_MILES,
         genders: [],
         ageRanges: [],
-        boarding: [],
+        boarding: ['dayProvision'],
         religions: [],
         sixthFormOnly: false,
         nurseryOnly: false,
@@ -1103,12 +1136,16 @@
     const boardingFeePair = clampRangePair(boardingFeeMinInput ? boardingFeeMinInput.value : boardingFeeBounds.min, boardingFeeMaxInput ? boardingFeeMaxInput.value : boardingFeeBounds.max, boardingFeeBounds);
     const alevelPair = clampRangePair(alevelMinInput ? alevelMinInput.value : alevelBounds.min, alevelMaxInput ? alevelMaxInput.value : alevelBounds.max, alevelBounds);
 
-    const genders = Array.from(form.querySelectorAll('input[name="gender"]:checked')).map(function (input) { return input.value; });
+    const genders = Array.from(form.querySelectorAll('input[name="gender"]:checked')).map(function (input) { return input.value; }).filter(Boolean);
     const ageRanges = Array.from(form.querySelectorAll('input[name="ageRange"]:checked')).map(function (input) { return input.value; });
-    const boarding = Array.from(form.querySelectorAll('input[name="boarding"]:checked')).map(function (input) { return input.value; });
+    const boardingModeInput = form.querySelector('#school-filter-boarding-mode');
+    const boardingMode = boardingModeInput && String(boardingModeInput.value || '').trim() === 'boardingProvision'
+      ? 'boardingProvision'
+      : 'dayProvision';
+    const boarding = [boardingMode];
     const religions = Array.from(form.querySelectorAll('input[name="religion"]:checked')).map(function (input) { return input.value; });
-    const showDayFees = !(boarding.length === 1 && boarding[0] === 'boardingProvision');
-    const showBoardingFees = !(boarding.length === 1 && boarding[0] === 'dayProvision');
+    const showDayFees = boardingMode !== 'boardingProvision';
+    const showBoardingFees = boardingMode === 'boardingProvision';
     const showAlevel = ageRanges.includes('senior');
 
     return {
@@ -1781,7 +1818,6 @@
 
   function bindFilterForm() {
     const form = getFilterForm();
-    const resetButton = document.getElementById('homepage-school-filter-reset');
     if (!form) return;
 
     bindAdvancedFilterControls();
@@ -1795,7 +1831,7 @@
       applyFilters();
     });
 
-    form.querySelectorAll('input[type="checkbox"]').forEach(function (input) {
+    form.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(function (input) {
       input.addEventListener('change', function () {
         refreshFilterDropdownLabels();
         updateConditionalFilterPanels();
@@ -1816,29 +1852,6 @@
         scheduleApplyFilters(250);
       });
     }
-
-    if (resetButton) {
-      resetButton.addEventListener('click', function () {
-        form.reset();
-        const hiddenRadiusInput = form.querySelector('#school-filter-radius');
-        if (hiddenRadiusInput) hiddenRadiusInput.value = String(DEFAULT_RADIUS_MILES);
-        state.resolvedLocation = null;
-        state.mapFocusLocation = null;
-        state.initialMapFocus = null;
-        state.hiddenTableSchoolIds.clear();
-        state.tablePage = 0;
-        closeFilterDropdowns();
-        closeMobileResultsPanel();
-        refreshFilterDropdownLabels();
-        updateRadiusButtons();
-        updateConditionalFilterPanels();
-        syncDayFeeRangeUi(true);
-        syncBoardingFeeRangeUi(true);
-        syncAlevelRangeUi(true);
-        updateError('');
-        applyFilters();
-      });
-    }
   }
 
   function bindRadiusButtons() {
@@ -1856,6 +1869,25 @@
         applyFilters();
       });
     });
+  }
+
+  function bindBoardingToggleButtons() {
+    const form = getFilterForm();
+    if (!form) return;
+    const input = form.querySelector('#school-filter-boarding-mode');
+    if (!input) return;
+
+    document.querySelectorAll('[data-boarding-option]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const value = String(button.getAttribute('data-value') || '').trim();
+        input.value = value === 'boardingProvision' ? 'boardingProvision' : 'dayProvision';
+        state.initialMapFocus = null;
+        updateConditionalFilterPanels();
+        applyFilters();
+      });
+    });
+
+    updateBoardingToggleButtons();
   }
 
   function bindMobileResultActions() {
@@ -2077,6 +2109,7 @@
     bindFilterDropdowns();
     bindFilterForm();
     bindRadiusButtons();
+    bindBoardingToggleButtons();
     bindMobileResultActions();
     bindFilterPanelToggle();
     bindResultViewControls();

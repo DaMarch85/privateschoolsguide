@@ -658,3 +658,343 @@
     height:290px;
   }
 }
+
+@media (max-width: 900px){
+  body.home-minimal:not(.shortlist-page):not(.mobile-results-open){
+    min-height:100svh;
+    overflow:hidden;
+  }
+
+  body.home-minimal:not(.shortlist-page):not(.mobile-results-open) #main{
+    min-height:100svh;
+  }
+
+  body.home-minimal:not(.shortlist-page) .home-finder,
+  body.home-minimal:not(.shortlist-page) .site-footer{
+    display:none !important;
+  }
+
+  body.home-minimal{
+    background:#f7f1e9;
+  }
+
+  .home-mobile-intro{
+    display:block;
+    padding:calc(env(safe-area-inset-top, 0px) + 14px) 0 10px;
+  }
+
+  .home-mobile-intro__copy{
+    max-width:100%;
+    margin:0 auto;
+    text-align:center;
+  }
+
+  .home-mobile-intro__title{
+    margin:0;
+    color:var(--home-ink);
+    font-family:"EB Garamond",ui-serif,Georgia,serif;
+    font-size:clamp(1.12rem, 4.4vw, 1.22rem);
+    font-weight:500;
+    line-height:1.1;
+    letter-spacing:.02em;
+    text-transform:none;
+    white-space:nowrap;
+  }
+
+  .home-mobile-intro__text,
+  .home-mobile-intro__button{
+    display:none !important;
+  }
+
+  .home-school-filter-bar{
+    border-top:0;
+    border-bottom:0;
+    background:#f7f1e9;
+  }
+
+  .home-school-filter-bar > .shell{
+    width:min(100%, 430px);
+  }
+
+  .school-filter-form{
+    padding:0 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
+  }
+
+  .school-filter-grid--mobile-compact{
+    --mobile-half-gap:8px;
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:8px;
+  }
+
+  .school-filter-grid--mobile-compact .school-filter-field--location,
+  .school-filter-grid--mobile-compact .school-filter-field--distance,
+  .school-filter-grid--mobile-compact .school-filter-field--range,
+  .school-filter-grid--mobile-compact .school-filter-field--must-have{
+    grid-column:1 / -1;
+  }
+
+  .school-filter-grid--mobile-compact .school-filter-field--half{
+    grid-column:auto;
+  }
+
+  .school-filter-grid--mobile-compact .school-filter-field--location,
+  .school-filter-grid--mobile-compact .school-filter-field--distance,
+  .school-filter-grid--mobile-compact .school-filter-field--must-have,
+  .school-filter-grid--mobile-compact .school-filter-field--range{
+    min-width:0;
+  }
+
+  .school-filter-grid--mobile-compact .school-filter-input,
+  .school-filter-grid--mobile-compact .school-filter-dropdown__summary--compact,
+  .school-filter-grid--mobile-compact .school-filter-segmented{
+    min-height:46px;
+    border:1px solid var(--home-border);
+    background:#fff;
+  }
+
+  .school-filter-grid--mobile-compact .school-filter-input,
+  .school-filter-grid--mobile-compact .school-filter-dropdown__summary--compact{
+    padding:0 14px;
+    font-size:.92rem;
+  }
+
+  .school-filter-grid--mobile-compact .school-filter-input::placeholder{
+    color:rgba(41,36,33,.68);
+    opacity:1;
+  }
+
+  .school-filter-grid--mobile-compact .school-filter-dropdown__summary--compact{
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    padding-right:34px;
+  }
+
+  .school-filter-grid--mobile-compact .school-filter-dropdown__summary--compact::after{
+    right:12px;
+  }
+
+  .school-filter-grid--mobile-compact .school-filter-dropdown__value{
+    font-size:.88rem;
+  }
+
+  .school-filter-chip-group--distance{
+    display:grid;
+    grid-template-columns:repeat(7, minmax(0, 1fr));
+    gap:4px;
+  }
+
+  .school-filter-chip-group--distance .school-filter-chip{
+    min-height:34px;
+    padding:0;
+    font:600 .72rem/1.1 "Inter",system-ui,sans-serif;
+    letter-spacing:0;
+    text-transform:none;
+  }
+
+  .school-filter-segmented{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    overflow:hidden;
+  }
+
+  .school-filter-segmented__button{
+    min-height:44px;
+    border:0;
+    background:transparent;
+    color:var(--home-ink);
+    font:600 .84rem/1.2 "Inter",system-ui,sans-serif;
+    cursor:pointer;
+  }
+
+  .school-filter-segmented__button + .school-filter-segmented__button{
+    border-left:1px solid var(--home-border);
+  }
+
+  .school-filter-segmented__button.is-active{
+    background:var(--home-dark);
+    color:#fff;
+  }
+
+  .school-filter-grid--mobile-compact .school-filter-dropdown__panel,
+  .school-filter-grid--mobile-compact .school-filter-dropdown--wide .school-filter-dropdown__panel,
+  .school-filter-grid--mobile-compact .school-filter-dropdown__panel--religion{
+    width:100%;
+    min-width:100%;
+    left:0;
+    right:auto;
+  }
+
+  .school-filter-grid--mobile-compact .school-filter-field--panel-left .school-filter-dropdown__panel--double{
+    width:calc(200% + var(--mobile-half-gap));
+    min-width:calc(200% + var(--mobile-half-gap));
+    left:0;
+    right:auto;
+  }
+
+  .school-filter-grid--mobile-compact .school-filter-field--panel-right .school-filter-dropdown__panel--double{
+    width:calc(200% + var(--mobile-half-gap));
+    min-width:calc(200% + var(--mobile-half-gap));
+    left:auto;
+    right:0;
+  }
+
+  .school-filter-grid--mobile-compact .school-filter-dropdown__panel--religion{
+    max-height:min(44svh, 300px);
+    overflow:auto;
+  }
+
+  .school-filter-grid--mobile-compact .school-filter-options--grid{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    max-height:none;
+  }
+
+  .school-filter-grid--mobile-compact .school-filter-option--dropdown{
+    min-height:38px;
+    padding:.48rem .65rem;
+    font-size:.84rem;
+  }
+
+  .school-filter-grid--mobile-compact .school-range-filter--compact{
+    display:flex;
+    flex-direction:column;
+    gap:.55rem;
+    padding:.68rem .8rem .62rem;
+    border:1px solid var(--home-border);
+    background:#fff;
+  }
+
+  .school-filter-grid--mobile-compact .school-range-filter__count,
+  .school-filter-grid--mobile-compact .school-range-filter__histogram,
+  .school-filter-grid--mobile-compact .school-range-filter__display,
+  .school-filter-grid--mobile-compact .school-range-filter__display-box,
+  .school-filter-grid--mobile-compact .school-range-filter__display-label{
+    display:none !important;
+  }
+
+  .school-filter-grid--mobile-compact .school-range-filter__header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:.6rem;
+  }
+
+  .school-filter-grid--mobile-compact .school-range-filter__title{
+    color:var(--home-ink);
+    font:600 .84rem/1.2 "Inter",system-ui,sans-serif;
+  }
+
+  .school-filter-grid--mobile-compact .school-range-filter__value-pair{
+    display:inline-flex;
+    align-items:center;
+    gap:.26rem;
+    color:var(--home-muted);
+    font:500 .8rem/1.2 "Inter",system-ui,sans-serif;
+    white-space:nowrap;
+  }
+
+  .school-filter-grid--mobile-compact .school-range-filter__value-pair strong{
+    color:var(--home-dark);
+    font:600 .84rem/1.2 "Inter",system-ui,sans-serif;
+  }
+
+  .school-filter-grid--mobile-compact .school-range-filter__slider-wrap{
+    height:18px;
+    border-radius:999px;
+    background:linear-gradient(90deg, rgba(41,36,33,.12), rgba(41,36,33,.12));
+  }
+
+  .school-filter-grid--mobile-compact .school-range-filter__slider{
+    height:18px;
+  }
+
+  .school-filter-grid--mobile-compact .school-range-filter__slider::-webkit-slider-thumb{
+    width:18px;
+    height:18px;
+    margin-top:-7px;
+  }
+
+  .school-filter-grid--mobile-compact .school-range-filter__slider::-moz-range-thumb{
+    width:18px;
+    height:18px;
+  }
+
+  .school-filter-field--must-have-inline .school-filter-checklist--inline{
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    justify-content:flex-start;
+    gap:12px;
+    padding:0;
+    border:0;
+    background:transparent;
+  }
+
+  .school-filter-checklist__label{
+    color:var(--home-muted);
+    font:600 .82rem/1.2 "Inter",system-ui,sans-serif;
+    white-space:nowrap;
+  }
+
+  .school-filter-field--must-have-inline .school-filter-check{
+    gap:.4rem;
+    font-size:.82rem;
+    white-space:nowrap;
+  }
+
+  .school-filter-field--must-have-inline .school-filter-check input{
+    width:15px;
+    height:15px;
+  }
+
+  .school-filter-actions--compact{
+    align-items:stretch;
+    gap:0;
+    padding-top:10px;
+    border-top:0;
+  }
+
+  .school-filter-button-row--single{
+    display:block;
+    width:100%;
+  }
+
+  .school-filter-open-first--full{
+    width:100%;
+    min-height:46px;
+    padding:0 14px;
+    border:1px solid var(--home-dark);
+    background:var(--home-dark);
+    color:#fff;
+    font:600 .95rem/1.2 "Inter",system-ui,sans-serif;
+    letter-spacing:0;
+    text-transform:none;
+  }
+
+  .school-filter-open-first--full:disabled{
+    opacity:.45;
+  }
+}
+
+@media (max-width: 390px){
+  .home-mobile-intro__title{
+    font-size:1.06rem;
+  }
+
+  .school-filter-form{
+    padding:0 14px calc(env(safe-area-inset-bottom, 0px) + 14px);
+  }
+
+  .school-filter-chip-group--distance{
+    gap:3px;
+  }
+
+  .school-filter-chip-group--distance .school-filter-chip{
+    font-size:.69rem;
+  }
+
+  .school-filter-field--must-have-inline .school-filter-checklist--inline{
+    gap:10px;
+  }
+}
