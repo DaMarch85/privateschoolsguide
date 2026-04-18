@@ -1,5 +1,6 @@
 (function () {
-  const DEFAULT_RADIUS_MILES = 5;
+  const DESKTOP_DEFAULT_RADIUS_MILES = 10;
+  const MOBILE_DEFAULT_RADIUS_MILES = 5;
   const ALL_RADIUS_MILES = 10000;
   const SEARCH_RESULTS_STORAGE_KEY = 'psg-search-results-v1';
   const MAX_VISIBLE_TILES = 60;
@@ -207,8 +208,30 @@
     return 3958.8 * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
   }
 
-  function getFilterForm() {
-    return document.getElementById('homepage-school-filters');
+  function getFilterForms() {
+    return Array.from(document.querySelectorAll('[data-filter-variant]'));
+  }
+
+  function queryFilterForm(variant) {
+    return document.querySelector('[data-filter-variant="' + variant + '"]');
+  }
+
+  function getFilterForm(variant) {
+    if (variant === 'desktop' || variant === 'mobile') {
+      return queryFilterForm(variant);
+    }
+    return isMobileViewport() ? queryFilterForm('mobile') : queryFilterForm('desktop');
+  }
+
+  function getDefaultRadiusMiles(target) {
+    const variant = typeof target === 'string'
+      ? target
+      : (target && target.dataset && target.dataset.filterVariant) || (isMobileViewport() ? 'mobile' : 'desktop');
+    return variant === 'mobile' ? MOBILE_DEFAULT_RADIUS_MILES : DESKTOP_DEFAULT_RADIUS_MILES;
+  }
+
+  function getFilterField(form, fieldName) {
+    return form ? form.querySelector('[data-filter-' + fieldName + ']') : null;
   }
 
   function getResultsSummary() {
@@ -216,7 +239,7 @@
   }
 
   function getErrorTarget() {
-    return document.getElementById('homepage-school-filter-error');
+    return getFilterField(getFilterForm(), 'error');
   }
 
   function getGuideSearchInput() {
@@ -224,42 +247,46 @@
   }
 
 
-  function getRadiusButtons() {
-    return Array.from(document.querySelectorAll('[data-radius-option]'));
+  function getRadiusButtons(form) {
+    const activeForm = form || getFilterForm();
+    return activeForm ? Array.from(activeForm.querySelectorAll('[data-radius-option]')) : [];
   }
 
-  function updateRadiusButtons() {
-    const form = getFilterForm();
-    if (!form) return;
-    const radiusInput = form.querySelector('#school-filter-radius');
-    const currentRadius = parseRadiusMilesValue(radiusInput ? radiusInput.value : DEFAULT_RADIUS_MILES, DEFAULT_RADIUS_MILES);
-    getRadiusButtons().forEach(function (button) {
+  function updateRadiusButtons(form) {
+    const activeForm = form || getFilterForm();
+    if (!activeForm) return;
+    const radiusInput = getFilterField(activeForm, 'radius');
+    const defaultRadius = getDefaultRadiusMiles(activeForm);
+    const currentRadius = parseRadiusMilesValue(radiusInput ? radiusInput.value : defaultRadius, defaultRadius);
+    getRadiusButtons(activeForm).forEach(function (button) {
       const rawValue = String(button.getAttribute('data-value') || '').trim().toLowerCase();
       const active = rawValue === 'all'
         ? currentRadius >= ALL_RADIUS_MILES
-        : parsePositiveNumber(rawValue, DEFAULT_RADIUS_MILES) === currentRadius;
+        : parsePositiveNumber(rawValue, defaultRadius) === currentRadius;
       button.classList.toggle('is-active', active);
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
   }
 
-  function getSelectedAgeRanges() {
-    const form = getFilterForm();
-    if (!form) return [];
-    return Array.from(form.querySelectorAll('input[name="ageRange"]:checked')).map(function (input) { return input.value; });
+  function getSelectedAgeRanges(form) {
+    const activeForm = form || getFilterForm();
+    if (!activeForm) return [];
+    return Array.from(activeForm.querySelectorAll('input[name="ageRange"]:checked')).map(function (input) { return input.value; });
   }
 
-  function getSelectedBoardingMode() {
-    const form = getFilterForm();
-    if (!form) return 'dayProvision';
-    const input = form.querySelector('#school-filter-boarding-mode');
+  function getSelectedBoardingMode(form) {
+    const activeForm = form || getFilterForm();
+    if (!activeForm || activeForm.dataset.filterVariant !== 'mobile') return 'dayProvision';
+    const input = getFilterField(activeForm, 'boarding-mode');
     const value = input ? String(input.value || '').trim() : '';
     return value === 'boardingProvision' ? 'boardingProvision' : 'dayProvision';
   }
 
-  function updateBoardingToggleButtons() {
-    const mode = getSelectedBoardingMode();
-    document.querySelectorAll('[data-boarding-option]').forEach(function (button) {
+  function updateBoardingToggleButtons(form) {
+    const activeForm = form || getFilterForm();
+    if (!activeForm || activeForm.dataset.filterVariant !== 'mobile') return;
+    const mode = getSelectedBoardingMode(activeForm);
+    activeForm.querySelectorAll('[data-boarding-option]').forEach(function (button) {
       const value = String(button.getAttribute('data-value') || '').trim();
       const active = value === mode;
       button.classList.toggle('is-active', active);
@@ -267,23 +294,23 @@
     });
   }
 
-  function updateConditionalFilterPanels() {
-    const form = getFilterForm();
-    if (!form) return;
+  function updateConditionalFilterPanels(form) {
+    const activeForm = form || getFilterForm();
+    if (!activeForm || activeForm.dataset.filterVariant !== 'mobile') return;
 
-    const alevelPanel = form.querySelector('[data-conditional-alevel]');
-    const ageRanges = getSelectedAgeRanges();
+    const alevelPanel = activeForm.querySelector('[data-conditional-alevel]');
+    const ageRanges = getSelectedAgeRanges(activeForm);
     const showAlevel = ageRanges.includes('senior');
     if (alevelPanel) {
       alevelPanel.hidden = !showAlevel;
       alevelPanel.classList.toggle('is-hidden', !showAlevel);
     }
 
-    const boardingMode = getSelectedBoardingMode();
+    const boardingMode = getSelectedBoardingMode(activeForm);
     const showDayFees = boardingMode !== 'boardingProvision';
     const showBoardingFees = boardingMode === 'boardingProvision';
-    const dayPanel = form.querySelector('[data-fee-panel="day"]');
-    const boardingPanel = form.querySelector('[data-fee-panel="boarding"]');
+    const dayPanel = activeForm.querySelector('[data-fee-panel="day"]');
+    const boardingPanel = activeForm.querySelector('[data-fee-panel="boarding"]');
     if (dayPanel) {
       dayPanel.hidden = !showDayFees;
       dayPanel.classList.toggle('is-hidden', !showDayFees);
@@ -293,7 +320,129 @@
       boardingPanel.classList.toggle('is-hidden', !showBoardingFees);
     }
 
-    updateBoardingToggleButtons();
+    updateBoardingToggleButtons(activeForm);
+  }
+
+  function getFallbackFilterState(target) {
+    const defaultRadius = getDefaultRadiusMiles(target);
+    const dayFeeBounds = getFeeBounds('day');
+    const boardingFeeBounds = getFeeBounds('boarding');
+    const alevelBounds = state.rangeBounds.alevel || { min: 0, max: 100, step: 1 };
+    const variant = typeof target === 'string'
+      ? target
+      : (target && target.dataset && target.dataset.filterVariant) || (isMobileViewport() ? 'mobile' : 'desktop');
+
+    return {
+      locationQuery: '',
+      radiusMiles: defaultRadius,
+      genders: [],
+      ageRanges: [],
+      boarding: variant === 'mobile' ? ['dayProvision'] : [],
+      religions: [],
+      sixthFormOnly: false,
+      nurseryOnly: false,
+      bursariesOnly: false,
+      scholarshipsOnly: false,
+      dayFeeMin: dayFeeBounds.min,
+      dayFeeMax: dayFeeBounds.max,
+      dayFeeActive: false,
+      boardingFeeMin: boardingFeeBounds.min,
+      boardingFeeMax: boardingFeeBounds.max,
+      boardingFeeActive: false,
+      alevelMin: alevelBounds.min,
+      alevelMax: alevelBounds.max,
+      alevelActive: false
+    };
+  }
+
+  function writeFiltersToForm(form, filters) {
+    if (!form || !filters) return;
+
+    const locationInput = getFilterField(form, 'location');
+    const radiusInput = getFilterField(form, 'radius');
+    if (locationInput) locationInput.value = filters.locationQuery || '';
+    if (radiusInput) {
+      const defaultRadius = getDefaultRadiusMiles(form);
+      const radiusMiles = Number(filters.radiusMiles);
+      if (isAllRadius(radiusMiles)) {
+        radiusInput.value = form.dataset.filterVariant === 'mobile' ? 'all' : String(radiusMiles);
+      } else {
+        radiusInput.value = String(Number.isFinite(radiusMiles) ? radiusMiles : defaultRadius);
+      }
+    }
+
+    const genderValues = Array.isArray(filters.genders) ? filters.genders.filter(Boolean) : [];
+    let matchedGenderRadio = false;
+    form.querySelectorAll('input[name="gender"]').forEach(function (input) {
+      if (input.type === 'radio') {
+        const targetValue = genderValues.length ? String(genderValues[0] || '') : '';
+        const isMatch = String(input.value || '') === targetValue;
+        input.checked = isMatch;
+        if (isMatch) matchedGenderRadio = true;
+      } else {
+        input.checked = genderValues.includes(input.value);
+      }
+    });
+    if (!matchedGenderRadio) {
+      const anyGenderInput = form.querySelector('input[name="gender"][type="radio"][value=""]');
+      if (anyGenderInput) anyGenderInput.checked = true;
+    }
+
+    form.querySelectorAll('input[name="ageRange"]').forEach(function (input) {
+      input.checked = (filters.ageRanges || []).includes(input.value);
+    });
+
+    form.querySelectorAll('input[name="boarding"]').forEach(function (input) {
+      input.checked = (filters.boarding || []).includes(input.value);
+    });
+
+    const boardingModeInput = getFilterField(form, 'boarding-mode');
+    if (boardingModeInput) {
+      boardingModeInput.value = Array.isArray(filters.boarding) && filters.boarding[0] === 'boardingProvision'
+        ? 'boardingProvision'
+        : 'dayProvision';
+    }
+
+    form.querySelectorAll('input[name="religion"]').forEach(function (input) {
+      input.checked = (filters.religions || []).includes(input.value);
+    });
+
+    const sixthFormInput = getFilterField(form, 'sixth-form');
+    const nurseryInput = getFilterField(form, 'nursery');
+    const bursariesInput = getFilterField(form, 'bursaries');
+    const scholarshipsInput = getFilterField(form, 'scholarships');
+    if (sixthFormInput) sixthFormInput.checked = Boolean(filters.sixthFormOnly);
+    if (nurseryInput) nurseryInput.checked = Boolean(filters.nurseryOnly);
+    if (bursariesInput) bursariesInput.checked = Boolean(filters.bursariesOnly);
+    if (scholarshipsInput) scholarshipsInput.checked = Boolean(filters.scholarshipsOnly);
+
+    const dayFeeMinInput = form.querySelector('[data-day-fee-min]');
+    const dayFeeMaxInput = form.querySelector('[data-day-fee-max]');
+    if (dayFeeMinInput && filters.dayFeeMin != null) dayFeeMinInput.value = String(filters.dayFeeMin);
+    if (dayFeeMaxInput && filters.dayFeeMax != null) dayFeeMaxInput.value = String(filters.dayFeeMax);
+
+    const boardingFeeMinInput = form.querySelector('[data-boarding-fee-min]');
+    const boardingFeeMaxInput = form.querySelector('[data-boarding-fee-max]');
+    if (boardingFeeMinInput && filters.boardingFeeMin != null) boardingFeeMinInput.value = String(filters.boardingFeeMin);
+    if (boardingFeeMaxInput && filters.boardingFeeMax != null) boardingFeeMaxInput.value = String(filters.boardingFeeMax);
+
+    const alevelMinInput = form.querySelector('[data-alevel-min]');
+    const alevelMaxInput = form.querySelector('[data-alevel-max]');
+    if (alevelMinInput && filters.alevelMin != null) alevelMinInput.value = String(filters.alevelMin);
+    if (alevelMaxInput && filters.alevelMax != null) alevelMaxInput.value = String(filters.alevelMax);
+
+    syncDayFeeRangeUi(false, form);
+    syncBoardingFeeRangeUi(false, form);
+    syncAlevelRangeUi(false, form);
+    refreshFilterDropdownLabels(form);
+    updateRadiusButtons(form);
+    updateConditionalFilterPanels(form);
+  }
+
+  function syncAllFilterForms(filters) {
+    getFilterForms().forEach(function (form) {
+      writeFiltersToForm(form, filters || getFallbackFilterState(form));
+    });
   }
 
   function getFirstNavigableSchool() {
@@ -549,12 +698,13 @@
     return resolvePlace(trimmed);
   }
 
-  function getFilterDropdowns() {
-    return Array.from(document.querySelectorAll('[data-dropdown]'));
+  function getFilterDropdowns(form) {
+    const root = form || document;
+    return Array.from(root.querySelectorAll('[data-dropdown]'));
   }
 
-  function closeFilterDropdowns(exceptDropdown) {
-    getFilterDropdowns().forEach(function (dropdown) {
+  function closeFilterDropdowns(exceptDropdown, form) {
+    getFilterDropdowns(form).forEach(function (dropdown) {
       if (dropdown !== exceptDropdown) dropdown.open = false;
     });
   }
@@ -581,8 +731,8 @@
     valueTarget.textContent = prefixLabel ? prefixLabel + ': ' + selectionLabel : selectionLabel;
   }
 
-  function refreshFilterDropdownLabels() {
-    getFilterDropdowns().forEach(updateFilterDropdownLabel);
+  function refreshFilterDropdownLabels(form) {
+    getFilterDropdowns(form).forEach(updateFilterDropdownLabel);
   }
 
   function bindFilterDropdowns() {
@@ -742,13 +892,13 @@
     }).join('');
   }
 
-  function refreshRangeHistograms(filters) {
-    const form = getFilterForm();
-    if (!form) return;
-    const activeFilters = filters || readFilters();
+  function refreshRangeHistograms(filters, form) {
+    const activeForm = form || getFilterForm();
+    if (!activeForm) return;
+    const activeFilters = filters || readFilters(activeForm);
 
-    const dayContainer = form.querySelector('[data-day-fee-histogram]');
-    const dayCount = form.querySelector('[data-day-fee-histogram-count]');
+    const dayContainer = activeForm.querySelector('[data-day-fee-histogram]');
+    const dayCount = activeForm.querySelector('[data-day-fee-histogram-count]');
     if (dayContainer) {
       const dayFilters = Object.assign({}, activeFilters, { dayFeeActive: false });
       const daySchools = getSchoolsWithinCurrentMapBounds(filterSchools(dayFilters, state.resolvedLocation));
@@ -765,8 +915,8 @@
       }
     }
 
-    const boardingContainer = form.querySelector('[data-boarding-fee-histogram]');
-    const boardingCount = form.querySelector('[data-boarding-fee-histogram-count]');
+    const boardingContainer = activeForm.querySelector('[data-boarding-fee-histogram]');
+    const boardingCount = activeForm.querySelector('[data-boarding-fee-histogram-count]');
     if (boardingContainer) {
       const boardingFilters = Object.assign({}, activeFilters, { boardingFeeActive: false });
       const boardingSchools = getSchoolsWithinCurrentMapBounds(filterSchools(boardingFilters, state.resolvedLocation));
@@ -783,8 +933,8 @@
       }
     }
 
-    const alevelContainer = form.querySelector('[data-alevel-histogram]');
-    const alevelCount = form.querySelector('[data-alevel-histogram-count]');
+    const alevelContainer = activeForm.querySelector('[data-alevel-histogram]');
+    const alevelCount = activeForm.querySelector('[data-alevel-histogram-count]');
     if (alevelContainer) {
       const alevelFilters = Object.assign({}, activeFilters, { alevelActive: false });
       const alevelSchools = getSchoolsWithinCurrentMapBounds(filterSchools(alevelFilters, state.resolvedLocation));
@@ -805,7 +955,8 @@
     const activeFilters = filters || readFilters();
     const mapCenter = state.map && typeof state.map.getCenter === 'function' ? state.map.getCenter() : null;
     const mapZoom = state.map && typeof state.map.getZoom === 'function' ? state.map.getZoom() : null;
-    const feeMode = Array.isArray(activeFilters.boarding) && activeFilters.boarding[0] === 'boardingProvision' ? 'boarding' : 'day';
+    const activeForm = getFilterForm();
+    const feeMode = activeForm && activeForm.dataset.filterVariant === 'mobile' && Array.isArray(activeFilters.boarding) && activeFilters.boarding[0] === 'boardingProvision' ? 'boarding' : 'day';
 
     window.PSGSearchState.save({
       mode: 'form',
@@ -846,80 +997,38 @@
     if (params.get('restoreSearch') !== '1') return;
 
     const savedState = window.PSGSearchState.get();
-    const form = getFilterForm();
-    if (!savedState || savedState.mode !== 'form' || !form) return;
+    if (!savedState || savedState.mode !== 'form') return;
 
-    const locationInput = form.querySelector('#school-filter-location');
-    const radiusInput = form.querySelector('#school-filter-radius');
-    if (locationInput) locationInput.value = savedState.locationQuery || '';
-    if (radiusInput) {
-      const restoredRadius = Number(savedState.radiusMiles);
-      radiusInput.value = isAllRadius(restoredRadius)
-        ? 'all'
-        : String(restoredRadius || DEFAULT_RADIUS_MILES);
-    }
-
-    const savedGender = Array.isArray(savedState.genders) && savedState.genders.length ? String(savedState.genders[0] || '') : '';
-    let matchedGender = false;
-    form.querySelectorAll('input[name="gender"]').forEach(function (input) {
-      const isMatch = String(input.value || '') === savedGender;
-      input.checked = isMatch;
-      if (isMatch) matchedGender = true;
+    const baseFilters = getFallbackFilterState('desktop');
+    const restoredFilters = Object.assign({}, baseFilters, {
+      locationQuery: savedState.locationQuery || '',
+      radiusMiles: Number(savedState.radiusMiles) || getDefaultRadiusMiles('desktop'),
+      genders: savedState.genders || [],
+      ageRanges: savedState.ageRanges || [],
+      boarding: savedState.boarding || [],
+      religions: savedState.religions || [],
+      sixthFormOnly: Boolean(savedState.sixthFormOnly),
+      nurseryOnly: Boolean(savedState.nurseryOnly),
+      bursariesOnly: Boolean(savedState.bursariesOnly),
+      scholarshipsOnly: Boolean(savedState.scholarshipsOnly),
+      dayFeeMin: savedState.dayFeeMin != null ? savedState.dayFeeMin : baseFilters.dayFeeMin,
+      dayFeeMax: savedState.dayFeeMax != null ? savedState.dayFeeMax : baseFilters.dayFeeMax,
+      boardingFeeMin: savedState.boardingFeeMin != null ? savedState.boardingFeeMin : baseFilters.boardingFeeMin,
+      boardingFeeMax: savedState.boardingFeeMax != null ? savedState.boardingFeeMax : baseFilters.boardingFeeMax,
+      alevelMin: savedState.alevelMin != null ? savedState.alevelMin : baseFilters.alevelMin,
+      alevelMax: savedState.alevelMax != null ? savedState.alevelMax : baseFilters.alevelMax
     });
-    if (!matchedGender) {
-      const anyGenderInput = form.querySelector('input[name="gender"][value=""]');
-      if (anyGenderInput) anyGenderInput.checked = true;
-    }
+    restoredFilters.dayFeeActive = restoredFilters.dayFeeMin > getFeeBounds('day').min || restoredFilters.dayFeeMax < getFeeBounds('day').max;
+    restoredFilters.boardingFeeActive = restoredFilters.boardingFeeMin > getFeeBounds('boarding').min || restoredFilters.boardingFeeMax < getFeeBounds('boarding').max;
+    const alevelBounds = state.rangeBounds.alevel || { min: 0, max: 100, step: 1 };
+    restoredFilters.alevelActive = restoredFilters.alevelMin > alevelBounds.min || restoredFilters.alevelMax < alevelBounds.max;
 
-    form.querySelectorAll('input[name="ageRange"]').forEach(function (input) {
-      input.checked = (savedState.ageRanges || []).includes(input.value);
-    });
-
-    const savedBoardingMode = Array.isArray(savedState.boarding) && savedState.boarding[0] === 'boardingProvision'
-      ? 'boardingProvision'
-      : 'dayProvision';
-    const boardingModeInput = form.querySelector('#school-filter-boarding-mode');
-    if (boardingModeInput) boardingModeInput.value = savedBoardingMode;
-
-    form.querySelectorAll('input[name="religion"]').forEach(function (input) {
-      input.checked = (savedState.religions || []).includes(input.value);
-    });
-
-    const sixthFormInput = form.querySelector('#school-filter-sixth-form');
-    const nurseryInput = form.querySelector('#school-filter-nursery');
-    const bursariesInput = form.querySelector('#school-filter-bursaries');
-    const scholarshipsInput = form.querySelector('#school-filter-scholarships');
-    if (sixthFormInput) sixthFormInput.checked = Boolean(savedState.sixthFormOnly);
-    if (nurseryInput) nurseryInput.checked = Boolean(savedState.nurseryOnly);
-    if (bursariesInput) bursariesInput.checked = Boolean(savedState.bursariesOnly);
-    if (scholarshipsInput) scholarshipsInput.checked = Boolean(savedState.scholarshipsOnly);
-
-    const dayFeeMinInput = form.querySelector('[data-day-fee-min]');
-    const dayFeeMaxInput = form.querySelector('[data-day-fee-max]');
-    if (dayFeeMinInput && savedState.dayFeeMin !== null) dayFeeMinInput.value = String(savedState.dayFeeMin);
-    if (dayFeeMaxInput && savedState.dayFeeMax !== null) dayFeeMaxInput.value = String(savedState.dayFeeMax);
-
-    const boardingFeeMinInput = form.querySelector('[data-boarding-fee-min]');
-    const boardingFeeMaxInput = form.querySelector('[data-boarding-fee-max]');
-    if (boardingFeeMinInput && savedState.boardingFeeMin !== null) boardingFeeMinInput.value = String(savedState.boardingFeeMin);
-    if (boardingFeeMaxInput && savedState.boardingFeeMax !== null) boardingFeeMaxInput.value = String(savedState.boardingFeeMax);
-
-    syncDayFeeRangeUi(false);
-    syncBoardingFeeRangeUi(false);
-
-    const alevelMinInput = form.querySelector('[data-alevel-min]');
-    const alevelMaxInput = form.querySelector('[data-alevel-max]');
-    if (alevelMinInput && savedState.alevelMin !== null) alevelMinInput.value = String(savedState.alevelMin);
-    if (alevelMaxInput && savedState.alevelMax !== null) alevelMaxInput.value = String(savedState.alevelMax);
-    syncAlevelRangeUi(false);
+    syncAllFilterForms(restoredFilters);
 
     state.sortMode = savedState.sortMode || 'dayFeesDesc';
     const sortSelect = document.getElementById('homepage-school-sort');
     if (sortSelect) sortSelect.value = state.sortMode;
 
-    refreshFilterDropdownLabels();
-    updateRadiusButtons();
-    updateConditionalFilterPanels();
     state.initialMapFocus = savedState.centeredMap && savedState.locationQuery ? {
       key: normalizeSearchQuery(savedState.locationQuery),
       zoom: savedState.centeredMapZoom || 14
@@ -941,16 +1050,16 @@
     }
   }
 
-  function syncRangeControl(config) {
-    const form = getFilterForm();
-    if (!form) return;
+  function syncRangeControl(config, form) {
+    const activeForm = form || getFilterForm();
+    if (!activeForm) return;
 
     const bounds = config.bounds;
-    const minInput = form.querySelector(config.minSelector);
-    const maxInput = form.querySelector(config.maxSelector);
-    const minDisplay = form.querySelector(config.minDisplaySelector);
-    const maxDisplay = form.querySelector(config.maxDisplaySelector);
-    const track = form.querySelector(config.trackSelector);
+    const minInput = activeForm.querySelector(config.minSelector);
+    const maxInput = activeForm.querySelector(config.maxSelector);
+    const minDisplay = activeForm.querySelector(config.minDisplaySelector);
+    const maxDisplay = activeForm.querySelector(config.maxDisplaySelector);
+    const track = activeForm.querySelector(config.trackSelector);
     if (!minInput || !maxInput) return;
 
     minInput.min = String(bounds.min);
@@ -974,7 +1083,8 @@
     setRangeTrackBackground(track, bounds, pair[0], pair[1]);
   }
 
-  function syncDayFeeRangeUi(resetValues) {
+  function syncDayFeeRangeUi(resetValues, form) {
+    const activeForm = form || getFilterForm();
     syncRangeControl({
       bounds: getFeeBounds('day'),
       minSelector: '[data-day-fee-min]',
@@ -984,11 +1094,12 @@
       trackSelector: '[data-day-fee-filter] .school-range-filter__slider-wrap',
       formatValue: formatCurrencyRangeValue,
       resetValues: Boolean(resetValues)
-    });
-    refreshRangeHistograms(readFilters());
+    }, activeForm);
+    refreshRangeHistograms(readFilters(activeForm), activeForm);
   }
 
-  function syncBoardingFeeRangeUi(resetValues) {
+  function syncBoardingFeeRangeUi(resetValues, form) {
+    const activeForm = form || getFilterForm();
     syncRangeControl({
       bounds: getFeeBounds('boarding'),
       minSelector: '[data-boarding-fee-min]',
@@ -998,11 +1109,12 @@
       trackSelector: '[data-boarding-fee-filter] .school-range-filter__slider-wrap',
       formatValue: formatCurrencyRangeValue,
       resetValues: Boolean(resetValues)
-    });
-    refreshRangeHistograms(readFilters());
+    }, activeForm);
+    refreshRangeHistograms(readFilters(activeForm), activeForm);
   }
 
-  function syncAlevelRangeUi(resetValues) {
+  function syncAlevelRangeUi(resetValues, form) {
+    const activeForm = form || getFilterForm();
     syncRangeControl({
       bounds: state.rangeBounds.alevel || { min: 0, max: 100, step: 1 },
       minSelector: '[data-alevel-min]',
@@ -1012,8 +1124,8 @@
       trackSelector: '[data-alevel-filter] .school-range-filter__slider-wrap',
       formatValue: formatPercentRangeValue,
       resetValues: Boolean(resetValues)
-    });
-    refreshRangeHistograms(readFilters());
+    }, activeForm);
+    refreshRangeHistograms(readFilters(activeForm), activeForm);
   }
 
   function initializeAdvancedFilterControls() {
@@ -1026,19 +1138,20 @@
       },
       alevel: { min: 0, max: 100, step: 1 }
     };
-    syncDayFeeRangeUi(true);
-    syncBoardingFeeRangeUi(true);
-    syncAlevelRangeUi(true);
+    getFilterForms().forEach(function (form) {
+      syncDayFeeRangeUi(true, form);
+      syncBoardingFeeRangeUi(true, form);
+      syncAlevelRangeUi(true, form);
+    });
   }
 
-  function bindAdvancedFilterControls() {
-    const form = getFilterForm();
+  function bindAdvancedFilterControls(form) {
     if (!form) return;
 
     [
-      { selectors: ['[data-day-fee-min]', '[data-day-fee-max]'], sync: function () { syncDayFeeRangeUi(false); } },
-      { selectors: ['[data-boarding-fee-min]', '[data-boarding-fee-max]'], sync: function () { syncBoardingFeeRangeUi(false); } },
-      { selectors: ['[data-alevel-min]', '[data-alevel-max]'], sync: function () { syncAlevelRangeUi(false); } }
+      { selectors: ['[data-day-fee-min]', '[data-day-fee-max]'], sync: function () { syncDayFeeRangeUi(false, form); } },
+      { selectors: ['[data-boarding-fee-min]', '[data-boarding-fee-max]'], sync: function () { syncBoardingFeeRangeUi(false, form); } },
+      { selectors: ['[data-alevel-min]', '[data-alevel-max]'], sync: function () { syncAlevelRangeUi(false, form); } }
     ].forEach(function (group) {
       group.selectors.forEach(function (selector) {
         const input = form.querySelector(selector);
@@ -1094,80 +1207,83 @@
     });
   }
 
-  function readFilters() {
-    const form = getFilterForm();
+  function readFilters(form) {
+    const activeForm = form || getFilterForm();
+    if (!activeForm) {
+      return getFallbackFilterState();
+    }
+
+    const variant = activeForm.dataset.filterVariant || 'desktop';
     const dayFeeBounds = getFeeBounds('day');
     const boardingFeeBounds = getFeeBounds('boarding');
     const alevelBounds = state.rangeBounds.alevel || { min: 0, max: 100, step: 1 };
-    if (!form) {
-      return {
-        locationQuery: '',
-        radiusMiles: DEFAULT_RADIUS_MILES,
-        genders: [],
-        ageRanges: [],
-        boarding: ['dayProvision'],
-        religions: [],
-        sixthFormOnly: false,
-        nurseryOnly: false,
-        bursariesOnly: false,
-        scholarshipsOnly: false,
-        dayFeeMin: dayFeeBounds.min,
-        dayFeeMax: dayFeeBounds.max,
-        dayFeeActive: false,
-        boardingFeeMin: boardingFeeBounds.min,
-        boardingFeeMax: boardingFeeBounds.max,
-        boardingFeeActive: false,
-        alevelMin: alevelBounds.min,
-        alevelMax: alevelBounds.max,
-        alevelActive: false
-      };
-    }
 
-    const locationInput = form.querySelector('#school-filter-location');
-    const radiusInput = form.querySelector('#school-filter-radius');
-    const dayFeeMinInput = form.querySelector('[data-day-fee-min]');
-    const dayFeeMaxInput = form.querySelector('[data-day-fee-max]');
-    const boardingFeeMinInput = form.querySelector('[data-boarding-fee-min]');
-    const boardingFeeMaxInput = form.querySelector('[data-boarding-fee-max]');
-    const alevelMinInput = form.querySelector('[data-alevel-min]');
-    const alevelMaxInput = form.querySelector('[data-alevel-max]');
+    const locationInput = getFilterField(activeForm, 'location');
+    const radiusInput = getFilterField(activeForm, 'radius');
+    const dayFeeMinInput = activeForm.querySelector('[data-day-fee-min]');
+    const dayFeeMaxInput = activeForm.querySelector('[data-day-fee-max]');
+    const boardingFeeMinInput = activeForm.querySelector('[data-boarding-fee-min]');
+    const boardingFeeMaxInput = activeForm.querySelector('[data-boarding-fee-max]');
+    const alevelMinInput = activeForm.querySelector('[data-alevel-min]');
+    const alevelMaxInput = activeForm.querySelector('[data-alevel-max]');
 
     const dayFeePair = clampRangePair(dayFeeMinInput ? dayFeeMinInput.value : dayFeeBounds.min, dayFeeMaxInput ? dayFeeMaxInput.value : dayFeeBounds.max, dayFeeBounds);
     const boardingFeePair = clampRangePair(boardingFeeMinInput ? boardingFeeMinInput.value : boardingFeeBounds.min, boardingFeeMaxInput ? boardingFeeMaxInput.value : boardingFeeBounds.max, boardingFeeBounds);
     const alevelPair = clampRangePair(alevelMinInput ? alevelMinInput.value : alevelBounds.min, alevelMaxInput ? alevelMaxInput.value : alevelBounds.max, alevelBounds);
+    const defaultRadius = getDefaultRadiusMiles(activeForm);
 
-    const genders = Array.from(form.querySelectorAll('input[name="gender"]:checked')).map(function (input) { return input.value; }).filter(Boolean);
-    const ageRanges = Array.from(form.querySelectorAll('input[name="ageRange"]:checked')).map(function (input) { return input.value; });
-    const boardingModeInput = form.querySelector('#school-filter-boarding-mode');
-    const boardingMode = boardingModeInput && String(boardingModeInput.value || '').trim() === 'boardingProvision'
-      ? 'boardingProvision'
-      : 'dayProvision';
-    const boarding = [boardingMode];
-    const religions = Array.from(form.querySelectorAll('input[name="religion"]:checked')).map(function (input) { return input.value; });
-    const showDayFees = boardingMode !== 'boardingProvision';
-    const showBoardingFees = boardingMode === 'boardingProvision';
-    const showAlevel = ageRanges.includes('senior');
+    if (variant === 'mobile') {
+      const genders = Array.from(activeForm.querySelectorAll('input[name="gender"]:checked')).map(function (input) { return input.value; }).filter(Boolean);
+      const ageRanges = Array.from(activeForm.querySelectorAll('input[name="ageRange"]:checked')).map(function (input) { return input.value; });
+      const boardingMode = getSelectedBoardingMode(activeForm);
+      const religions = Array.from(activeForm.querySelectorAll('input[name="religion"]:checked')).map(function (input) { return input.value; });
+      const showDayFees = boardingMode !== 'boardingProvision';
+      const showBoardingFees = boardingMode === 'boardingProvision';
+      const showAlevel = ageRanges.includes('senior');
+
+      return {
+        locationQuery: locationInput ? locationInput.value.trim() : '',
+        radiusMiles: parseRadiusMilesValue(radiusInput ? radiusInput.value : defaultRadius, defaultRadius),
+        genders: genders,
+        ageRanges: ageRanges,
+        boarding: [boardingMode],
+        religions: religions,
+        sixthFormOnly: Boolean(getFilterField(activeForm, 'sixth-form') && getFilterField(activeForm, 'sixth-form').checked),
+        nurseryOnly: Boolean(getFilterField(activeForm, 'nursery') && getFilterField(activeForm, 'nursery').checked),
+        bursariesOnly: false,
+        scholarshipsOnly: false,
+        dayFeeMin: dayFeePair[0],
+        dayFeeMax: dayFeePair[1],
+        dayFeeActive: showDayFees && (dayFeePair[0] > dayFeeBounds.min || dayFeePair[1] < dayFeeBounds.max),
+        boardingFeeMin: boardingFeePair[0],
+        boardingFeeMax: boardingFeePair[1],
+        boardingFeeActive: showBoardingFees && (boardingFeePair[0] > boardingFeeBounds.min || boardingFeePair[1] < boardingFeeBounds.max),
+        alevelMin: alevelPair[0],
+        alevelMax: alevelPair[1],
+        alevelActive: showAlevel && (alevelPair[0] > alevelBounds.min || alevelPair[1] < alevelBounds.max)
+      };
+    }
 
     return {
       locationQuery: locationInput ? locationInput.value.trim() : '',
-      radiusMiles: parseRadiusMilesValue(radiusInput ? radiusInput.value : DEFAULT_RADIUS_MILES, DEFAULT_RADIUS_MILES),
-      genders: genders,
-      ageRanges: ageRanges,
-      boarding: boarding,
-      religions: religions,
-      sixthFormOnly: Boolean(form.querySelector('#school-filter-sixth-form:checked')),
-      nurseryOnly: Boolean(form.querySelector('#school-filter-nursery:checked')),
-      bursariesOnly: Boolean(form.querySelector('#school-filter-bursaries:checked')),
-      scholarshipsOnly: Boolean(form.querySelector('#school-filter-scholarships:checked')),
+      radiusMiles: parsePositiveNumber(radiusInput ? radiusInput.value : defaultRadius, defaultRadius),
+      genders: Array.from(activeForm.querySelectorAll('input[name="gender"]:checked')).map(function (input) { return input.value; }),
+      ageRanges: Array.from(activeForm.querySelectorAll('input[name="ageRange"]:checked')).map(function (input) { return input.value; }),
+      boarding: Array.from(activeForm.querySelectorAll('input[name="boarding"]:checked')).map(function (input) { return input.value; }),
+      religions: Array.from(activeForm.querySelectorAll('input[name="religion"]:checked')).map(function (input) { return input.value; }),
+      sixthFormOnly: Boolean(getFilterField(activeForm, 'sixth-form') && getFilterField(activeForm, 'sixth-form').checked),
+      nurseryOnly: Boolean(getFilterField(activeForm, 'nursery') && getFilterField(activeForm, 'nursery').checked),
+      bursariesOnly: Boolean(getFilterField(activeForm, 'bursaries') && getFilterField(activeForm, 'bursaries').checked),
+      scholarshipsOnly: Boolean(getFilterField(activeForm, 'scholarships') && getFilterField(activeForm, 'scholarships').checked),
       dayFeeMin: dayFeePair[0],
       dayFeeMax: dayFeePair[1],
-      dayFeeActive: showDayFees && (dayFeePair[0] > dayFeeBounds.min || dayFeePair[1] < dayFeeBounds.max),
+      dayFeeActive: dayFeePair[0] > dayFeeBounds.min || dayFeePair[1] < dayFeeBounds.max,
       boardingFeeMin: boardingFeePair[0],
       boardingFeeMax: boardingFeePair[1],
-      boardingFeeActive: showBoardingFees && (boardingFeePair[0] > boardingFeeBounds.min || boardingFeePair[1] < boardingFeeBounds.max),
+      boardingFeeActive: boardingFeePair[0] > boardingFeeBounds.min || boardingFeePair[1] < boardingFeeBounds.max,
       alevelMin: alevelPair[0],
       alevelMax: alevelPair[1],
-      alevelActive: showAlevel && (alevelPair[0] > alevelBounds.min || alevelPair[1] < alevelBounds.max)
+      alevelActive: alevelPair[0] > alevelBounds.min || alevelPair[1] < alevelBounds.max
     };
   }
 
@@ -1765,8 +1881,9 @@
     const previousSearchKey = (state.resolvedLocation && state.resolvedLocation.key) || (state.mapFocusLocation && state.mapFocusLocation.key) || '';
     const previousRadiusMiles = state.currentFilters && Number.isFinite(Number(state.currentFilters.radiusMiles))
       ? Number(state.currentFilters.radiusMiles)
-      : DEFAULT_RADIUS_MILES;
+      : getDefaultRadiusMiles();
     state.currentFilters = filters;
+    syncAllFilterForms(filters);
     updateError('');
 
     let resolvedLocation = null;
@@ -1817,77 +1934,96 @@
   }
 
   function bindFilterForm() {
-    const form = getFilterForm();
-    if (!form) return;
+    getFilterForms().forEach(function (form) {
+      bindAdvancedFilterControls(form);
 
-    bindAdvancedFilterControls();
-
-    const locationInput = form.querySelector('#school-filter-location');
-    const radiusInput = form.querySelector('#school-filter-radius');
-
-    form.addEventListener('submit', function (event) {
-      event.preventDefault();
-      closeFilterDropdowns();
-      applyFilters();
-    });
-
-    form.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(function (input) {
-      input.addEventListener('change', function () {
-        refreshFilterDropdownLabels();
-        updateConditionalFilterPanels();
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
         applyFilters();
       });
+
+      form.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(function (input) {
+        input.addEventListener('change', function () {
+          refreshFilterDropdownLabels(form);
+          updateConditionalFilterPanels(form);
+          applyFilters();
+        });
+      });
+
+      const locationInput = getFilterField(form, 'location');
+      if (locationInput) {
+        locationInput.addEventListener('input', function () {
+          state.initialMapFocus = null;
+          scheduleApplyFilters(250);
+        });
+      }
+
+      const radiusInput = getFilterField(form, 'radius');
+      if (radiusInput && form.dataset.filterVariant === 'desktop') {
+        radiusInput.addEventListener('input', function () {
+          state.initialMapFocus = null;
+          scheduleApplyFilters(250);
+        });
+        radiusInput.addEventListener('change', function () {
+          state.initialMapFocus = null;
+          applyFilters();
+        });
+      }
+
+      const resetButton = form.querySelector('[data-filter-reset]');
+      if (resetButton) {
+        resetButton.addEventListener('click', function () {
+          form.reset();
+          state.resolvedLocation = null;
+          state.mapFocusLocation = null;
+          state.initialMapFocus = null;
+          state.hiddenTableSchoolIds.clear();
+          state.tablePage = 0;
+          closeFilterDropdowns();
+          const resetFilters = readFilters(form);
+          syncAllFilterForms(resetFilters);
+          updateError('');
+          applyFilters();
+        });
+      }
     });
-
-    if (locationInput) {
-      locationInput.addEventListener('input', function () {
-        state.initialMapFocus = null;
-        scheduleApplyFilters(350);
-      });
-    }
-
-    if (radiusInput) {
-      radiusInput.addEventListener('input', function () {
-        state.initialMapFocus = null;
-        scheduleApplyFilters(250);
-      });
-    }
   }
 
   function bindRadiusButtons() {
-    const form = getFilterForm();
-    if (!form) return;
-    const radiusInput = form.querySelector('#school-filter-radius');
-    if (!radiusInput) return;
+    getFilterForms().forEach(function (form) {
+      const radiusInput = getFilterField(form, 'radius');
+      if (!radiusInput) return;
 
-    getRadiusButtons().forEach(function (button) {
-      button.addEventListener('click', function () {
-        const rawValue = String(button.getAttribute('data-value') || '').trim().toLowerCase();
-        radiusInput.value = rawValue === 'all' ? 'all' : String(parsePositiveNumber(rawValue, DEFAULT_RADIUS_MILES));
-        state.initialMapFocus = null;
-        updateRadiusButtons();
-        applyFilters();
+      getRadiusButtons(form).forEach(function (button) {
+        button.addEventListener('click', function () {
+          const rawValue = String(button.getAttribute('data-value') || '').trim().toLowerCase();
+          const defaultRadius = getDefaultRadiusMiles(form);
+          radiusInput.value = rawValue === 'all' ? 'all' : String(parsePositiveNumber(rawValue, defaultRadius));
+          state.initialMapFocus = null;
+          updateRadiusButtons(form);
+          applyFilters();
+        });
       });
     });
   }
 
   function bindBoardingToggleButtons() {
-    const form = getFilterForm();
+    const form = getFilterForm('mobile');
     if (!form) return;
-    const input = form.querySelector('#school-filter-boarding-mode');
+    const input = getFilterField(form, 'boarding-mode');
     if (!input) return;
 
-    document.querySelectorAll('[data-boarding-option]').forEach(function (button) {
+    form.querySelectorAll('[data-boarding-option]').forEach(function (button) {
       button.addEventListener('click', function () {
         const value = String(button.getAttribute('data-value') || '').trim();
         input.value = value === 'boardingProvision' ? 'boardingProvision' : 'dayProvision';
         state.initialMapFocus = null;
-        updateConditionalFilterPanels();
+        updateConditionalFilterPanels(form);
         applyFilters();
       });
     });
 
-    updateBoardingToggleButtons();
+    updateBoardingToggleButtons(form);
   }
 
   function bindMobileResultActions() {
@@ -1920,28 +2056,32 @@
 
 
   function applyInitialQueryParams() {
-    const form = getFilterForm();
-    if (!form || typeof window === 'undefined') return;
+    const activeForm = getFilterForm();
+    if (!activeForm || typeof window === 'undefined') return;
 
     const params = new URLSearchParams(window.location.search || '');
     const locationValue = params.get('location');
     const radiusValue = params.get('radius');
     const mapMode = params.get('map');
     const zoomValue = parsePositiveNumber(params.get('zoom'), 14);
-    const locationInput = form.querySelector('#school-filter-location');
-    const radiusInput = form.querySelector('#school-filter-radius');
+    const locationInput = getFilterField(activeForm, 'location');
+    const radiusInput = getFilterField(activeForm, 'radius');
 
     if (locationInput && locationValue) {
       locationInput.value = locationValue;
     }
 
     if (radiusInput && radiusValue) {
-      const parsedRadius = parseRadiusMilesValue(radiusValue, DEFAULT_RADIUS_MILES);
-      radiusInput.value = isAllRadius(parsedRadius) ? 'all' : String(parsedRadius);
+      const defaultRadius = getDefaultRadiusMiles(activeForm);
+      const parsedRadius = parseRadiusMilesValue(radiusValue, defaultRadius);
+      if (isAllRadius(parsedRadius)) {
+        radiusInput.value = activeForm.dataset.filterVariant === 'mobile' ? 'all' : String(parsedRadius);
+      } else {
+        radiusInput.value = String(parsedRadius);
+      }
     }
 
-    updateRadiusButtons();
-    updateConditionalFilterPanels();
+    syncAllFilterForms(readFilters(activeForm));
 
     if (locationValue && mapMode === 'centered') {
       state.initialMapFocus = {
@@ -2015,9 +2155,9 @@
   }
 
   function bindFilterPanelToggle() {
-    const form = getFilterForm();
-    const toggleButton = document.querySelector('[data-filter-toggle]');
-    const collapsible = document.querySelector('[data-filter-collapsible]');
+    const form = getFilterForm('desktop');
+    const toggleButton = form ? form.querySelector('[data-filter-toggle]') : null;
+    const collapsible = form ? form.querySelector('[data-filter-collapsible]') : null;
     if (!form || !toggleButton || !collapsible) return;
 
     let lastIsMobile = null;
@@ -2081,7 +2221,15 @@
   function bindResponsiveFinderLayout() {
     if (!document.querySelector('.home-school-filter-bar')) return;
 
+    let lastIsMobile = isMobileViewport();
+
     function syncLayout() {
+      const nextIsMobile = isMobileViewport();
+      if (nextIsMobile !== lastIsMobile) {
+        syncAllFilterForms(state.currentFilters || getFallbackFilterState(nextIsMobile ? 'mobile' : 'desktop'));
+        lastIsMobile = nextIsMobile;
+      }
+
       if (state.map) {
         window.requestAnimationFrame(function () {
           try { state.map.invalidateSize({ pan: false, animate: false }); } catch (error) {}
