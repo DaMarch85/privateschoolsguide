@@ -2,6 +2,8 @@
 (function () {
   const OPENFREEMAP_BRIGHT_STYLE = "https://tiles.openfreemap.org/styles/bright";
   const OSM_FALLBACK_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+  const SEARCH_RESULTS_STORAGE_KEY = "psg-search-results-v1";
+  const VALID_SECTIONS = ["overview", "fees", "academics", "about"];
   const body = document.body;
   const currentSlug =
     body.dataset.schoolSlug ||
@@ -34,11 +36,150 @@
   const floatingCompareClose = document.querySelector('[data-compare-floating-close]');
   const main = document.querySelector(".school-profile-main");
   const baseGrid = main ? main.querySelector(".school-feature-grid") : null;
+  const resultsNav = document.querySelector('[data-school-results-nav]');
+  const prevResultButton = document.querySelector('[data-school-prev]');
+  const nextResultButton = document.querySelector('[data-school-next]');
+  const resultsLabel = document.querySelector('[data-school-results-label]');
+  const sectionButtons = Array.from(document.querySelectorAll('[data-school-section-target]'));
 
   let compareMount = null;
   let map = null;
   let markerLayer = null;
   const cache = new Map();
+
+  function normalizePath(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    try {
+      const url = new URL(raw, window.location.origin);
+      return url.pathname.replace(/\/+$/, "") + "/";
+    } catch (error) {
+      return raw.replace(/[?#].*$/, "").replace(/\/+$/, "") + "/";
+    }
+  }
+
+  function getSessionStorage() {
+    try {
+      return window.sessionStorage;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function readSearchResultsState() {
+    const storage = getSessionStorage();
+    if (!storage) return null;
+    try {
+      const raw = storage.getItem(SEARCH_RESULTS_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function normalizeSearchResultItem(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const lat = Number(raw.lat ?? raw.latitude);
+    const lng = Number(raw.lng ?? raw.longitude);
+    const path = normalizePath(raw.path || raw.href || (raw.slug ? `/schools/${raw.slug}/` : ""));
+    const slug = String(raw.slug || (path ? path.replace(/\/$/, "").split("/").pop() : "") || "").trim();
+    return {
+      ...raw,
+      lat: Number.isFinite(lat) ? lat : null,
+      lng: Number.isFinite(lng) ? lng : null,
+      path,
+      href: path,
+      slug,
+      name: raw.name || "School",
+      note: raw.note || "",
+    };
+  }
+
+  function getCurrentSectionFromUrl() {
+    const params = new URLSearchParams(window.location.search || "");
+    const section = String(params.get("section") || "overview").trim().toLowerCase();
+    return VALID_SECTIONS.includes(section) ? section : "overview";
+  }
+
+  function buildSchoolUrl(path, section) {
+    const url = new URL(path || window.location.pathname, window.location.origin);
+    const nextSection = VALID_SECTIONS.includes(section) ? section : "overview";
+    if (nextSection === "overview") url.searchParams.delete("section");
+    else url.searchParams.set("section", nextSection);
+    return url.pathname + url.search + url.hash;
+  }
+
+  function setActiveSection(section, options) {
+    const nextSection = VALID_SECTIONS.includes(section) ? section : "overview";
+    body.dataset.activeSchoolSection = nextSection;
+    sectionButtons.forEach((button) => {
+      const target = String(button.getAttribute("data-school-section-target") || "overview").trim().toLowerCase();
+      const active = target === nextSection;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+
+    if (!options || options.updateHistory !== false) {
+      const nextUrl = new URL(window.location.href);
+      if (nextSection === "overview") nextUrl.searchParams.delete("section");
+      else nextUrl.searchParams.set("section", nextSection);
+      window.history.replaceState({}, "", nextUrl.pathname + nextUrl.search + nextUrl.hash);
+    }
+  }
+
+  function bindMobileSectionNav() {
+    if (!sectionButtons.length) return;
+    sectionButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        setActiveSection(button.getAttribute("data-school-section-target") || "overview");
+      });
+    });
+    setActiveSection(getCurrentSectionFromUrl(), { updateHistory: false });
+  }
+
+  function getCurrentSearchResultsContext() {
+    const raw = readSearchResultsState();
+    if (!raw || !Array.isArray(raw.items) || !raw.items.length) return null;
+    const items = raw.items.map(normalizeSearchResultItem).filter(Boolean);
+    if (!items.length) return null;
+    const currentPath = normalizePath(currentData && currentData.path);
+    const index = items.findIndex((item) => {
+      return (item.path && currentPath && item.path === currentPath) || (item.slug && item.slug === currentSlug);
+    });
+    if (index === -1) return null;
+    return {
+      ...raw,
+      items,
+      index,
+    };
+  }
+
+  function bindSearchResultsNavigation() {
+    if (!resultsNav || !prevResultButton || !nextResultButton || !resultsLabel) return;
+    const context = getCurrentSearchResultsContext();
+    if (!context) {
+      resultsNav.hidden = true;
+      return;
+    }
+
+    const total = context.items.length;
+    const currentIndex = context.index;
+    const currentSection = getCurrentSectionFromUrl();
+    const previousItem = currentIndex > 0 ? context.items[currentIndex - 1] : null;
+    const nextItem = currentIndex < total - 1 ? context.items[currentIndex + 1] : null;
+
+    resultsNav.hidden = false;
+    resultsLabel.textContent = `School ${currentIndex + 1} of ${total}`;
+    prevResultButton.disabled = !previousItem;
+    nextResultButton.disabled = !nextItem;
+
+    prevResultButton.onclick = previousItem
+      ? function () { window.location.href = buildSchoolUrl(previousItem.path || previousItem.href, currentSection); }
+      : null;
+    nextResultButton.onclick = nextItem
+      ? function () { window.location.href = buildSchoolUrl(nextItem.path || nextItem.href, currentSection); }
+      : null;
+  }
 
   function escapeHtml(str) {
     return String(str || "").replace(/[&<>"']/g, (m) =>
@@ -380,6 +521,13 @@
   }
 
   function buildNearbyMarkers(primary, secondary) {
+    const searchResultsContext = !secondary ? getCurrentSearchResultsContext() : null;
+    if (searchResultsContext) {
+      return searchResultsContext.items
+        .filter((item, index) => index !== searchResultsContext.index)
+        .filter((item) => Number.isFinite(item.lat) && Number.isFinite(item.lng));
+    }
+
     const ignored = new Set();
     if (primary?.path) ignored.add(primary.path);
     if (secondary?.path) ignored.add(secondary.path);
@@ -412,7 +560,9 @@
     markerLayer = window.L.layerGroup().addTo(map);
 
     const bounds = [];
+    const searchResultsContext = !secondary ? getCurrentSearchResultsContext() : null;
     const nearbyMarkers = buildNearbyMarkers(primary, secondary);
+    const enableDirectMarkerNavigation = Boolean(searchResultsContext && !secondary);
     const addMarker = (data, kind, zIndexOffset) => {
       if (!data) return;
       const source = data.mapData ? data.mapData : data;
@@ -423,14 +573,22 @@
         icon: getMarkerIcon(kind),
         zIndexOffset: zIndexOffset || 0,
       }).addTo(markerLayer);
-      marker.bindPopup(popupHtml(data));
+      if (enableDirectMarkerNavigation && kind === "nearby" && data.path) {
+        marker.on("click", function () {
+          window.location.href = buildSchoolUrl(data.path, "overview");
+        });
+      } else {
+        marker.bindPopup(popupHtml(data));
+      }
     };
 
     nearbyMarkers.forEach((point) => addMarker(point, "nearby", 100));
     addMarker(primary, "primary", 500);
     if (secondary) addMarker(secondary, "secondary", 420);
 
-    if (bounds.length === 1) {
+    if (searchResultsContext && primary.mapData) {
+      map.setView([primary.mapData.lat, primary.mapData.lng], primary.mapData.zoom || 13);
+    } else if (bounds.length === 1) {
       map.setView(bounds[0], primary.mapData.zoom || 13);
     } else if (bounds.length > 1) {
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: primary.mapData.zoom || 13 });
@@ -462,7 +620,7 @@
         items.push(`<span class="school-map-legend-item"><i class="school-map-dot school-map-dot--secondary"></i><span>${escapeHtml(secondary.name)}</span></span>`);
       }
       if (hasNearbyMarkers) {
-        items.push('<span class="school-map-legend-item"><i class="school-map-dot school-map-dot--nearby"></i><span>Other nearby schools</span></span>');
+        items.push('<span class="school-map-legend-item"><i class="school-map-dot school-map-dot--nearby"></i><span>' + (searchResultsContext ? 'Other schools in this search' : 'Other nearby schools') + '</span></span>');
       }
       legend.innerHTML = items.join('');
       mapTarget.parentElement.appendChild(legend);
@@ -667,6 +825,8 @@
 
   bindTileInteractions(document);
   initHeroSlideshow();
+  bindMobileSectionNav();
+  bindSearchResultsNavigation();
   bindComparePanelToggle();
   if (floatingCompareClose) floatingCompareClose.addEventListener("click", clearComparison);
   renderCurrentMap(0);

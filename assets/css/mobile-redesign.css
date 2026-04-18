@@ -1,0 +1,660 @@
+.home-mobile-intro,
+.school-mobile-topbar,
+.school-mobile-section-nav,
+.homepage-results-close{
+  display:none;
+}
+
+.school-filter-chip-group{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.55rem;
+}
+
+.school-filter-chip,
+.school-filter-open-first{
+  min-height:44px;
+  padding:.75rem .95rem;
+  border:1px solid var(--home-border, var(--psg-line));
+  background:#fff;
+  color:var(--home-ink, var(--psg-dark));
+  font:600 .82rem/1.2 "Inter",system-ui,sans-serif;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+
+.school-filter-chip:hover,
+.school-filter-chip:focus-visible,
+.school-filter-open-first:hover,
+.school-filter-open-first:focus-visible,
+.home-mobile-intro__button:hover,
+.home-mobile-intro__button:focus-visible,
+.homepage-results-close:hover,
+.homepage-results-close:focus-visible,
+.school-mobile-topbar__action:hover,
+.school-mobile-topbar__action:focus-visible,
+.school-mobile-topbar__pager:hover,
+.school-mobile-topbar__pager:focus-visible,
+.school-mobile-section-nav__button:focus-visible{
+  border-color:rgba(179,91,46,.5);
+  color:var(--home-accent, var(--psg-accent));
+  outline:none;
+}
+
+.school-filter-chip.is-active{
+  background:var(--home-dark, var(--psg-dark));
+  border-color:var(--home-dark, var(--psg-dark));
+  color:#fff;
+}
+
+.school-filter-open-first,
+.home-mobile-intro__button,
+.school-mobile-topbar__action.is-active{
+  background:var(--home-dark, var(--psg-dark));
+  border-color:var(--home-dark, var(--psg-dark));
+  color:#fff;
+}
+
+.school-filter-open-first:disabled,
+.home-mobile-intro__button:disabled,
+.homepage-results-close:disabled,
+.school-mobile-topbar__action:disabled,
+.school-mobile-topbar__pager:disabled{
+  opacity:.45;
+  cursor:default;
+}
+
+.school-filter-field--must-have .school-filter-checklist{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.75rem;
+}
+
+.school-filter-field--must-have .school-filter-check{
+  min-height:44px;
+  padding:.55rem .75rem;
+}
+
+.school-filter-field--range.is-hidden,
+[data-conditional-alevel].is-hidden,
+[data-fee-panel].is-hidden{
+  display:none !important;
+}
+
+.home-mobile-intro__button,
+.homepage-results-close,
+.school-mobile-topbar__action,
+.school-mobile-topbar__pager{
+  min-height:40px;
+  padding:0 .9rem;
+  border:1px solid var(--psg-line);
+  background:#fff;
+  color:var(--psg-dark);
+  font:600 .72rem/1.2 "Inter",system-ui,sans-serif;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+
+.school-profile-address{
+  margin:.45rem 0 .55rem;
+  color:rgba(250,247,242,.92);
+  font-size:.98rem;
+  line-height:1.45;
+}
+
+.homepage-shortlist-link__count,
+.school-mobile-topbar__shortlist-count{
+  display:inline-grid;
+  place-items:center;
+  min-width:1.7rem;
+  min-height:1.7rem;
+  padding:0 .35rem;
+  border-radius:0 !important;
+  background:var(--psg-dark);
+  color:#fff;
+  font:700 .72rem/1 "Inter",system-ui,sans-serif;
+}
+
+.school-overview-list{
+  display:grid;
+  gap:0;
+}
+
+.school-overview-item{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:.35rem;
+  padding:.95rem 0;
+  text-align:center;
+  border-top:1px solid var(--psg-line);
+}
+
+.school-overview-item:last-child{
+  border-bottom:1px solid var(--psg-line);
+}
+
+.school-overview-label{
+  color:var(--psg-muted);
+  font:700 .72rem/1.2 "Inter",system-ui,sans-serif;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.school-overview-value{
+  color:var(--psg-dark);
+  font:600 1rem/1.45 "Inter",system-ui,sans-serif;
+}
+
+.school-yes-no--lead{
+  margin:0 0 .55rem;
+  color:var(--psg-dark);
+  font:600 1.55rem/1 "EB Garamond",ui-serif,Georgia,"Times New Roman",serif;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+
+.mobile-fee-table{
+  border-top:1px solid var(--psg-line);
+}
+
+.mobile-fee-table__row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:1rem;
+  padding:.7rem 0;
+  border-bottom:1px solid var(--psg-line);
+}
+
+.mobile-fee-table__year{
+  color:var(--psg-muted);
+  font-size:.94rem;
+}
+
+.mobile-fee-table__amount{
+  color:var(--psg-dark);
+  font-weight:600;
+}
+
+@media (min-width: 901px){
+  .home-mobile-intro,
+  .school-mobile-topbar,
+  .school-mobile-section-nav,
+  .homepage-results-close{
+    display:none !important;
+  }
+}
+
+@media (max-width: 900px){
+  body.home-minimal{
+    background:#f7f1e9;
+  }
+
+  .home-minimal .home-hero{
+    display:none;
+  }
+
+  .home-mobile-intro{
+    display:block;
+    padding:1.35rem 0 .35rem;
+  }
+
+  .home-mobile-intro__copy{
+    max-width:38rem;
+    margin:0 auto;
+    text-align:center;
+  }
+
+  .home-mobile-intro__title{
+    margin:0;
+    color:var(--home-ink);
+    font-family:"EB Garamond",ui-serif,Georgia,serif;
+    font-size:2.35rem;
+    font-weight:500;
+    line-height:1;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+  }
+
+  .home-mobile-intro__text{
+    margin:.7rem auto 1rem;
+    max-width:27ch;
+    color:var(--home-muted);
+    font-size:1rem;
+    line-height:1.55;
+  }
+
+  .home-mobile-intro__button{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .home-school-filter-bar{
+    border-top:0;
+    background:#f7f1e9;
+  }
+
+  .school-filter-form{
+    padding:.5rem 18px 1.2rem;
+  }
+
+  .school-filter-grid,
+  .school-filter-range-row{
+    grid-template-columns:1fr;
+    gap:.95rem;
+  }
+
+  .school-filter-field--location,
+  .school-filter-field--religion{
+    grid-column:auto;
+  }
+
+  .school-filter-label{
+    margin:0 0 .4rem;
+  }
+
+  .school-filter-input,
+  .school-filter-dropdown__summary,
+  .school-filter-option,
+  .school-filter-check,
+  .school-filter-chip,
+  .school-filter-reset,
+  .school-filter-open-first,
+  .home-mobile-intro__button,
+  .homepage-shortlist-link,
+  .homepage-results-close,
+  .homepage-school-card,
+  .school-feature-tile,
+  .school-side-section,
+  .school-mobile-topbar__action,
+  .school-mobile-topbar__pager{
+    border-radius:0 !important;
+  }
+
+  .school-filter-input,
+  .school-filter-dropdown__summary{
+    min-height:48px;
+    background:#fff;
+  }
+
+  .school-filter-dropdown__panel,
+  .school-filter-dropdown--wide .school-filter-dropdown__panel,
+  .school-filter-dropdown__panel--religion{
+    width:100%;
+    min-width:100%;
+    right:auto;
+    left:0;
+  }
+
+  .school-filter-range-row{
+    margin-top:.1rem;
+  }
+
+  .school-filter-field--range .school-range-filter{
+    padding:.9rem;
+    border:1px solid var(--home-border);
+    background:#fff;
+  }
+
+  .school-range-filter__display{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:.6rem;
+  }
+
+  .school-range-filter__display-box{
+    padding:.65rem .7rem;
+    border:1px solid var(--home-border);
+    background:#f8f4ee;
+  }
+
+  .school-filter-actions{
+    align-items:stretch;
+    padding-top:1rem;
+  }
+
+  .school-filter-button-row{
+    width:100%;
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:.75rem;
+  }
+
+  .school-filter-reset,
+  .school-filter-open-first{
+    width:100%;
+    min-height:48px;
+  }
+
+  .finder-left-column{
+    display:none;
+  }
+
+  .home-finder{
+    padding:0 0 2.2rem;
+  }
+
+  .finder-grid{
+    grid-template-columns:1fr;
+  }
+
+  .finder-cards-panel{
+    display:none;
+    padding:1.25rem 18px 1.6rem;
+    background:#f7f1e9;
+    border-top:1px solid var(--home-border);
+  }
+
+  body.home-minimal.mobile-results-open .finder-cards-panel{
+    display:block;
+  }
+
+  .finder-results-head--results{
+    align-items:center;
+    gap:.8rem;
+    margin-bottom:.9rem;
+  }
+
+  .finder-results-head--results .finder-results-title{
+    font-size:1.55rem;
+  }
+
+  .finder-results-summary,
+  .homepage-view-toggle,
+  .homepage-sort-controls,
+  .homepage-table-controls,
+  .homepage-school-table-wrap{
+    display:none !important;
+  }
+
+  .homepage-results-close{
+    display:inline-flex;
+  }
+
+  .homepage-results-toolbar{
+    display:block;
+    margin-bottom:.9rem;
+  }
+
+  .homepage-shortlist-link{
+    justify-content:space-between;
+    width:100%;
+  }
+
+  .homepage-visible-school-grid{
+    grid-template-columns:1fr;
+    gap:.8rem;
+  }
+
+  .homepage-school-card{
+    background:#fff;
+    box-shadow:none;
+    transform:none !important;
+    border-left:1px solid var(--home-border);
+  }
+
+  .homepage-school-card__body{
+    padding:1rem 1rem .85rem;
+  }
+
+  .homepage-school-card__actions{
+    padding:0 1rem 1rem;
+  }
+
+  .homepage-school-card__shortlist{
+    width:100%;
+    justify-content:center;
+  }
+
+  .finder-note{
+    margin-top:.8rem;
+  }
+
+  .school-profile-page .site-header,
+  .school-profile-page .school-back-strip,
+  .school-profile-page .school-profile-actions,
+  .school-profile-page .school-compare-floating-bar,
+  .school-profile-page .school-desktop-only,
+  .school-profile-page .school-compare-section{
+    display:none !important;
+  }
+
+  .school-profile-page .school-mobile-topbar{
+    display:block;
+    background:#f7f1e9;
+    border-bottom:1px solid var(--psg-line);
+  }
+
+  .school-profile-page .school-mobile-topbar__row{
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items:center;
+    gap:.75rem;
+    padding:.7rem 18px;
+  }
+
+  .school-profile-page .school-mobile-topbar__row + .school-mobile-topbar__row{
+    border-top:1px solid var(--psg-line);
+  }
+
+  .school-profile-page .school-mobile-topbar__link{
+    justify-self:start;
+    color:var(--psg-dark);
+    font:600 .72rem/1.2 "Inter",system-ui,sans-serif;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+  }
+
+  .school-profile-page .school-mobile-topbar__shortlist{
+    display:inline-flex;
+    align-items:center;
+    gap:.55rem;
+    justify-self:center;
+    color:var(--psg-dark);
+    font:600 .68rem/1.2 "Inter",system-ui,sans-serif;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    white-space:nowrap;
+  }
+
+  .school-profile-page .school-mobile-topbar__action{
+    justify-self:end;
+    padding:0 .7rem;
+    font-size:.68rem;
+  }
+
+  .school-profile-page .school-mobile-topbar__row--results{
+    grid-template-columns:auto minmax(0, 1fr) auto;
+  }
+
+  .school-profile-page .school-mobile-topbar__position{
+    margin:0;
+    color:var(--psg-muted);
+    text-align:center;
+    font-size:.88rem;
+    line-height:1.4;
+  }
+
+  .school-profile-page .school-mobile-topbar__pager{
+    padding:0 .7rem;
+    font-size:.68rem;
+  }
+
+  .school-profile-page .school-mobile-section-nav{
+    display:block;
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:#f7f1e9;
+    border-bottom:1px solid var(--psg-line);
+  }
+
+  .school-profile-page .school-mobile-section-nav__inner{
+    display:grid;
+    grid-template-columns:repeat(4, minmax(0, 1fr));
+  }
+
+  .school-profile-page .school-mobile-section-nav__button{
+    min-height:48px;
+    border:0;
+    border-bottom:2px solid transparent;
+    background:transparent;
+    color:var(--psg-muted);
+    font:600 .72rem/1.2 "Inter",system-ui,sans-serif;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    cursor:pointer;
+  }
+
+  .school-profile-page .school-mobile-section-nav__button.is-active{
+    border-bottom-color:var(--psg-accent);
+    color:var(--psg-dark);
+  }
+
+  .school-profile-page .school-profile-hero{
+    min-height:34rem;
+  }
+
+  .school-profile-page .school-profile-hero-copy{
+    padding:0 18px 1.35rem;
+  }
+
+  .school-profile-page .school-profile-title{
+    font-size:clamp(2.2rem, 9vw, 3.4rem);
+    letter-spacing:.06em;
+    line-height:.98;
+  }
+
+  .school-profile-page .school-profile-subhead{
+    max-width:30ch;
+    font-size:.98rem;
+  }
+
+  .school-profile-page .school-profile-hero--compact{
+    background:#8f8a84;
+  }
+
+  .school-profile-page .school-profile-hero--compact::after{
+    background:linear-gradient(180deg, rgba(31,26,23,.10) 0%, rgba(31,26,23,.24) 38%, rgba(31,26,23,.72) 100%);
+  }
+
+  .school-profile-page .page-shell{
+    padding:0 0 2.5rem;
+  }
+
+  .school-profile-page .school-profile-layout{
+    display:block;
+    padding-top:1.1rem;
+  }
+
+  .school-profile-page .school-profile-main,
+  .school-profile-page .school-feature-grid{
+    display:block;
+  }
+
+  .school-profile-page .school-feature-grid > * + *{
+    margin-top:.9rem;
+  }
+
+  .school-profile-page .school-feature-tile,
+  .school-profile-page .school-side-section{
+    min-height:0;
+    padding:1.05rem 1rem;
+  }
+
+  .school-profile-page .school-feature-tile h2{
+    margin-bottom:.75rem;
+    font-size:1.38rem;
+  }
+
+  .school-profile-page .school-overview-summary{
+    border:0;
+    background:transparent;
+    padding:.1rem 0 .25rem;
+  }
+
+  .school-profile-page .school-overview-summary .nav-kicker{
+    display:none;
+  }
+
+  .school-profile-page .school-map-panel{
+    padding:0;
+    border:0;
+    background:transparent;
+    position:static;
+  }
+
+  .school-profile-page .school-map-panel .location-map-head,
+  .school-profile-page .school-map-panel .map-caption,
+  .school-profile-page .school-map-panel .school-map-actions,
+  .school-profile-page .school-map-panel .school-map-legend{
+    display:none !important;
+  }
+
+  .school-profile-page .school-page-map{
+    width:100vw;
+    height:320px;
+    margin-left:calc(50% - 50vw);
+    margin-right:calc(50% - 50vw);
+    border:0;
+  }
+
+  .school-profile-page .school-page-map .school-map-marker--primary{
+    width:20px;
+    height:20px;
+    border-width:3px;
+  }
+
+  .school-profile-page .school-page-map .school-map-marker--nearby{
+    width:12px;
+    height:12px;
+    border-width:2px;
+  }
+
+  .school-profile-page [data-school-mobile-section]{
+    display:none !important;
+  }
+
+  .school-profile-page:not([data-active-school-section]) [data-school-mobile-section="overview"],
+  .school-profile-page[data-active-school-section="overview"] [data-school-mobile-section="overview"],
+  .school-profile-page[data-active-school-section="fees"] [data-school-mobile-section="fees"],
+  .school-profile-page[data-active-school-section="academics"] [data-school-mobile-section="academics"],
+  .school-profile-page[data-active-school-section="about"] [data-school-mobile-section="about"]{
+    display:block !important;
+  }
+}
+
+@media (max-width: 640px){
+  .home-mobile-intro__title{
+    font-size:2.05rem;
+  }
+
+  .school-filter-button-row{
+    grid-template-columns:1fr;
+  }
+
+  .school-profile-page .school-mobile-topbar__row--results{
+    grid-template-columns:auto minmax(0, 1fr) auto;
+    justify-items:stretch;
+  }
+
+  .school-profile-page .school-mobile-topbar__position{
+    text-align:center;
+  }
+
+  .school-profile-page .school-mobile-section-nav__button{
+    min-height:46px;
+    font-size:.68rem;
+  }
+
+  .school-profile-page .school-profile-hero{
+    min-height:30rem;
+  }
+
+  .school-profile-page .school-page-map{
+    height:290px;
+  }
+}

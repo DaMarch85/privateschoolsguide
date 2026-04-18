@@ -93,6 +93,7 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
 >
   <Fragment slot="head">
     <link rel="stylesheet" href="/assets/css/homepage.css?v=20260414d-range-row" />
+    <link rel="stylesheet" href="/assets/css/mobile-redesign.css?v=20260418a-mobile-redesign" />
   </Fragment>
 
   <main id="main">
@@ -113,16 +114,19 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
       </div>
     </section>
 
+    <section class="home-mobile-intro shell" aria-label="Mobile search intro">
+      <div class="home-mobile-intro__copy">
+        <h2 class="home-mobile-intro__title">Find the right school</h2>
+        <p class="home-mobile-intro__text">Search by town or postcode, then narrow by distance, age, fees, and essentials.</p>
+        <button class="home-mobile-intro__button" data-view-full-results type="button">View full list</button>
+      </div>
+    </section>
+
     <section aria-labelledby="school-filter-title" class="home-school-filter-bar">
       <div class="shell">
         <form class="school-filter-form" id="homepage-school-filters" novalidate>
           <h2 class="visually-hidden" id="school-filter-title">School filters</h2>
 
-          <div class="school-filter-mobile-actions">
-            <button aria-controls="homepage-school-filter-collapsible" aria-expanded="true" class="school-filter-mobile-button" data-filter-toggle type="button">Hide filters</button>
-          </div>
-
-          <div class="school-filter-collapsible" data-filter-collapsible id="homepage-school-filter-collapsible">
           <div class="school-filter-grid">
             <div class="school-filter-field school-filter-field--location">
               <label class="school-filter-label" for="school-filter-location">Location</label>
@@ -131,14 +135,23 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
                 class="school-filter-input"
                 id="school-filter-location"
                 name="location"
-                placeholder="Postcode or UK location"
+                placeholder="Postcode or town"
                 type="text"
               />
             </div>
 
-            <div class="school-filter-field school-filter-field--radius">
-              <label class="school-filter-label" for="school-filter-radius">Radius (miles)</label>
-              <input class="school-filter-input" id="school-filter-radius" min="1" name="radius" step="1" type="number" value="10" />
+            <div class="school-filter-field school-filter-field--radius-buttons">
+              <span class="school-filter-label">Distance</span>
+              <input id="school-filter-radius" name="radius" type="hidden" value="5" />
+              <div aria-label="Distance in miles" class="school-filter-chip-group" data-radius-group role="group">
+                <button class="school-filter-chip" data-radius-option data-value="2" type="button">2</button>
+                <button class="school-filter-chip is-active" data-radius-option data-value="5" type="button">5</button>
+                <button class="school-filter-chip" data-radius-option data-value="10" type="button">10</button>
+                <button class="school-filter-chip" data-radius-option data-value="25" type="button">25</button>
+                <button class="school-filter-chip" data-radius-option data-value="50" type="button">50</button>
+                <button class="school-filter-chip" data-radius-option data-value="100" type="button">100</button>
+                <button class="school-filter-chip" data-radius-option data-value="all" type="button">All</button>
+              </div>
             </div>
 
             <div class="school-filter-field school-filter-field--compact">
@@ -161,6 +174,25 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
             </div>
 
             <div class="school-filter-field school-filter-field--compact">
+              <span class="school-filter-label">Day / boarding</span>
+              <details class="school-filter-dropdown" data-dropdown>
+                <summary class="school-filter-dropdown__summary">
+                  <span class="school-filter-dropdown__value" data-default-label="Any" data-dropdown-value>Any</span>
+                </summary>
+                <div class="school-filter-dropdown__panel">
+                  <div class="school-filter-options school-filter-options--stacked">
+                    {boardingOptions.map((option) => (
+                      <label class="school-filter-option school-filter-option--dropdown">
+                        <input data-option-label={option.label} name="boarding" type="checkbox" value={option.value} />
+                        <span>{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </details>
+            </div>
+
+            <div class="school-filter-field school-filter-field--compact">
               <span class="school-filter-label">Age range</span>
               <details class="school-filter-dropdown" data-dropdown>
                 <summary class="school-filter-dropdown__summary">
@@ -171,25 +203,6 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
                     {ageRangeOptions.map((option) => (
                       <label class="school-filter-option school-filter-option--dropdown">
                         <input data-option-label={option.label} name="ageRange" type="checkbox" value={option.value} />
-                        <span>{option.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </details>
-            </div>
-
-            <div class="school-filter-field school-filter-field--compact">
-              <span class="school-filter-label">Boarding</span>
-              <details class="school-filter-dropdown" data-dropdown>
-                <summary class="school-filter-dropdown__summary">
-                  <span class="school-filter-dropdown__value" data-default-label="Any" data-dropdown-value>Any</span>
-                </summary>
-                <div class="school-filter-dropdown__panel">
-                  <div class="school-filter-options school-filter-options--stacked">
-                    {boardingOptions.map((option) => (
-                      <label class="school-filter-option school-filter-option--dropdown">
-                        <input data-option-label={option.label} name="boarding" type="checkbox" value={option.value} />
                         <span>{option.label}</span>
                       </label>
                     ))}
@@ -218,7 +231,7 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
             </div>
 
             <div class="school-filter-range-row">
-              <div class="school-filter-field school-filter-field--range school-filter-field--day-fee">
+              <div class="school-filter-field school-filter-field--range school-filter-field--day-fee" data-fee-panel="day">
                 <span class="school-filter-label">Average day fees</span>
                 <div class="school-range-filter school-range-filter--fee" data-day-fee-filter>
                   <p class="school-range-filter__count" data-day-fee-histogram-count>Loading day-fee data…</p>
@@ -240,7 +253,7 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
                 </div>
               </div>
 
-              <div class="school-filter-field school-filter-field--range school-filter-field--boarding-fee">
+              <div class="school-filter-field school-filter-field--range school-filter-field--boarding-fee" data-fee-panel="boarding">
                 <span class="school-filter-label">Average boarding fees</span>
                 <div class="school-range-filter school-range-filter--fee" data-boarding-fee-filter>
                   <p class="school-range-filter__count" data-boarding-fee-histogram-count>Loading boarding-fee data…</p>
@@ -262,7 +275,7 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
                 </div>
               </div>
 
-              <div class="school-filter-field school-filter-field--range school-filter-field--alevel">
+              <div class="school-filter-field school-filter-field--range school-filter-field--alevel" data-conditional-alevel>
                 <span class="school-filter-label">A*–A at A-level</span>
                 <div class="school-range-filter school-range-filter--alevel" data-alevel-filter>
                   <p class="school-range-filter__count" data-alevel-histogram-count>Loading A-level data…</p>
@@ -296,14 +309,6 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
                   <input id="school-filter-nursery" name="nursery" type="checkbox" />
                   <span>Nursery</span>
                 </label>
-                <label class="school-filter-check">
-                  <input id="school-filter-bursaries" name="bursaries" type="checkbox" />
-                  <span>Bursaries available</span>
-                </label>
-                <label class="school-filter-check">
-                  <input id="school-filter-scholarships" name="scholarships" type="checkbox" />
-                  <span>Scholarships available</span>
-                </label>
               </div>
             </div>
           </div>
@@ -312,8 +317,8 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
             <p aria-live="polite" class="school-filter-error" hidden id="homepage-school-filter-error"></p>
             <div class="school-filter-button-row">
               <button class="school-filter-reset" id="homepage-school-filter-reset" type="button">Clear filters</button>
+              <button class="school-filter-open-first" data-open-first-result type="button">Show schools</button>
             </div>
-          </div>
           </div>
         </form>
       </div>
@@ -359,11 +364,12 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
           </div>
         </div>
 
-        <div class="finder-panel finder-cards-panel">
+        <div class="finder-panel finder-cards-panel" data-mobile-results-panel id="homepage-results-panel">
           <div class="finder-results-head finder-results-head--results">
             <div>
               <h2 class="finder-results-title">Schools</h2>
             </div>
+            <button class="homepage-results-close" data-hide-full-results type="button">Back to filters</button>
             <p aria-live="polite" class="finder-results-summary" id="homepage-results-summary">Showing all {initialSchoolCount} schools with map coordinates.</p>
           </div>
 
@@ -420,5 +426,5 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script defer src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js" crossorigin=""></script>
   <script defer src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js" crossorigin=""></script>
-  <script defer src="/assets/js/homepage.js?v=20260416b-filter-state-age-boarding"></script>
+  <script defer src="/assets/js/homepage.js?v=20260418a-mobile-redesign"></script>
 </BaseLayout>

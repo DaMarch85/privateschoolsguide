@@ -1,5 +1,7 @@
 (function () {
-  const DEFAULT_RADIUS_MILES = 10;
+  const DEFAULT_RADIUS_MILES = 5;
+  const ALL_RADIUS_MILES = 10000;
+  const SEARCH_RESULTS_STORAGE_KEY = 'psg-search-results-v1';
   const MAX_VISIBLE_TILES = 60;
   const UK_DEFAULT_CENTER = [54.25, -2.6];
   const UK_DEFAULT_ZOOM = 6;
@@ -74,6 +76,61 @@
   function parsePositiveNumber(value, fallback) {
     const parsed = Number(value);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  }
+
+
+  function parseRadiusMilesValue(value, fallback) {
+    const raw = String(value == null ? '' : value).trim().toLowerCase();
+    if (raw === 'all') return ALL_RADIUS_MILES;
+    return parsePositiveNumber(raw, fallback);
+  }
+
+  function getSessionStorage() {
+    try {
+      return window.sessionStorage;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function readSearchResultsContext() {
+    const storage = getSessionStorage();
+    if (!storage) return null;
+    try {
+      const raw = storage.getItem(SEARCH_RESULTS_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function writeSearchResultsContext(payload) {
+    const storage = getSessionStorage();
+    if (!storage) return null;
+    try {
+      storage.setItem(SEARCH_RESULTS_STORAGE_KEY, JSON.stringify(payload));
+      return payload;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function clearSearchResultsContext() {
+    const storage = getSessionStorage();
+    if (!storage) return;
+    try {
+      storage.removeItem(SEARCH_RESULTS_STORAGE_KEY);
+    } catch (error) {
+      // ignore storage failures
+    }
+  }
+
+  function isMobileViewport() {
+    return window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+  }
+
+  function isAllRadius(value) {
+    return Number(value) >= ALL_RADIUS_MILES;
   }
 
   function formatMiles(value) {
@@ -164,6 +221,134 @@
 
   function getGuideSearchInput() {
     return document.getElementById('guide-location-search');
+  }
+
+
+  function getRadiusButtons() {
+    return Array.from(document.querySelectorAll('[data-radius-option]'));
+  }
+
+  function updateRadiusButtons() {
+    const form = getFilterForm();
+    if (!form) return;
+    const radiusInput = form.querySelector('#school-filter-radius');
+    const currentRadius = parseRadiusMilesValue(radiusInput ? radiusInput.value : DEFAULT_RADIUS_MILES, DEFAULT_RADIUS_MILES);
+    getRadiusButtons().forEach(function (button) {
+      const rawValue = String(button.getAttribute('data-value') || '').trim().toLowerCase();
+      const active = rawValue === 'all'
+        ? currentRadius >= ALL_RADIUS_MILES
+        : parsePositiveNumber(rawValue, DEFAULT_RADIUS_MILES) === currentRadius;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+
+  function getSelectedAgeRanges() {
+    const form = getFilterForm();
+    if (!form) return [];
+    return Array.from(form.querySelectorAll('input[name="ageRange"]:checked')).map(function (input) { return input.value; });
+  }
+
+  function getSelectedBoardingFilters() {
+    const form = getFilterForm();
+    if (!form) return [];
+    return Array.from(form.querySelectorAll('input[name="boarding"]:checked')).map(function (input) { return input.value; });
+  }
+
+  function updateConditionalFilterPanels() {
+    const form = getFilterForm();
+    if (!form) return;
+
+    const alevelPanel = form.querySelector('[data-conditional-alevel]');
+    const ageRanges = getSelectedAgeRanges();
+    const showAlevel = ageRanges.includes('senior');
+    if (alevelPanel) {
+      alevelPanel.hidden = !showAlevel;
+      alevelPanel.classList.toggle('is-hidden', !showAlevel);
+    }
+
+    const boardingSelections = getSelectedBoardingFilters();
+    const showDayOnly = boardingSelections.length === 1 && boardingSelections[0] === 'dayProvision';
+    const showBoardingOnly = boardingSelections.length === 1 && boardingSelections[0] === 'boardingProvision';
+    const dayPanel = form.querySelector('[data-fee-panel="day"]');
+    const boardingPanel = form.querySelector('[data-fee-panel="boarding"]');
+    if (dayPanel) {
+      dayPanel.hidden = showBoardingOnly;
+      dayPanel.classList.toggle('is-hidden', showBoardingOnly);
+    }
+    if (boardingPanel) {
+      boardingPanel.hidden = showDayOnly;
+      boardingPanel.classList.toggle('is-hidden', showDayOnly);
+    }
+  }
+
+  function getFirstNavigableSchool() {
+    return state.filteredSchools.find(function (school) {
+      return school && school.href;
+    }) || null;
+  }
+
+  function saveSearchResultsContext() {
+    const items = state.filteredSchools
+      .filter(function (school) { return school && school.href && school.slug; })
+      .map(function (school) {
+        return {
+          id: school.id,
+          slug: school.slug,
+          name: school.name,
+          href: school.href,
+          path: school.href,
+          lat: school.lat,
+          lng: school.lng,
+          latitude: school.lat,
+          longitude: school.lng,
+          note: school.note || [school.displayLocation, school.genderLabel, school.boardingLabel, school.ageLabel ? 'Ages ' + school.ageLabel : ''].filter(Boolean).join(' · ')
+        };
+      });
+
+    if (!items.length) {
+      clearSearchResultsContext();
+      return;
+    }
+
+    writeSearchResultsContext({
+      count: items.length,
+      updatedAt: Date.now(),
+      items: items,
+      locationLabel: state.resolvedLocation && state.resolvedLocation.label ? state.resolvedLocation.label : '',
+      filters: state.currentFilters || null
+    });
+  }
+
+  function updateMobileActionButtons() {
+    const filteredCount = state.filteredSchools.length;
+    const firstSchool = getFirstNavigableSchool();
+    document.querySelectorAll('[data-open-first-result]').forEach(function (button) {
+      const disabled = !firstSchool;
+      button.disabled = disabled;
+      button.textContent = disabled ? 'No schools found' : 'Show ' + formatCount(filteredCount) + ' ' + pluralize(filteredCount, 'school') ;
+    });
+    document.querySelectorAll('[data-view-full-results]').forEach(function (button) {
+      const disabled = !filteredCount;
+      button.disabled = disabled;
+      button.textContent = disabled ? 'View full list' : 'View full list (' + formatCount(filteredCount) + ')';
+    });
+  }
+
+  function openMobileResultsPanel() {
+    document.body.classList.add('mobile-results-open');
+    const panel = document.getElementById('homepage-results-panel');
+    if (panel && typeof panel.scrollIntoView === 'function') {
+      panel.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+  }
+
+  function closeMobileResultsPanel() {
+    document.body.classList.remove('mobile-results-open');
+    const form = getFilterForm();
+    if (form && typeof form.scrollIntoView === 'function' && isMobileViewport()) {
+      form.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
   }
 
   function getSchoolData() {
@@ -647,7 +832,12 @@
     const locationInput = form.querySelector('#school-filter-location');
     const radiusInput = form.querySelector('#school-filter-radius');
     if (locationInput) locationInput.value = savedState.locationQuery || '';
-    if (radiusInput) radiusInput.value = String(savedState.radiusMiles || DEFAULT_RADIUS_MILES);
+    if (radiusInput) {
+      const restoredRadius = Number(savedState.radiusMiles);
+      radiusInput.value = isAllRadius(restoredRadius)
+        ? 'all'
+        : String(restoredRadius || DEFAULT_RADIUS_MILES);
+    }
 
     form.querySelectorAll('input[name="gender"]').forEach(function (input) {
       input.checked = (savedState.genders || []).includes(input.value);
@@ -695,6 +885,8 @@
     if (sortSelect) sortSelect.value = state.sortMode;
 
     refreshFilterDropdownLabels();
+    updateRadiusButtons();
+    updateConditionalFilterPanels();
     state.initialMapFocus = savedState.centeredMap && savedState.locationQuery ? {
       key: normalizeSearchQuery(savedState.locationQuery),
       zoom: savedState.centeredMapZoom || 14
@@ -911,26 +1103,34 @@
     const boardingFeePair = clampRangePair(boardingFeeMinInput ? boardingFeeMinInput.value : boardingFeeBounds.min, boardingFeeMaxInput ? boardingFeeMaxInput.value : boardingFeeBounds.max, boardingFeeBounds);
     const alevelPair = clampRangePair(alevelMinInput ? alevelMinInput.value : alevelBounds.min, alevelMaxInput ? alevelMaxInput.value : alevelBounds.max, alevelBounds);
 
+    const genders = Array.from(form.querySelectorAll('input[name="gender"]:checked')).map(function (input) { return input.value; });
+    const ageRanges = Array.from(form.querySelectorAll('input[name="ageRange"]:checked')).map(function (input) { return input.value; });
+    const boarding = Array.from(form.querySelectorAll('input[name="boarding"]:checked')).map(function (input) { return input.value; });
+    const religions = Array.from(form.querySelectorAll('input[name="religion"]:checked')).map(function (input) { return input.value; });
+    const showDayFees = !(boarding.length === 1 && boarding[0] === 'boardingProvision');
+    const showBoardingFees = !(boarding.length === 1 && boarding[0] === 'dayProvision');
+    const showAlevel = ageRanges.includes('senior');
+
     return {
       locationQuery: locationInput ? locationInput.value.trim() : '',
-      radiusMiles: parsePositiveNumber(radiusInput ? radiusInput.value : DEFAULT_RADIUS_MILES, DEFAULT_RADIUS_MILES),
-      genders: Array.from(form.querySelectorAll('input[name="gender"]:checked')).map(function (input) { return input.value; }),
-      ageRanges: Array.from(form.querySelectorAll('input[name="ageRange"]:checked')).map(function (input) { return input.value; }),
-      boarding: Array.from(form.querySelectorAll('input[name="boarding"]:checked')).map(function (input) { return input.value; }),
-      religions: Array.from(form.querySelectorAll('input[name="religion"]:checked')).map(function (input) { return input.value; }),
+      radiusMiles: parseRadiusMilesValue(radiusInput ? radiusInput.value : DEFAULT_RADIUS_MILES, DEFAULT_RADIUS_MILES),
+      genders: genders,
+      ageRanges: ageRanges,
+      boarding: boarding,
+      religions: religions,
       sixthFormOnly: Boolean(form.querySelector('#school-filter-sixth-form:checked')),
       nurseryOnly: Boolean(form.querySelector('#school-filter-nursery:checked')),
       bursariesOnly: Boolean(form.querySelector('#school-filter-bursaries:checked')),
       scholarshipsOnly: Boolean(form.querySelector('#school-filter-scholarships:checked')),
       dayFeeMin: dayFeePair[0],
       dayFeeMax: dayFeePair[1],
-      dayFeeActive: dayFeePair[0] > dayFeeBounds.min || dayFeePair[1] < dayFeeBounds.max,
+      dayFeeActive: showDayFees && (dayFeePair[0] > dayFeeBounds.min || dayFeePair[1] < dayFeeBounds.max),
       boardingFeeMin: boardingFeePair[0],
       boardingFeeMax: boardingFeePair[1],
-      boardingFeeActive: boardingFeePair[0] > boardingFeeBounds.min || boardingFeePair[1] < boardingFeeBounds.max,
+      boardingFeeActive: showBoardingFees && (boardingFeePair[0] > boardingFeeBounds.min || boardingFeePair[1] < boardingFeeBounds.max),
       alevelMin: alevelPair[0],
       alevelMax: alevelPair[1],
-      alevelActive: alevelPair[0] > alevelBounds.min || alevelPair[1] < alevelBounds.max
+      alevelActive: showAlevel && (alevelPair[0] > alevelBounds.min || alevelPair[1] < alevelBounds.max)
     };
   }
 
@@ -1185,13 +1385,16 @@
     const boundsLayers = [];
 
     if (resolvedLocation) {
-      const radiusCircle = window.L.circle([resolvedLocation.lat, resolvedLocation.lng], {
-        radius: filters.radiusMiles * 1609.34,
-        color: '#b35b2e',
-        weight: 1.5,
-        fillColor: '#b35b2e',
-        fillOpacity: 0.08
-      }).addTo(state.searchLayer);
+      let radiusCircle = null;
+      if (!isAllRadius(filters.radiusMiles)) {
+        radiusCircle = window.L.circle([resolvedLocation.lat, resolvedLocation.lng], {
+          radius: filters.radiusMiles * 1609.34,
+          color: '#b35b2e',
+          weight: 1.5,
+          fillColor: '#b35b2e',
+          fillOpacity: 0.08
+        }).addTo(state.searchLayer);
+      }
       const centreMarker = window.L.circleMarker([resolvedLocation.lat, resolvedLocation.lng], {
         radius: 7,
         color: '#b35b2e',
@@ -1199,7 +1402,8 @@
         fillColor: '#ffffff',
         fillOpacity: 1
       }).bindPopup('<div class="map-popup"><h3 class="map-popup-title">' + escapeHtml(resolvedLocation.label) + '</h3><p class="map-popup-meta">Search centre</p></div>').addTo(state.searchLayer);
-      boundsLayers.push(radiusCircle, centreMarker);
+      if (radiusCircle) boundsLayers.push(radiusCircle);
+      boundsLayers.push(centreMarker);
     }
 
     results.forEach(function (school) {
@@ -1217,7 +1421,11 @@
       if (!emptyState.hidden) emptyState.textContent = state.shortlistPage ? 'No shortlisted schools match these filters.' : 'No schools match these filters.';
       if (resolvedLocation && results.length === 0) {
         emptyState.hidden = false;
-        emptyState.textContent = (state.shortlistPage ? 'No shortlisted schools were found within ' : 'No schools were found within ') + formatMiles(filters.radiusMiles) + ' miles of ' + resolvedLocation.label + '.';
+        if (isAllRadius(filters.radiusMiles)) {
+          emptyState.textContent = (state.shortlistPage ? 'No shortlisted schools were found near ' : 'No schools were found near ') + resolvedLocation.label + '.';
+        } else {
+          emptyState.textContent = (state.shortlistPage ? 'No shortlisted schools were found within ' : 'No schools were found within ') + formatMiles(filters.radiusMiles) + ' miles of ' + resolvedLocation.label + '.';
+        }
       }
     }
 
@@ -1377,7 +1585,8 @@
   function renderSchoolCards() {
     const cardGrid = document.getElementById('homepage-visible-school-grid');
     if (!cardGrid) return;
-    const shown = state.visibleSchools.slice(0, MAX_VISIBLE_TILES);
+    const sourceSchools = isMobileViewport() ? state.filteredSchools : state.visibleSchools;
+    const shown = isMobileViewport() ? sourceSchools.slice() : sourceSchools.slice(0, MAX_VISIBLE_TILES);
     cardGrid.innerHTML = shown.map(schoolCardHtml).join('');
     bindCardHoverStates();
     if (window.PSGShortlist && typeof window.PSGShortlist.refreshUi === 'function') {
@@ -1403,7 +1612,9 @@
         return;
       }
       if (state.resolvedLocation && state.currentFilters) {
-        target.textContent = 'No schools found within ' + formatMiles(state.currentFilters.radiusMiles) + ' miles of ' + state.resolvedLocation.label + '.';
+        target.textContent = isAllRadius(state.currentFilters.radiusMiles)
+          ? 'No schools found near ' + state.resolvedLocation.label + '.'
+          : 'No schools found within ' + formatMiles(state.currentFilters.radiusMiles) + ' miles of ' + state.resolvedLocation.label + '.';
       } else {
         target.textContent = 'No schools match these filters.';
       }
@@ -1430,13 +1641,14 @@
     }
 
     if (state.viewMode === 'tiles') {
-      if (!state.visibleSchools.length) {
+      const sourceSchools = isMobileViewport() ? state.filteredSchools : state.visibleSchools;
+      if (!sourceSchools.length) {
         empty.hidden = false;
-        empty.textContent = state.shortlistPage ? 'No shortlisted schools are currently visible on the map.' : 'No schools are currently visible on the map.';
+        empty.textContent = state.shortlistPage ? 'No shortlisted schools match these filters.' : 'No schools match these filters.';
         return;
       }
 
-      if (state.visibleSchools.length > MAX_VISIBLE_TILES) {
+      if (!isMobileViewport() && state.visibleSchools.length > MAX_VISIBLE_TILES) {
         empty.hidden = false;
         empty.textContent = 'Showing the first ' + formatCount(MAX_VISIBLE_TILES) + ' schools visible on the map.';
         return;
@@ -1492,6 +1704,7 @@
   function renderResultsOnly() {
     syncViewControls();
     updateResultsSummary();
+    updateMobileActionButtons();
     refreshRangeHistograms(state.currentFilters || readFilters());
     if (state.viewMode === 'tiles') {
       renderSchoolCards();
@@ -1561,6 +1774,7 @@
     state.filteredSchools = filterSchools(filters, state.resolvedLocation);
     state.visibleSchools = preserveMapView ? getSchoolsWithinCurrentMapBounds(state.filteredSchools) : state.filteredSchools.slice();
     saveHomepageSearchState(filters);
+    saveSearchResultsContext();
     renderResultsOnly();
     redrawMap(state.filteredSchools, filters, state.resolvedLocation, state.mapFocusLocation, { preserveView: preserveMapView });
   }
@@ -1584,6 +1798,7 @@
     form.querySelectorAll('input[type="checkbox"]').forEach(function (input) {
       input.addEventListener('change', function () {
         refreshFilterDropdownLabels();
+        updateConditionalFilterPanels();
         applyFilters();
       });
     });
@@ -1605,13 +1820,18 @@
     if (resetButton) {
       resetButton.addEventListener('click', function () {
         form.reset();
+        const hiddenRadiusInput = form.querySelector('#school-filter-radius');
+        if (hiddenRadiusInput) hiddenRadiusInput.value = String(DEFAULT_RADIUS_MILES);
         state.resolvedLocation = null;
         state.mapFocusLocation = null;
         state.initialMapFocus = null;
         state.hiddenTableSchoolIds.clear();
         state.tablePage = 0;
         closeFilterDropdowns();
+        closeMobileResultsPanel();
         refreshFilterDropdownLabels();
+        updateRadiusButtons();
+        updateConditionalFilterPanels();
         syncDayFeeRangeUi(true);
         syncBoardingFeeRangeUi(true);
         syncAlevelRangeUi(true);
@@ -1619,6 +1839,51 @@
         applyFilters();
       });
     }
+  }
+
+  function bindRadiusButtons() {
+    const form = getFilterForm();
+    if (!form) return;
+    const radiusInput = form.querySelector('#school-filter-radius');
+    if (!radiusInput) return;
+
+    getRadiusButtons().forEach(function (button) {
+      button.addEventListener('click', function () {
+        const rawValue = String(button.getAttribute('data-value') || '').trim().toLowerCase();
+        radiusInput.value = rawValue === 'all' ? 'all' : String(parsePositiveNumber(rawValue, DEFAULT_RADIUS_MILES));
+        state.initialMapFocus = null;
+        updateRadiusButtons();
+        applyFilters();
+      });
+    });
+  }
+
+  function bindMobileResultActions() {
+    document.querySelectorAll('[data-view-full-results]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        state.viewMode = 'tiles';
+        renderResultsOnly();
+        openMobileResultsPanel();
+      });
+    });
+
+    document.querySelectorAll('[data-hide-full-results]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        closeMobileResultsPanel();
+      });
+    });
+
+    document.querySelectorAll('[data-open-first-result]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const firstSchool = getFirstNavigableSchool();
+        if (!firstSchool || !firstSchool.href) return;
+        saveHomepageSearchState(readFilters());
+        saveSearchResultsContext();
+        const targetUrl = new URL(firstSchool.href, window.location.origin);
+        targetUrl.searchParams.set('section', 'overview');
+        window.location.href = targetUrl.pathname + targetUrl.search + targetUrl.hash;
+      });
+    });
   }
 
 
@@ -1639,9 +1904,12 @@
     }
 
     if (radiusInput && radiusValue) {
-      const parsedRadius = parsePositiveNumber(radiusValue, DEFAULT_RADIUS_MILES);
-      radiusInput.value = String(parsedRadius);
+      const parsedRadius = parseRadiusMilesValue(radiusValue, DEFAULT_RADIUS_MILES);
+      radiusInput.value = isAllRadius(parsedRadius) ? 'all' : String(parsedRadius);
     }
+
+    updateRadiusButtons();
+    updateConditionalFilterPanels();
 
     if (locationValue && mapMode === 'centered') {
       state.initialMapFocus = {
@@ -1779,33 +2047,9 @@
   }
 
   function bindResponsiveFinderLayout() {
-    const filterBar = document.querySelector('.home-school-filter-bar');
-    const finderLeftInner = document.querySelector('.finder-left-inner');
-    const mapPanel = finderLeftInner ? finderLeftInner.querySelector('.finder-map-panel') : null;
-    if (!filterBar || !finderLeftInner || !mapPanel) return;
-
-    const originalParent = filterBar.parentElement;
-    const originalNextSibling = filterBar.nextElementSibling;
+    if (!document.querySelector('.home-school-filter-bar')) return;
 
     function syncLayout() {
-      const isMobile = window.matchMedia('(max-width: 900px)').matches;
-
-      if (isMobile) {
-        if (filterBar.parentElement !== finderLeftInner) {
-          finderLeftInner.insertBefore(filterBar, mapPanel.nextSibling);
-        }
-        filterBar.classList.add('finder-filter-panel');
-      } else {
-        if (originalParent && filterBar.parentElement !== originalParent) {
-          if (originalNextSibling && originalNextSibling.parentElement === originalParent) {
-            originalParent.insertBefore(filterBar, originalNextSibling);
-          } else {
-            originalParent.appendChild(filterBar);
-          }
-        }
-        filterBar.classList.remove('finder-filter-panel');
-      }
-
       if (state.map) {
         window.requestAnimationFrame(function () {
           try { state.map.invalidateSize({ pan: false, animate: false }); } catch (error) {}
@@ -1832,12 +2076,16 @@
     bindGuideLocationSearch();
     bindFilterDropdowns();
     bindFilterForm();
+    bindRadiusButtons();
+    bindMobileResultActions();
     bindFilterPanelToggle();
     bindResultViewControls();
     bindHomeHeroPlayback();
     applyInitialQueryParams();
     seedHomepageSearchStateFromCurrentForm();
     applyRestoredSearchStateFromStorage();
+    updateRadiusButtons();
+    updateConditionalFilterPanels();
     bootHomepageMap(0);
     applyFilters();
 
