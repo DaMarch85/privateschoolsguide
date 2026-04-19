@@ -16,196 +16,199 @@ const {
 ---
 <section class="mobile-homepage" aria-label="Mobile school search" data-mobile-homepage>
   <div class="mobile-homepage__shell shell">
-    <header class="mobile-homepage__header">
-      <h2 class="mobile-homepage__title">Search by town or postcode and filters</h2>
-    </header>
+    <div class="mobile-homepage__panel">
+      <header class="mobile-homepage__header">
+        <h1 class="mobile-homepage__title">Find independent schools</h1>
+        <p class="mobile-homepage__intro">Search by town or postcode, fees, age range and other filters.</p>
+      </header>
 
-    <form class="mobile-homepage__form" id="mobile-homepage-filters" novalidate>
-      <div class="mobile-homepage__field mobile-homepage__field--location">
-        <label class="visually-hidden" for="mobile-filter-location">Enter postcode or town location</label>
-        <input
-          autocomplete="postal-code"
-          class="mobile-homepage__input"
-          id="mobile-filter-location"
-          name="location"
-          placeholder="Enter postcode or town location"
-          type="text"
-        />
-      </div>
-
-      <div class="mobile-homepage__field mobile-homepage__field--distance">
-        <label class="visually-hidden" for="mobile-filter-radius">Distance</label>
-        <input id="mobile-filter-radius" name="radius" type="hidden" value="5" />
-        <div aria-label="Distance in miles" class="mobile-chip-row mobile-chip-row--distance" role="group">
-          <button class="mobile-chip" data-mobile-radius-option data-value="2" type="button">2</button>
-          <button class="mobile-chip is-active" data-mobile-radius-option data-value="5" type="button">5</button>
-          <button class="mobile-chip" data-mobile-radius-option data-value="10" type="button">10</button>
-          <button class="mobile-chip" data-mobile-radius-option data-value="25" type="button">25</button>
-          <button class="mobile-chip" data-mobile-radius-option data-value="50" type="button">50</button>
-          <button class="mobile-chip" data-mobile-radius-option data-value="100" type="button">100</button>
-          <button class="mobile-chip" data-mobile-radius-option data-value="all" type="button">All</button>
+      <form class="mobile-homepage__form" id="mobile-homepage-filters" novalidate>
+        <div class="mobile-homepage__field mobile-homepage__field--location">
+          <label class="visually-hidden" for="mobile-filter-location">Enter postcode or town location</label>
+          <input
+            autocomplete="postal-code"
+            class="mobile-homepage__input"
+            id="mobile-filter-location"
+            name="location"
+            placeholder="Enter postcode or town location"
+            type="text"
+          />
         </div>
-      </div>
 
-      <div class="mobile-homepage__row">
-        <div class="mobile-homepage__field mobile-homepage__field--half mobile-homepage__field--panel-left">
-          <details class="mobile-dropdown" data-mobile-dropdown>
-            <summary class="mobile-dropdown__summary">
-              <span
-                class="mobile-dropdown__value"
-                data-mobile-dropdown-value
-                data-default-label="Any"
-                data-filter-label="Gender"
-              >Gender: Any</span>
-            </summary>
-            <div class="mobile-dropdown__panel mobile-dropdown__panel--double">
-              <div class="mobile-dropdown__options mobile-dropdown__options--stacked">
-                <label class="mobile-dropdown__option">
-                  <input checked data-option-label="Any" name="gender" type="radio" value="" />
-                  <span>Any</span>
-                </label>
-                {genderOptions.map((option) => (
+        <div class="mobile-homepage__field mobile-homepage__field--distance">
+          <label class="visually-hidden" for="mobile-filter-radius">Distance</label>
+          <input id="mobile-filter-radius" name="radius" type="hidden" value="5" />
+          <div aria-label="Distance in miles" class="mobile-chip-row mobile-chip-row--distance" role="group">
+            <button class="mobile-chip" data-mobile-radius-option data-value="2" type="button">2</button>
+            <button class="mobile-chip is-active" data-mobile-radius-option data-value="5" type="button">5</button>
+            <button class="mobile-chip" data-mobile-radius-option data-value="10" type="button">10</button>
+            <button class="mobile-chip" data-mobile-radius-option data-value="25" type="button">25</button>
+            <button class="mobile-chip" data-mobile-radius-option data-value="50" type="button">50</button>
+            <button class="mobile-chip" data-mobile-radius-option data-value="100" type="button">100</button>
+            <button class="mobile-chip" data-mobile-radius-option data-value="all" type="button">All</button>
+          </div>
+        </div>
+
+        <div class="mobile-homepage__row">
+          <div class="mobile-homepage__field mobile-homepage__field--half mobile-homepage__field--panel-left">
+            <details class="mobile-dropdown" data-mobile-dropdown>
+              <summary class="mobile-dropdown__summary">
+                <span
+                  class="mobile-dropdown__value"
+                  data-mobile-dropdown-value
+                  data-default-label="Any"
+                  data-filter-label="Gender"
+                >Gender: Any</span>
+              </summary>
+              <div class="mobile-dropdown__panel mobile-dropdown__panel--double">
+                <div class="mobile-dropdown__options mobile-dropdown__options--stacked">
                   <label class="mobile-dropdown__option">
-                    <input data-option-label={option.label} name="gender" type="radio" value={option.value} />
-                    <span>{option.label}</span>
+                    <input checked data-option-label="Any" name="gender" type="radio" value="" />
+                    <span>Any</span>
                   </label>
-                ))}
+                  {genderOptions.map((option) => (
+                    <label class="mobile-dropdown__option">
+                      <input data-option-label={option.label} name="gender" type="radio" value={option.value} />
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
-          </details>
-        </div>
+            </details>
+          </div>
 
-        <div class="mobile-homepage__field mobile-homepage__field--half">
-          <label class="visually-hidden" for="mobile-filter-boarding-mode">Day or boarding</label>
-          <input id="mobile-filter-boarding-mode" name="boardingMode" type="hidden" value="dayProvision" />
-          <div aria-label="Day or boarding" class="mobile-segmented" role="group">
-            <button class="mobile-segmented__button is-active" data-mobile-boarding-option data-value="dayProvision" type="button">Day</button>
-            <button class="mobile-segmented__button" data-mobile-boarding-option data-value="boardingProvision" type="button">Boarding</button>
+          <div class="mobile-homepage__field mobile-homepage__field--half">
+            <label class="visually-hidden" for="mobile-filter-boarding-mode">Day or boarding</label>
+            <input id="mobile-filter-boarding-mode" name="boardingMode" type="hidden" value="dayProvision" />
+            <div aria-label="Day or boarding" class="mobile-segmented" role="group">
+              <button class="mobile-segmented__button is-active" data-mobile-boarding-option data-value="dayProvision" type="button">Day</button>
+              <button class="mobile-segmented__button" data-mobile-boarding-option data-value="boardingProvision" type="button">Boarding</button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="mobile-homepage__row">
-        <div class="mobile-homepage__field mobile-homepage__field--half mobile-homepage__field--panel-left">
-          <details class="mobile-dropdown" data-mobile-dropdown>
-            <summary class="mobile-dropdown__summary">
-              <span
-                class="mobile-dropdown__value"
-                data-mobile-dropdown-value
-                data-default-label="Any"
-                data-filter-label="Age range"
-              >Age range: Any</span>
-            </summary>
-            <div class="mobile-dropdown__panel mobile-dropdown__panel--double">
-              <div class="mobile-dropdown__options mobile-dropdown__options--stacked">
-                {ageRangeOptions.map((option) => (
-                  <label class="mobile-dropdown__option">
-                    <input data-option-label={option.label} name="ageRange" type="checkbox" value={option.value} />
-                    <span>{option.label}</span>
-                  </label>
-                ))}
+        <div class="mobile-homepage__row">
+          <div class="mobile-homepage__field mobile-homepage__field--half mobile-homepage__field--panel-left">
+            <details class="mobile-dropdown" data-mobile-dropdown>
+              <summary class="mobile-dropdown__summary">
+                <span
+                  class="mobile-dropdown__value"
+                  data-mobile-dropdown-value
+                  data-default-label="Any"
+                  data-filter-label="Age range"
+                >Age range: Any</span>
+              </summary>
+              <div class="mobile-dropdown__panel mobile-dropdown__panel--double">
+                <div class="mobile-dropdown__options mobile-dropdown__options--stacked">
+                  {ageRangeOptions.map((option) => (
+                    <label class="mobile-dropdown__option">
+                      <input data-option-label={option.label} name="ageRange" type="checkbox" value={option.value} />
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
-          </details>
-        </div>
+            </details>
+          </div>
 
-        <div class="mobile-homepage__field mobile-homepage__field--half mobile-homepage__field--panel-right">
-          <details class="mobile-dropdown" data-mobile-dropdown>
-            <summary class="mobile-dropdown__summary">
-              <span
-                class="mobile-dropdown__value"
-                data-mobile-dropdown-value
-                data-default-label="Any"
-                data-filter-label="Religion"
-              >Religion: Any</span>
-            </summary>
-            <div class="mobile-dropdown__panel mobile-dropdown__panel--double mobile-dropdown__panel--religion">
-              <div class="mobile-dropdown__options mobile-dropdown__options--stacked">
-                {religionOptions.map((religion) => (
-                  <label class="mobile-dropdown__option">
-                    <input data-option-label={religion} name="religion" type="checkbox" value={religion} />
-                    <span>{religion}</span>
-                  </label>
-                ))}
+          <div class="mobile-homepage__field mobile-homepage__field--half mobile-homepage__field--panel-right">
+            <details class="mobile-dropdown" data-mobile-dropdown>
+              <summary class="mobile-dropdown__summary">
+                <span
+                  class="mobile-dropdown__value"
+                  data-mobile-dropdown-value
+                  data-default-label="Any"
+                  data-filter-label="Religion"
+                >Religion: Any</span>
+              </summary>
+              <div class="mobile-dropdown__panel mobile-dropdown__panel--double mobile-dropdown__panel--religion">
+                <div class="mobile-dropdown__options mobile-dropdown__options--stacked">
+                  {religionOptions.map((religion) => (
+                    <label class="mobile-dropdown__option">
+                      <input data-option-label={religion} name="religion" type="checkbox" value={religion} />
+                      <span>{religion}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
+            </details>
+          </div>
+        </div>
+
+        <div class="mobile-homepage__field mobile-homepage__field--range" data-mobile-fee-panel="day">
+          <div class="mobile-range">
+            <div class="mobile-range__header">
+              <span class="mobile-range__title">Day fees</span>
+              <span class="mobile-range__values">
+                <strong data-mobile-day-fee-min-display>£1,000</strong>
+                <span>–</span>
+                <strong data-mobile-day-fee-max-display>£1,000</strong>
+              </span>
             </div>
-          </details>
-        </div>
-      </div>
-
-      <div class="mobile-homepage__field mobile-homepage__field--range" data-mobile-fee-panel="day">
-        <div class="mobile-range">
-          <div class="mobile-range__header">
-            <span class="mobile-range__title">Day fees</span>
-            <span class="mobile-range__values">
-              <strong data-mobile-day-fee-min-display>£1,000</strong>
-              <span>–</span>
-              <strong data-mobile-day-fee-max-display>£1,000</strong>
-            </span>
-          </div>
-          <div class="mobile-range__track">
-            <input class="mobile-range__input" data-mobile-day-fee-min id="mobile-filter-day-fee-min" type="range" />
-            <input class="mobile-range__input" data-mobile-day-fee-max id="mobile-filter-day-fee-max" type="range" />
-            <div aria-hidden="true" class="mobile-range__fill" data-mobile-day-fee-fill></div>
+            <div class="mobile-range__track">
+              <input class="mobile-range__input" data-mobile-day-fee-min id="mobile-filter-day-fee-min" type="range" />
+              <input class="mobile-range__input" data-mobile-day-fee-max id="mobile-filter-day-fee-max" type="range" />
+              <div aria-hidden="true" class="mobile-range__fill" data-mobile-day-fee-fill></div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="mobile-homepage__field mobile-homepage__field--range" data-mobile-fee-panel="boarding" hidden>
-        <div class="mobile-range">
-          <div class="mobile-range__header">
-            <span class="mobile-range__title">Boarding fees</span>
-            <span class="mobile-range__values">
-              <strong data-mobile-boarding-fee-min-display>£1,000</strong>
-              <span>–</span>
-              <strong data-mobile-boarding-fee-max-display>£1,000</strong>
-            </span>
-          </div>
-          <div class="mobile-range__track">
-            <input class="mobile-range__input" data-mobile-boarding-fee-min id="mobile-filter-boarding-fee-min" type="range" />
-            <input class="mobile-range__input" data-mobile-boarding-fee-max id="mobile-filter-boarding-fee-max" type="range" />
-            <div aria-hidden="true" class="mobile-range__fill" data-mobile-boarding-fee-fill></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="mobile-homepage__field mobile-homepage__field--range" data-mobile-conditional-alevel hidden>
-        <div class="mobile-range">
-          <div class="mobile-range__header">
-            <span class="mobile-range__title">A*–A at A-level</span>
-            <span class="mobile-range__values">
-              <strong data-mobile-alevel-min-display>0%</strong>
-              <span>–</span>
-              <strong data-mobile-alevel-max-display>100%</strong>
-            </span>
-          </div>
-          <div class="mobile-range__track">
-            <input class="mobile-range__input" data-mobile-alevel-min id="mobile-filter-alevel-min" type="range" />
-            <input class="mobile-range__input" data-mobile-alevel-max id="mobile-filter-alevel-max" type="range" />
-            <div aria-hidden="true" class="mobile-range__fill" data-mobile-alevel-fill></div>
+        <div class="mobile-homepage__field mobile-homepage__field--range" data-mobile-fee-panel="boarding" hidden>
+          <div class="mobile-range">
+            <div class="mobile-range__header">
+              <span class="mobile-range__title">Boarding fees</span>
+              <span class="mobile-range__values">
+                <strong data-mobile-boarding-fee-min-display>£1,000</strong>
+                <span>–</span>
+                <strong data-mobile-boarding-fee-max-display>£1,000</strong>
+              </span>
+            </div>
+            <div class="mobile-range__track">
+              <input class="mobile-range__input" data-mobile-boarding-fee-min id="mobile-filter-boarding-fee-min" type="range" />
+              <input class="mobile-range__input" data-mobile-boarding-fee-max id="mobile-filter-boarding-fee-max" type="range" />
+              <div aria-hidden="true" class="mobile-range__fill" data-mobile-boarding-fee-fill></div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="mobile-homepage__field mobile-homepage__field--must-have">
-        <div class="mobile-must-have">
-          <span class="mobile-must-have__label">Must have</span>
-          <label class="mobile-check">
-            <input id="mobile-filter-sixth-form" name="sixthForm" type="checkbox" />
-            <span>Sixth form</span>
-          </label>
-          <label class="mobile-check">
-            <input id="mobile-filter-nursery" name="nursery" type="checkbox" />
-            <span>Nursery</span>
-          </label>
+        <div class="mobile-homepage__field mobile-homepage__field--range" data-mobile-conditional-alevel hidden>
+          <div class="mobile-range">
+            <div class="mobile-range__header">
+              <span class="mobile-range__title">A*–A at A-level</span>
+              <span class="mobile-range__values">
+                <strong data-mobile-alevel-min-display>0%</strong>
+                <span>–</span>
+                <strong data-mobile-alevel-max-display>100%</strong>
+              </span>
+            </div>
+            <div class="mobile-range__track">
+              <input class="mobile-range__input" data-mobile-alevel-min id="mobile-filter-alevel-min" type="range" />
+              <input class="mobile-range__input" data-mobile-alevel-max id="mobile-filter-alevel-max" type="range" />
+              <div aria-hidden="true" class="mobile-range__fill" data-mobile-alevel-fill></div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <p class="mobile-homepage__error" hidden id="mobile-homepage-error"></p>
+        <div class="mobile-homepage__field mobile-homepage__field--must-have">
+          <div class="mobile-must-have">
+            <span class="mobile-must-have__label">Must have</span>
+            <label class="mobile-check">
+              <input id="mobile-filter-sixth-form" name="sixthForm" type="checkbox" />
+              <span>Sixth form</span>
+            </label>
+            <label class="mobile-check">
+              <input id="mobile-filter-nursery" name="nursery" type="checkbox" />
+              <span>Nursery</span>
+            </label>
+          </div>
+        </div>
 
-      <div class="mobile-homepage__actions">
-        <button class="mobile-homepage__submit" data-mobile-open-first-result type="button">Show schools</button>
-      </div>
-    </form>
+        <p class="mobile-homepage__error" hidden id="mobile-homepage-error"></p>
+
+        <div class="mobile-homepage__actions">
+          <button class="mobile-homepage__submit" data-mobile-open-first-result type="button">Show schools</button>
+        </div>
+      </form>
+    </div>
   </div>
 </section>

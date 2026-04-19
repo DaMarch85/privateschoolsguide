@@ -1,3 +1,17 @@
+:root{
+  --psg-bg:#f4efe8;
+  --psg-paper:#f6f0e8;
+  --psg-paper-2:#efe7dc;
+  --psg-ink:#292421;
+  --psg-muted:#6c6359;
+  --psg-accent:#b35b2e;
+  --psg-accent-soft:#cf8a5a;
+  --psg-line:rgba(41,36,33,.16);
+  --psg-dark:#2a2520;
+  --psg-dark-soft:#1f1a17;
+  --psg-white:#faf7f2;
+}
+
 .mobile-homepage,
 .mobile-school-profile{
   display:none;
@@ -10,7 +24,9 @@
   }
 
   body.home-minimal{
-    background:var(--psg-bg);
+    background:
+      radial-gradient(circle at top, rgba(179,91,46,.06), transparent 34%),
+      var(--psg-bg);
   }
 
   body.home-minimal .home-hero,
@@ -22,24 +38,36 @@
 
   .mobile-homepage{
     min-height:100svh;
-    padding:14px 0 16px;
+    padding:16px 0 18px;
   }
 
   .mobile-homepage__shell{
-    max-width:31rem;
+    max-width:29rem;
+  }
+
+  .mobile-homepage__panel{
+    border:1px solid var(--psg-line);
+    background:var(--psg-paper);
+    padding:16px 14px 16px;
   }
 
   .mobile-homepage__header{
-    margin:0 0 10px;
+    margin:0 0 12px;
     text-align:center;
   }
 
   .mobile-homepage__title{
     margin:0;
     color:var(--psg-dark);
-    font:600 clamp(.98rem, 3.55vw, 1.08rem)/1.25 "Inter",system-ui,sans-serif;
-    letter-spacing:.01em;
-    white-space:nowrap;
+    font:500 clamp(1.95rem, 7vw, 2.35rem)/.94 "EB Garamond", ui-serif, Georgia, serif;
+    letter-spacing:.02em;
+  }
+
+  .mobile-homepage__intro{
+    max-width:22rem;
+    margin:5px auto 0;
+    color:var(--psg-muted);
+    font:500 .82rem/1.35 "Inter",system-ui,sans-serif;
   }
 
   .mobile-homepage__form{
@@ -61,19 +89,16 @@
   .mobile-dropdown__summary,
   .mobile-homepage__submit,
   .mobile-chip,
-  .mobile-segmented__button,
-  .mobile-check{
+  .mobile-segmented{
     border-radius:0;
   }
 
   .mobile-homepage__input,
   .mobile-dropdown__summary,
-  .mobile-homepage__submit,
-  .mobile-segmented__button,
-  .mobile-check{
+  .mobile-homepage__submit{
     min-height:42px;
     border:1px solid var(--psg-line);
-    background:#fff;
+    background:#fbf7f0;
     color:var(--psg-dark);
     box-shadow:none;
   }
@@ -81,11 +106,20 @@
   .mobile-homepage__input{
     width:100%;
     padding:0 13px;
-    font:500 .95rem/1.2 "Inter",system-ui,sans-serif;
+    font:500 .93rem/1.2 "Inter",system-ui,sans-serif;
   }
 
   .mobile-homepage__input::placeholder{
     color:rgba(108,99,89,.82);
+  }
+
+  .mobile-homepage__input:focus,
+  .mobile-dropdown[open] > .mobile-dropdown__summary,
+  .mobile-dropdown__summary:focus-visible,
+  .mobile-homepage__submit:focus-visible{
+    outline:none;
+    border-color:rgba(179,91,46,.52);
+    box-shadow:0 0 0 3px rgba(179,91,46,.12);
   }
 
   .mobile-chip-row{
@@ -95,14 +129,13 @@
   }
 
   .mobile-chip{
-    min-height:38px;
+    min-height:35px;
     padding:0;
     border:1px solid var(--psg-line);
-    background:#fff;
+    background:#fbf7f0;
     color:var(--psg-dark);
-    font:600 .68rem/1 "Inter",system-ui,sans-serif;
-    letter-spacing:.06em;
-    text-transform:uppercase;
+    font:600 .72rem/1 "Inter",system-ui,sans-serif;
+    letter-spacing:.05em;
     cursor:pointer;
   }
 
@@ -118,11 +151,9 @@
   .mobile-chip:focus-visible,
   .mobile-chip:hover,
   .mobile-dropdown__summary:hover,
-  .mobile-dropdown__summary:focus-visible,
   .mobile-segmented__button:hover,
   .mobile-segmented__button:focus-visible,
   .mobile-homepage__submit:hover,
-  .mobile-homepage__submit:focus-visible,
   .mobile-check:hover,
   .mobile-check:focus-within,
   .mobile-school-topbar__link:hover,
@@ -172,7 +203,7 @@
     flex:0 0 auto;
     margin-left:10px;
     color:var(--psg-muted);
-    font-size:.86rem;
+    font-size:.82rem;
   }
 
   .mobile-dropdown[open] .mobile-dropdown__summary::after{
@@ -184,7 +215,7 @@
     min-width:0;
     overflow:hidden;
     color:var(--psg-dark);
-    font:600 .8rem/1.15 "Inter",system-ui,sans-serif;
+    font:500 .9rem/1.15 "Inter",system-ui,sans-serif;
     letter-spacing:.01em;
     text-overflow:ellipsis;
     white-space:nowrap;
@@ -199,8 +230,8 @@
     max-height:min(18rem, 46svh);
     overflow:auto;
     border:1px solid var(--psg-line);
-    background:#fff;
-    box-shadow:0 12px 28px rgba(22,17,12,.14);
+    background:#fbf8f2;
+    box-shadow:0 18px 34px rgba(22,17,12,.14);
   }
 
   .mobile-dropdown__panel--religion{
@@ -232,26 +263,36 @@
   .mobile-dropdown__option input{
     flex:0 0 auto;
     margin:2px 0 0;
+    accent-color:var(--psg-accent);
   }
 
   .mobile-segmented{
     display:grid;
     grid-template-columns:repeat(2, minmax(0,1fr));
-    gap:4px;
+    border:1px solid var(--psg-line);
+    background:#fbf7f0;
   }
 
   .mobile-segmented__button{
+    min-height:42px;
     padding:0 8px;
+    border:0;
+    background:transparent;
+    color:var(--psg-dark);
     font:600 .76rem/1 "Inter",system-ui,sans-serif;
-    letter-spacing:.06em;
+    letter-spacing:.08em;
     text-transform:uppercase;
     cursor:pointer;
   }
 
+  .mobile-segmented__button + .mobile-segmented__button{
+    border-left:1px solid var(--psg-line);
+  }
+
   .mobile-range{
     border:1px solid var(--psg-line);
-    background:#fff;
-    padding:8px 10px 9px;
+    background:#fbf7f0;
+    padding:10px 11px 11px;
   }
 
   .mobile-range__header{
@@ -259,13 +300,13 @@
     align-items:center;
     justify-content:space-between;
     gap:8px;
-    margin-bottom:8px;
+    margin-bottom:10px;
   }
 
   .mobile-range__title{
     color:var(--psg-dark);
-    font:600 .74rem/1.2 "Inter",system-ui,sans-serif;
-    letter-spacing:.08em;
+    font:600 .72rem/1.2 "Inter",system-ui,sans-serif;
+    letter-spacing:.12em;
     text-transform:uppercase;
   }
 
@@ -275,7 +316,7 @@
     gap:5px;
     min-width:0;
     color:var(--psg-dark);
-    font:600 .8rem/1.1 "Inter",system-ui,sans-serif;
+    font:600 .86rem/1.1 "Inter",system-ui,sans-serif;
     white-space:nowrap;
   }
 
@@ -290,7 +331,7 @@
     left:0;
     right:0;
     height:4px;
-    background:linear-gradient(90deg, rgba(41,36,33,.12) 0%, rgba(41,36,33,.12) 100%);
+    background:rgba(41,36,33,.14);
     pointer-events:none;
   }
 
@@ -320,20 +361,20 @@
   .mobile-range__input::-webkit-slider-thumb{
     -webkit-appearance:none;
     appearance:none;
-    width:16px;
-    height:16px;
+    width:15px;
+    height:15px;
     margin-top:-6px;
-    border:2px solid var(--psg-dark);
-    background:#fff;
+    border:2px solid var(--psg-accent);
+    background:var(--psg-white);
     pointer-events:auto;
     cursor:pointer;
   }
 
   .mobile-range__input::-moz-range-thumb{
-    width:16px;
-    height:16px;
-    border:2px solid var(--psg-dark);
-    background:#fff;
+    width:15px;
+    height:15px;
+    border:2px solid var(--psg-accent);
+    background:var(--psg-white);
     border-radius:0;
     pointer-events:auto;
     cursor:pointer;
@@ -344,25 +385,25 @@
   }
 
   .mobile-range__input:focus-visible::-webkit-slider-thumb{
-    border-color:var(--psg-accent);
+    box-shadow:0 0 0 3px rgba(179,91,46,.15);
   }
 
   .mobile-range__input:focus-visible::-moz-range-thumb{
-    border-color:var(--psg-accent);
+    box-shadow:0 0 0 3px rgba(179,91,46,.15);
   }
 
   .mobile-must-have{
     display:flex;
     align-items:center;
     flex-wrap:nowrap;
-    gap:8px;
+    gap:12px;
     min-width:0;
   }
 
   .mobile-must-have__label{
     flex:0 0 auto;
-    color:var(--psg-dark);
-    font:600 .75rem/1 "Inter",system-ui,sans-serif;
+    color:var(--psg-muted);
+    font:600 .74rem/1 "Inter",system-ui,sans-serif;
     letter-spacing:.08em;
     text-transform:uppercase;
   }
@@ -370,14 +411,19 @@
   .mobile-check{
     display:inline-flex;
     align-items:center;
-    gap:7px;
-    padding:0 9px;
+    gap:6px;
+    min-height:auto;
+    padding:0;
+    border:0;
+    background:transparent;
     white-space:nowrap;
-    font:500 .8rem/1 "Inter",system-ui,sans-serif;
+    color:var(--psg-dark);
+    font:500 .84rem/1 "Inter",system-ui,sans-serif;
   }
 
   .mobile-check input{
     margin:0;
+    accent-color:var(--psg-accent);
   }
 
   .mobile-homepage__error{
@@ -390,7 +436,7 @@
   }
 
   .mobile-homepage__actions{
-    padding-top:2px;
+    padding-top:4px;
   }
 
   .mobile-homepage__submit{
@@ -402,7 +448,7 @@
     background:var(--psg-dark);
     border-color:var(--psg-dark);
     color:var(--psg-white);
-    font:600 .82rem/1 "Inter",system-ui,sans-serif;
+    font:600 .84rem/1 "Inter",system-ui,sans-serif;
     letter-spacing:.08em;
     text-transform:uppercase;
     cursor:pointer;
@@ -432,11 +478,15 @@
     padding-bottom:24px;
   }
 
+  .mobile-school-profile .shell{
+    max-width:32rem;
+  }
+
   .mobile-school-topbar{
     position:sticky;
     top:0;
     z-index:35;
-    background:var(--psg-bg);
+    background:var(--psg-paper);
     border-bottom:1px solid var(--psg-line);
   }
 
@@ -463,9 +513,9 @@
   .mobile-school-topbar__pager{
     min-height:34px;
     border:1px solid var(--psg-line);
-    background:#fff;
+    background:#fbf7f0;
     color:var(--psg-dark);
-    font:600 .68rem/1 "Inter",system-ui,sans-serif;
+    font:600 .67rem/1 "Inter",system-ui,sans-serif;
     letter-spacing:.08em;
     text-transform:uppercase;
   }
@@ -483,6 +533,12 @@
   .mobile-school-topbar__pager{
     padding:0 10px;
     cursor:pointer;
+  }
+
+  .mobile-school-topbar__action{
+    background:var(--psg-dark);
+    border-color:var(--psg-dark);
+    color:var(--psg-white);
   }
 
   .mobile-school-topbar__count{
@@ -507,7 +563,7 @@
 
   .mobile-school-hero{
     position:relative;
-    min-height:252px;
+    min-height:264px;
     background:#8e8a86;
     color:var(--psg-white);
   }
@@ -552,19 +608,19 @@
     display:flex;
     flex-direction:column;
     justify-content:flex-end;
-    min-height:252px;
+    min-height:264px;
     padding-top:44px;
-    padding-bottom:18px;
+    padding-bottom:20px;
   }
 
   .mobile-school-hero__title{
     margin:0;
+    max-width:11ch;
     font-family:"EB Garamond",ui-serif,Georgia,serif;
-    font-size:2.05rem;
+    font-size:clamp(2.25rem, 9vw, 3rem);
     font-weight:500;
-    line-height:.95;
-    letter-spacing:.03em;
-    text-transform:uppercase;
+    line-height:.94;
+    letter-spacing:.01em;
   }
 
   .mobile-school-hero__address,
@@ -576,7 +632,12 @@
     line-height:1.45;
   }
 
+  .mobile-school-hero__address{
+    font-weight:500;
+  }
+
   .mobile-school-hero__subhead{
+    max-width:30ch;
     font-size:.84rem;
     color:rgba(250,247,242,.88);
   }
@@ -625,7 +686,7 @@
     z-index:30;
     border-top:1px solid var(--psg-line);
     border-bottom:1px solid var(--psg-line);
-    background:rgba(244,239,232,.98);
+    background:rgba(246,240,232,.98);
     backdrop-filter:blur(8px);
   }
 
@@ -666,8 +727,8 @@
 
   .mobile-school-card{
     border:1px solid var(--psg-line);
-    background:#fff;
-    padding:15px 14px;
+    background:var(--psg-paper);
+    padding:16px 15px;
   }
 
   .mobile-school-card h2{
@@ -690,7 +751,7 @@
   .mobile-school-card p{
     margin:0 0 10px;
     font-size:.94rem;
-    line-height:1.55;
+    line-height:1.58;
   }
 
   .mobile-school-card p:last-child{
@@ -914,5 +975,37 @@
   .mobile-school-map .leaflet-popup-content a{
     color:var(--psg-accent);
     font-weight:600;
+  }
+}
+
+@media (max-width: 390px){
+  .mobile-homepage__panel{
+    padding:14px 12px 14px;
+  }
+
+  .mobile-homepage__title{
+    font-size:1.82rem;
+  }
+
+  .mobile-homepage__intro{
+    font-size:.79rem;
+  }
+
+  .mobile-chip{
+    font-size:.68rem;
+  }
+
+  .mobile-dropdown__value,
+  .mobile-homepage__input{
+    font-size:.87rem;
+  }
+
+  .mobile-must-have{
+    gap:10px;
+  }
+
+  .mobile-must-have__label,
+  .mobile-check{
+    font-size:.78rem;
   }
 }

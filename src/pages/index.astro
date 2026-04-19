@@ -94,7 +94,7 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
 >
   <Fragment slot="head">
     <link rel="stylesheet" href="/assets/css/homepage.css?v=20260414d-range-row" />
-    <link rel="stylesheet" href="/assets/css/mobile-redesign.css?v=20260419b-mobile-separate-routes" />
+    <link rel="stylesheet" href="/assets/css/mobile-redesign.css?v=20260419c-mobile-polish" />
   </Fragment>
 
   <MobileHomepage
@@ -433,7 +433,7 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
       var script = document.createElement('script');
       script.defer = true;
       script.src = window.matchMedia && window.matchMedia('(max-width: 900px)').matches
-        ? '/assets/js/mobile-homepage.js?v=20260419b-mobile-separate-routes'
+        ? '/assets/js/mobile-homepage.js?v=20260419c-mobile-polish'
         : '/assets/js/homepage.js?v=20260416b-filter-state-age-boarding';
       document.body.appendChild(script);
     })();
