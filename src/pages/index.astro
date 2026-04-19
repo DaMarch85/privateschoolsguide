@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SiteFooter from '../components/SiteFooter.astro';
+import MobileHomepage from '../components/MobileHomepage.astro';
 import { supabase } from '../lib/supabase';
 import { getHomepageSearchSchools } from '../lib/directory';
 import { getLocationPresentation } from '../lib/location-config';
@@ -93,7 +94,14 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
 >
   <Fragment slot="head">
     <link rel="stylesheet" href="/assets/css/homepage.css?v=20260414d-range-row" />
+    <link rel="stylesheet" href="/assets/css/mobile-redesign.css?v=20260419b-mobile-separate-routes" />
   </Fragment>
+
+  <MobileHomepage
+    religionOptions={religionOptions}
+    genderOptions={genderOptions}
+    ageRangeOptions={ageRangeOptions}
+  />
 
   <main id="main">
     <section aria-labelledby="home-title" class="home-hero" data-home-hero>
@@ -420,5 +428,14 @@ const homepageSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.str
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script defer src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js" crossorigin=""></script>
   <script defer src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js" crossorigin=""></script>
-  <script defer src="/assets/js/homepage.js?v=20260416b-filter-state-age-boarding"></script>
+  <script is:inline>
+    (function () {
+      var script = document.createElement('script');
+      script.defer = true;
+      script.src = window.matchMedia && window.matchMedia('(max-width: 900px)').matches
+        ? '/assets/js/mobile-homepage.js?v=20260419b-mobile-separate-routes'
+        : '/assets/js/homepage.js?v=20260416b-filter-state-age-boarding';
+      document.body.appendChild(script);
+    })();
+  </script>
 </BaseLayout>

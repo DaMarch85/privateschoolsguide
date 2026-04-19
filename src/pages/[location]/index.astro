@@ -130,6 +130,8 @@ const changeSearchHref = `/?location=${encodeURIComponent(location.name)}&map=ce
 const locationSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.stringify(locationSchools)};`;
 const locationSearchStateScript = `window.PSGInitialSearchState = ${JSON.stringify({ mode: 'url', restoreUrl: changeSearchHref, locationLabel: location.name })};`;
 const initialSchoolCount = formatCount(locationSchools.length);
+const mobileSearchRedirectHref = `/?location=${encodeURIComponent(location.name)}`;
+const mobileRedirectScript = `(function(){var isMobile=window.matchMedia&&window.matchMedia('(max-width: 900px)').matches;if(isMobile){window.location.replace(${JSON.stringify(mobileSearchRedirectHref)});}})();`;
 ---
 <BaseLayout
   title={location.meta_title || fallbackMetaTitle}
@@ -144,6 +146,7 @@ const initialSchoolCount = formatCount(locationSchools.length);
     <link rel="stylesheet" href="/assets/css/homepage.css?v=20260414d-range-row" />
   </Fragment>
 
+  <script is:inline set:html={mobileRedirectScript}></script>
   <a class="skip-link" href="#main">Skip to content</a>
   <SiteHeader minimal={true} />
 

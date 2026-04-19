@@ -51,6 +51,8 @@ function formatTimeRange(startAt: string | null, endAt: string | null) {
 const lastVerifiedLabel = lastVerifiedAt
   ? new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(lastVerifiedAt))
   : null;
+const mobileSearchRedirectHref = `/?location=${encodeURIComponent(location.name)}`;
+const mobileRedirectScript = `(function(){var isMobile=window.matchMedia&&window.matchMedia('(max-width: 900px)').matches;if(isMobile){window.location.replace(${JSON.stringify(mobileSearchRedirectHref)});}})();`;
 ---
 <BaseLayout
   title={title}
@@ -64,6 +66,7 @@ const lastVerifiedLabel = lastVerifiedAt
     <link rel="stylesheet" href="/assets/css/bath-refined.css" />
   </Fragment>
 
+  <script is:inline set:html={mobileRedirectScript}></script>
   <a class="skip-link" href="#main">Skip to content</a>
   <SiteHeader minimal={true} />
 

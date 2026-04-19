@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
+import MobileSchoolProfile from '../../components/MobileSchoolProfile.astro';
 import {
   getAllCanonicalSchoolPaths,
   getCanonicalSchoolProfile,
@@ -47,10 +48,12 @@ const hasHeroMedia = heroSlides.length > 0;
   <Fragment slot="head">
     <link rel="stylesheet" href="/assets/css/styles.css" />
     <link rel="stylesheet" href="/assets/css/bath-refined.css?v=20260416a-school-hero-search-back" />
+    <link rel="stylesheet" href="/assets/css/mobile-redesign.css?v=20260419b-mobile-separate-routes" />
   </Fragment>
 
   <a class="skip-link" href="#main">Skip to content</a>
   <SiteHeader minimal={true} />
+  <MobileSchoolProfile profile={profile} />
 
   <section aria-labelledby="school-page-title" class={`school-profile-hero ${heroSlides.length > 1 ? 'school-profile-hero--slideshow' : ''} ${!hasHeroMedia ? 'school-profile-hero--compact' : ''}`}>
     {hasHeroMedia ? (
@@ -371,5 +374,14 @@ const hasHeroMedia = heroSlides.length > 0;
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script defer src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js" crossorigin=""></script>
   <script defer src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js" crossorigin=""></script>
-  <script defer src="/assets/js/school-pages.js?v=20260408b-school-compare-map-refresh"></script>
+  <script is:inline>
+    (function () {
+      var script = document.createElement('script');
+      script.defer = true;
+      script.src = window.matchMedia && window.matchMedia('(max-width: 900px)').matches
+        ? '/assets/js/mobile-school-pages.js?v=20260419b-mobile-separate-routes'
+        : '/assets/js/school-pages.js?v=20260408b-school-compare-map-refresh';
+      document.body.appendChild(script);
+    })();
+  </script>
 </BaseLayout>

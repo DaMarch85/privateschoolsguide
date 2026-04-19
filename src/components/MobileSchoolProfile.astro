@@ -1,0 +1,388 @@
+---
+import {
+  formatCurrency,
+  formatPercent,
+  formatInteger,
+  splitParagraphs
+} from '../lib/directory';
+
+const { profile }: { profile: any } = Astro.props;
+
+const heroSlides = Array.from(
+  new Map(
+    [
+      { url: profile.heroImageUrl, alt: profile.heroImageAlt || `${profile.school.name} hero image`, imageType: 'hero' },
+      ...(profile.galleryImages || [])
+    ]
+      .filter((image) => Boolean(image?.url))
+      .map((image) => [image.url, image])
+  ).values()
+);
+
+const hasHeroMedia = heroSlides.length > 0;
+const yearLabels = [
+  'Pre-Reception',
+  'Reception',
+  'Year 1',
+  'Year 2',
+  'Year 3',
+  'Year 4',
+  'Year 5',
+  'Year 6',
+  'Year 7',
+  'Year 8',
+  'Year 9',
+  'Year 10',
+  'Year 11',
+  'Year 12',
+  'Year 13'
+];
+
+function flattenFeeRows(pane: any) {
+  return Array.isArray(pane?.columns) ? pane.columns.flat() : [];
+}
+
+function buildFullFeeRows(pane: any) {
+  const lookup = new Map(
+    flattenFeeRows(pane).map((row) => [row.year_group_label, formatCurrency(row.amount_gbp)])
+  );
+
+  return yearLabels.map((label) => ({
+    yearLabel: label,
+    amountLabel: lookup.get(label) || '—'
+  }));
+}
+
+function averageFeeForTypes(types: string[]) {
+  const values = (profile.feePanes || [])
+    .filter((pane) => types.includes(pane.feeType))
+    .flatMap((pane) => flattenFeeRows(pane))
+    .map((row) => Number(row.amount_gbp))
+    .filter((value) => Number.isFinite(value) && value > 0);
+
+  if (!values.length) return null;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function getAtGlanceValue(label: string) {
+  const row = (profile.atGlanceRows || []).find((entry) => entry.label === label);
+  return row ? row.value : '—';
+}
+
+function hasText(value: unknown) {
+  return String(value || '').replace(/\s+/g, ' ').trim().length > 0;
+}
+
+function pickFirstTextValue(record: Record<string, unknown> | null | undefined, keys: string[]) {
+  if (!record) return null;
+  for (const key of keys) {
+    const value = record[key];
+    if (hasText(value)) return String(value).replace(/\s+/g, ' ').trim();
+  }
+  return null;
+}
+
+const feePanes = (profile.feePanes || []).map((pane) => ({
+  ...pane,
+  allRows: buildFullFeeRows(pane)
+}));
+
+const dayFeePane = feePanes.find((pane) => pane.feeType === 'day') || null;
+const boardingFeePanes = feePanes.filter((pane) => pane.feeType === 'weekly_boarding' || pane.feeType === 'full_boarding');
+
+const averageDayFee = averageFeeForTypes(['day']);
+const averageBoardingFee = averageFeeForTypes(['weekly_boarding', 'full_boarding']);
+
+const averageFeeLabel = averageDayFee !== null && averageBoardingFee !== null
+  ? `Day ${formatCurrency(averageDayFee)} · Boarding ${formatCurrency(averageBoardingFee)} (annual, inc. VAT)`
+  : averageDayFee !== null
+    ? `${formatCurrency(averageDayFee)} (annual, inc. VAT)`
+    : averageBoardingFee !== null
+      ? `${formatCurrency(averageBoardingFee)} (annual, inc. VAT)`
+      : '—';
+
+const isSeniorSchool = Boolean(profile.school?.official_sixth_form)
+  || Number(profile.school?.age_max) >= 16
+  || /senior/i.test(String(profile.phaseLabel || ''));
+const hasScholarships = hasText(profile.content?.scholarships);
+const hasBursaries = profile.bursary?.has_bursaries === true || (!profile.bursary || profile.bursary?.has_bursaries == null ? hasText(profile.bursary?.summary) : false);
+const religionValue = getAtGlanceValue('Religion');
+const studentsValue = getAtGlanceValue('Students');
+const nurseryValue = getAtGlanceValue('Nursery') === 'Has a nursery' ? 'Yes' : 'No';
+const linkedSeniorSchool = pickFirstTextValue(profile.content, [
+  'linked_senior_school',
+  'linked_senior',
+  'linked_senior_school_name',
+  'linked_school',
+  'senior_school_link'
+]);
+
+const overviewRows = [
+  { label: 'Age range', value: profile.ageLabel || '—' },
+  { label: 'Co-ed status', value: profile.genderLabel || '—' },
+  { label: 'Number of students', value: studentsValue || '—' },
+  { label: 'Day / boarding', value: profile.formatLabel || '—' },
+  { label: 'Religious affiliation', value: religionValue || '—' },
+  { label: 'Average fees', value: averageFeeLabel },
+  { label: 'Has a nursery', value: nurseryValue }
+];
+---
+<section class="mobile-school-profile" aria-label="Mobile school profile" data-mobile-school-profile>
+  <div class="mobile-school-topbar">
+    <div class="mobile-school-topbar__row">
+      <a class="mobile-school-topbar__link" data-restore-search-link href={profile.changeSearchHref}>Back to results</a>
+      <a class="mobile-school-topbar__shortlist" href="/shortlist/">
+        <span>View shortlist</span>
+        <span class="mobile-school-topbar__count" data-shortlist-count>0</span>
+      </a>
+      <button
+        class="mobile-school-topbar__action"
+        data-shortlist-add-label="Add to shortlist"
+        data-shortlist-button
+        data-shortlist-remove-label="Shortlisted"
+        data-shortlist-school-id={profile.school.id}
+        type="button"
+      >Add to shortlist</button>
+    </div>
+    <div class="mobile-school-topbar__row mobile-school-topbar__row--pager" data-mobile-school-results-nav hidden>
+      <button class="mobile-school-topbar__pager" data-mobile-school-prev type="button">Prev</button>
+      <p class="mobile-school-topbar__position" data-mobile-school-results-label>School profile</p>
+      <button class="mobile-school-topbar__pager" data-mobile-school-next type="button">Next</button>
+    </div>
+  </div>
+
+  <section class={`mobile-school-hero ${!hasHeroMedia ? 'mobile-school-hero--fallback' : ''}`} aria-labelledby="mobile-school-title">
+    {hasHeroMedia ? (
+      <div class="mobile-school-hero__media" data-mobile-hero-slideshow={heroSlides.length > 1 ? 'true' : undefined}>
+        {heroSlides.map((image, index) => (
+          <img
+            alt={image.alt || `${profile.school.name} image ${index + 1}`}
+            class={`mobile-school-hero__slide ${index === 0 ? 'is-active' : ''}`}
+            data-mobile-hero-slide
+            loading={index === 0 ? 'eager' : 'lazy'}
+            src={image.url}
+          />
+        ))}
+
+        {heroSlides.length > 1 ? (
+          <div class="mobile-school-hero__controls" aria-label="School image gallery controls">
+            <button aria-label="Previous school image" class="mobile-school-hero__control" data-mobile-hero-prev type="button">←</button>
+            <div class="mobile-school-hero__dots" role="tablist" aria-label="School image slides">
+              {heroSlides.map((image, index) => (
+                <button
+                  aria-label={`Show image ${index + 1}`}
+                  class={`mobile-school-hero__dot ${index === 0 ? 'is-active' : ''}`}
+                  data-mobile-hero-dot
+                  data-mobile-hero-index={index}
+                  type="button"
+                ></button>
+              ))}
+            </div>
+            <button aria-label="Next school image" class="mobile-school-hero__control" data-mobile-hero-next type="button">→</button>
+          </div>
+        ) : null}
+      </div>
+    ) : <div class="mobile-school-hero__fallback"></div>}
+    <div class="mobile-school-hero__overlay"></div>
+    <div class="mobile-school-hero__copy shell">
+      <h1 class="mobile-school-hero__title" id="mobile-school-title">{profile.school.name}</h1>
+      {profile.address ? <p class="mobile-school-hero__address">{profile.address}</p> : null}
+      <p class="mobile-school-hero__subhead">{profile.subhead}</p>
+    </div>
+  </section>
+
+  <nav class="mobile-school-sections" aria-label="School sections">
+    <div class="mobile-school-sections__inner shell">
+      <button class="mobile-school-sections__button is-active" data-mobile-school-section-target="overview" type="button">Overview</button>
+      <button class="mobile-school-sections__button" data-mobile-school-section-target="fees" type="button">Fees</button>
+      <button class="mobile-school-sections__button" data-mobile-school-section-target="academics" type="button">Academics</button>
+      <button class="mobile-school-sections__button" data-mobile-school-section-target="about" type="button">About</button>
+    </div>
+  </nav>
+
+  <div class="mobile-school-content shell">
+    <section class="mobile-school-panel" data-mobile-school-section="overview">
+      <div class="mobile-school-card mobile-school-card--overview">
+        <div class="mobile-overview-list">
+          {overviewRows.map((row) => (
+            <div class="mobile-overview-list__item">
+              <span class="mobile-overview-list__label">{row.label}</span>
+              <strong class="mobile-overview-list__value">{row.value}</strong>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {profile.mapData ? (
+        <div class="mobile-school-map-wrap">
+          <div aria-label={`Map showing ${profile.school.name}`} class="mobile-school-map" id="mobile-school-map"></div>
+        </div>
+      ) : null}
+    </section>
+
+    <section class="mobile-school-panel" data-mobile-school-section="fees" hidden>
+      {dayFeePane ? (
+        <article class="mobile-school-card">
+          <h2>Day fees</h2>
+          <div class="mobile-fee-table">
+            {dayFeePane.allRows.map((row) => (
+              <div class="mobile-fee-table__row">
+                <span class="mobile-fee-table__year">{row.yearLabel}</span>
+                <strong class="mobile-fee-table__amount">{row.amountLabel}</strong>
+              </div>
+            ))}
+          </div>
+        </article>
+      ) : null}
+
+      {boardingFeePanes.map((pane) => (
+        <article class="mobile-school-card">
+          <h2>{pane.label}</h2>
+          <div class="mobile-fee-table">
+            {pane.allRows.map((row) => (
+              <div class="mobile-fee-table__row">
+                <span class="mobile-fee-table__year">{row.yearLabel}</span>
+                <strong class="mobile-fee-table__amount">{row.amountLabel}</strong>
+              </div>
+            ))}
+          </div>
+        </article>
+      ))}
+
+      {!dayFeePane && !boardingFeePanes.length ? (
+        <article class="mobile-school-card">
+          <h2>Fee profile</h2>
+          <p>No fee profile is currently published for this school.</p>
+        </article>
+      ) : null}
+
+      <article class="mobile-school-card">
+        <h2>Bursaries</h2>
+        <p class="mobile-school-yes-no">{hasBursaries ? 'Yes' : 'No'}</p>
+      </article>
+
+      <article class="mobile-school-card">
+        <h2>Scholarships</h2>
+        <p class="mobile-school-yes-no">{hasScholarships ? 'Yes' : 'No'}</p>
+      </article>
+    </section>
+
+    <section class="mobile-school-panel" data-mobile-school-section="academics" hidden>
+      {profile.alevelResult ? (
+        <article class="mobile-school-card">
+          <h2>A-level results</h2>
+          <div class="tile-kpis">
+            <div class="tile-kpi"><span class="tile-kpi-label">% A*–A</span><span class="tile-kpi-value">{formatPercent(profile.alevelResult.pct_a_star_a)}</span></div>
+            <div class="tile-kpi"><span class="tile-kpi-label">% A*–B</span><span class="tile-kpi-value">{formatPercent(profile.alevelResult.pct_a_star_b)}</span></div>
+            <div class="tile-kpi"><span class="tile-kpi-label">Different A-level subjects</span><span class="tile-kpi-value">{formatInteger(profile.alevelResult.unique_subjects)}</span></div>
+          </div>
+          <p class="tile-note">Results shown for {profile.alevelResult.result_year}.</p>
+        </article>
+      ) : isSeniorSchool ? (
+        <article class="mobile-school-card">
+          <h2>A-level results</h2>
+          <p>No A-level results are currently published for this school.</p>
+        </article>
+      ) : null}
+
+      {profile.subjectRows.length > 0 ? (
+        <article class={`mobile-school-card ${profile.subjectExtraRows.length ? 'tile-expandable' : ''}`}>
+          <h2>Subject popularity</h2>
+          <p class="tile-note">By percentage of all A-level exams taken.</p>
+          <div class="metric-list">
+            {profile.subjectTopRows.map((subject) => (
+              <div class="metric-row"><span class="metric-name">{subject.subject_name}</span><span class="metric-value">{formatPercent(subject.share_of_entries)}</span></div>
+            ))}
+          </div>
+          {profile.subjectExtraRows.length > 0 && (
+            <Fragment>
+              <button class="subject-toggle" data-mobile-subject-toggle="expand" type="button">Show full subject mix</button>
+              <div class="subject-extra" hidden>
+                <div class="metric-list">
+                  {profile.subjectExtraRows.map((subject) => (
+                    <div class="metric-row"><span class="metric-name">{subject.subject_name}</span><span class="metric-value">{formatPercent(subject.share_of_entries)}</span></div>
+                  ))}
+                </div>
+                <button class="subject-toggle subject-toggle--collapse" data-mobile-subject-toggle="collapse" type="button">Collapse subject mix</button>
+              </div>
+            </Fragment>
+          )}
+        </article>
+      ) : null}
+
+      {!isSeniorSchool && profile.content?.assessment_approach ? (
+        <article class="mobile-school-card">
+          <h2>Assessment approach</h2>
+          <div class="school-card-copy">
+            {profile.assessmentBullets.length > 1 ? (
+              <ul>
+                {profile.assessmentBullets.map((item) => <li>{item}</li>)}
+              </ul>
+            ) : (
+              splitParagraphs(profile.content.assessment_approach).map((paragraph) => <p>{paragraph}</p>)
+            )}
+          </div>
+        </article>
+      ) : null}
+
+      {!isSeniorSchool && linkedSeniorSchool ? (
+        <article class="mobile-school-card">
+          <h2>Linked senior school</h2>
+          <p>{linkedSeniorSchool}</p>
+        </article>
+      ) : null}
+
+      {profile.content?.admissions_summary ? (
+        <article class="mobile-school-card">
+          <h2>Admissions</h2>
+          <div class="school-card-copy">
+            {splitParagraphs(profile.content.admissions_summary).map((paragraph) => <p>{paragraph}</p>)}
+          </div>
+        </article>
+      ) : null}
+    </section>
+
+    <section class="mobile-school-panel" data-mobile-school-section="about" hidden>
+      <article class="mobile-school-card">
+        <h2>How the school describes itself</h2>
+        <div class="school-card-copy">
+          {profile.schoolVoice.length > 0 ? (
+            <ul>
+              {profile.schoolVoice.map((item) => <li>{item}</li>)}
+            </ul>
+          ) : (
+            <p>Coming soon</p>
+          )}
+        </div>
+      </article>
+
+      <article class="mobile-school-card">
+        <h2>Parents like</h2>
+        <div class="school-card-copy">
+          {profile.parentLikes.length > 0 ? (
+            <ul>
+              {profile.parentLikes.map((item) => <li>{item}</li>)}
+            </ul>
+          ) : (
+            <p>Coming soon</p>
+          )}
+        </div>
+      </article>
+
+      {profile.content?.inspection_snapshot || profile.school.inspection_rating ? (
+        <article class="mobile-school-card">
+          <h2>Inspection snapshot</h2>
+          <div class="school-card-copy">
+            {profile.inspectionBullets.length > 1 ? (
+              <ul>
+                {profile.inspectionBullets.map((item) => <li>{item}</li>)}
+              </ul>
+            ) : (
+              splitParagraphs(profile.content?.inspection_snapshot || profile.school.inspection_rating).map((paragraph) => <p>{paragraph}</p>)
+            )}
+          </div>
+        </article>
+      ) : null}
+    </section>
+  </div>
+</section>

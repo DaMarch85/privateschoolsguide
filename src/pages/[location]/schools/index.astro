@@ -13,6 +13,8 @@ const { location: locationSlug } = Astro.params;
 if (!locationSlug) throw new Error('Missing location slug');
 
 const { location, schoolCards } = await getLocationDirectoryData(locationSlug);
+const mobileSearchRedirectHref = `/?location=${encodeURIComponent(location.name)}`;
+const mobileRedirectScript = `(function(){var isMobile=window.matchMedia&&window.matchMedia('(max-width: 900px)').matches;if(isMobile){window.location.replace(${JSON.stringify(mobileSearchRedirectHref)});}})();`;
 ---
 <BaseLayout
   title={`${location.name} schools directory | The Private School Guide`}
@@ -26,6 +28,7 @@ const { location, schoolCards } = await getLocationDirectoryData(locationSlug);
     <link rel="stylesheet" href="/assets/css/bath-refined.css" />
   </Fragment>
 
+  <script is:inline set:html={mobileRedirectScript}></script>
   <a class="skip-link" href="#main">Skip to content</a>
   <SiteHeader minimal={true} />
   <div class="page-back-strip"><div class="shell"><a class="page-back-link" href={`/${location.slug}/`}>Back to {location.name}</a></div></div>
