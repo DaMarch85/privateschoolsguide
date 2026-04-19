@@ -53,6 +53,11 @@ function buildFullFeeRows(pane: any) {
   }));
 }
 
+function splitFeeRows(rows: Array<{ yearLabel: string; amountLabel: string }>) {
+  const midpoint = Math.ceil(rows.length / 2);
+  return [rows.slice(0, midpoint), rows.slice(midpoint)];
+}
+
 function averageFeeForTypes(types: string[]) {
   const values = (profile.feePanes || [])
     .filter((pane) => types.includes(pane.feeType))
@@ -82,23 +87,24 @@ function pickFirstTextValue(record: Record<string, unknown> | null | undefined, 
   return null;
 }
 
-const feePanes = (profile.feePanes || []).map((pane) => ({
-  ...pane,
-  allRows: buildFullFeeRows(pane)
-}));
-
-const dayFeePane = feePanes.find((pane) => pane.feeType === 'day') || null;
-const boardingFeePanes = feePanes.filter((pane) => pane.feeType === 'weekly_boarding' || pane.feeType === 'full_boarding');
+const feePanes = (profile.feePanes || []).map((pane) => {
+  const allRows = buildFullFeeRows(pane);
+  return {
+    ...pane,
+    allRows,
+    compactColumns: splitFeeRows(allRows)
+  };
+});
 
 const averageDayFee = averageFeeForTypes(['day']);
 const averageBoardingFee = averageFeeForTypes(['weekly_boarding', 'full_boarding']);
 
-const averageFeeLabel = averageDayFee !== null && averageBoardingFee !== null
-  ? `Day ${formatCurrency(averageDayFee)} · Boarding ${formatCurrency(averageBoardingFee)} (annual, inc. VAT)`
+const averageFeeValue = averageDayFee !== null && averageBoardingFee !== null
+  ? `Day ${formatCurrency(averageDayFee)} · Boarding ${formatCurrency(averageBoardingFee)}`
   : averageDayFee !== null
-    ? `${formatCurrency(averageDayFee)} (annual, inc. VAT)`
+    ? `${formatCurrency(averageDayFee)}`
     : averageBoardingFee !== null
-      ? `${formatCurrency(averageBoardingFee)} (annual, inc. VAT)`
+      ? `${formatCurrency(averageBoardingFee)}`
       : '—';
 
 const isSeniorSchool = Boolean(profile.school?.official_sixth_form)
@@ -123,12 +129,12 @@ const overviewRows = [
   { label: 'Number of students', value: studentsValue || '—' },
   { label: 'Day / boarding', value: profile.formatLabel || '—' },
   { label: 'Religious affiliation', value: religionValue || '—' },
-  { label: 'Average fees', value: averageFeeLabel },
+  { label: 'Average fees', value: averageFeeValue, note: averageFeeValue !== '—' ? 'annual, inc. VAT' : null },
   { label: 'Has a nursery', value: nurseryValue }
 ];
 ---
 <section class="mobile-school-profile" aria-label="Mobile school profile" data-mobile-school-profile>
-  <div class="mobile-school-topbar">
+  <div class="mobile-school-topbar" data-mobile-school-topbar>
     <div class="mobile-school-topbar__row">
       <a class="mobile-school-topbar__link" data-restore-search-link href={profile.changeSearchHref}>Back to results</a>
       <a class="mobile-school-topbar__shortlist" href="/shortlist/">
@@ -144,10 +150,15 @@ const overviewRows = [
         type="button"
       >Add to shortlist</button>
     </div>
+
     <div class="mobile-school-topbar__row mobile-school-topbar__row--pager" data-mobile-school-results-nav hidden>
       <button class="mobile-school-topbar__pager" data-mobile-school-prev type="button">Prev</button>
       <p class="mobile-school-topbar__position" data-mobile-school-results-label>School profile</p>
       <button class="mobile-school-topbar__pager" data-mobile-school-next type="button">Next</button>
+    </div>
+
+    <div class="mobile-school-topbar__row mobile-school-topbar__row--results" data-mobile-school-results-list-row hidden>
+      <button class="mobile-school-topbar__results-button" data-mobile-results-open type="button">View full list of results</button>
     </div>
   </div>
 
@@ -191,26 +202,36 @@ const overviewRows = [
     </div>
   </section>
 
+  <input checked class="mobile-school-section-control" data-mobile-school-section-control id="mobile-school-section-overview" name="mobile-school-section" type="radio" value="overview" />
+  <input class="mobile-school-section-control" data-mobile-school-section-control id="mobile-school-section-fees" name="mobile-school-section" type="radio" value="fees" />
+  <input class="mobile-school-section-control" data-mobile-school-section-control id="mobile-school-section-academics" name="mobile-school-section" type="radio" value="academics" />
+  <input class="mobile-school-section-control" data-mobile-school-section-control id="mobile-school-section-about" name="mobile-school-section" type="radio" value="about" />
+
   <nav class="mobile-school-sections" aria-label="School sections">
     <div class="mobile-school-sections__inner shell">
-      <button class="mobile-school-sections__button is-active" data-mobile-school-section-target="overview" type="button">Overview</button>
-      <button class="mobile-school-sections__button" data-mobile-school-section-target="fees" type="button">Fees</button>
-      <button class="mobile-school-sections__button" data-mobile-school-section-target="academics" type="button">Academics</button>
-      <button class="mobile-school-sections__button" data-mobile-school-section-target="about" type="button">About</button>
+      <label class="mobile-school-sections__button" for="mobile-school-section-overview">Overview</label>
+      <label class="mobile-school-sections__button" for="mobile-school-section-fees">Fees</label>
+      <label class="mobile-school-sections__button" for="mobile-school-section-academics">Academics</label>
+      <label class="mobile-school-sections__button" for="mobile-school-section-about">About</label>
     </div>
   </nav>
 
-  <div class="mobile-school-content shell">
-    <section class="mobile-school-panel" data-mobile-school-section="overview">
-      <div class="mobile-school-card mobile-school-card--overview">
-        <div class="mobile-overview-list">
-          {overviewRows.map((row) => (
-            <div class="mobile-overview-list__item">
-              <span class="mobile-overview-list__label">{row.label}</span>
-              <strong class="mobile-overview-list__value">{row.value}</strong>
-            </div>
-          ))}
-        </div>
+  <div class="mobile-school-content">
+    <section class="mobile-school-panel mobile-school-panel--overview" data-mobile-school-panel="overview">
+      <div class="shell">
+        <article class="mobile-school-card mobile-school-card--overview">
+          <dl class="mobile-overview-list">
+            {overviewRows.map((row) => (
+              <div class="mobile-overview-list__item">
+                <dt class="mobile-overview-list__label">{row.label}</dt>
+                <dd class="mobile-overview-list__value">
+                  <span>{row.value}</span>
+                  {row.note ? <small>{row.note}</small> : null}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </article>
       </div>
 
       {profile.mapData ? (
@@ -220,169 +241,196 @@ const overviewRows = [
       ) : null}
     </section>
 
-    <section class="mobile-school-panel" data-mobile-school-section="fees" hidden>
-      {dayFeePane ? (
+    <section class="mobile-school-panel mobile-school-panel--fees" data-mobile-school-panel="fees">
+      <div class="shell">
         <article class="mobile-school-card">
-          <h2>Day fees</h2>
-          <div class="mobile-fee-table">
-            {dayFeePane.allRows.map((row) => (
-              <div class="mobile-fee-table__row">
-                <span class="mobile-fee-table__year">{row.yearLabel}</span>
-                <strong class="mobile-fee-table__amount">{row.amountLabel}</strong>
+          <div class="mobile-school-card__head">
+            <h2>Fee profile</h2>
+            {feePanes.length > 1 ? (
+              <div class="mobile-school-fee-switch" role="tablist" aria-label="Fee profile views">
+                {feePanes.map((pane, index) => (
+                  <button
+                    aria-pressed={index === 0 ? 'true' : 'false'}
+                    class={`mobile-school-fee-switch__button ${index === 0 ? 'is-active' : ''}`}
+                    data-mobile-fee-target={pane.feeType}
+                    type="button"
+                  >{pane.label}</button>
+                ))}
               </div>
-            ))}
+            ) : null}
           </div>
-        </article>
-      ) : null}
 
-      {boardingFeePanes.map((pane) => (
-        <article class="mobile-school-card">
-          <h2>{pane.label}</h2>
-          <div class="mobile-fee-table">
-            {pane.allRows.map((row) => (
-              <div class="mobile-fee-table__row">
-                <span class="mobile-fee-table__year">{row.yearLabel}</span>
-                <strong class="mobile-fee-table__amount">{row.amountLabel}</strong>
-              </div>
-            ))}
-          </div>
-        </article>
-      ))}
-
-      {!dayFeePane && !boardingFeePanes.length ? (
-        <article class="mobile-school-card">
-          <h2>Fee profile</h2>
-          <p>No fee profile is currently published for this school.</p>
-        </article>
-      ) : null}
-
-      <article class="mobile-school-card">
-        <h2>Bursaries</h2>
-        <p class="mobile-school-yes-no">{hasBursaries ? 'Yes' : 'No'}</p>
-      </article>
-
-      <article class="mobile-school-card">
-        <h2>Scholarships</h2>
-        <p class="mobile-school-yes-no">{hasScholarships ? 'Yes' : 'No'}</p>
-      </article>
-    </section>
-
-    <section class="mobile-school-panel" data-mobile-school-section="academics" hidden>
-      {profile.alevelResult ? (
-        <article class="mobile-school-card">
-          <h2>A-level results</h2>
-          <div class="tile-kpis">
-            <div class="tile-kpi"><span class="tile-kpi-label">% A*–A</span><span class="tile-kpi-value">{formatPercent(profile.alevelResult.pct_a_star_a)}</span></div>
-            <div class="tile-kpi"><span class="tile-kpi-label">% A*–B</span><span class="tile-kpi-value">{formatPercent(profile.alevelResult.pct_a_star_b)}</span></div>
-            <div class="tile-kpi"><span class="tile-kpi-label">Different A-level subjects</span><span class="tile-kpi-value">{formatInteger(profile.alevelResult.unique_subjects)}</span></div>
-          </div>
-          <p class="tile-note">Results shown for {profile.alevelResult.result_year}.</p>
-        </article>
-      ) : isSeniorSchool ? (
-        <article class="mobile-school-card">
-          <h2>A-level results</h2>
-          <p>No A-level results are currently published for this school.</p>
-        </article>
-      ) : null}
-
-      {profile.subjectRows.length > 0 ? (
-        <article class={`mobile-school-card ${profile.subjectExtraRows.length ? 'tile-expandable' : ''}`}>
-          <h2>Subject popularity</h2>
-          <p class="tile-note">By percentage of all A-level exams taken.</p>
-          <div class="metric-list">
-            {profile.subjectTopRows.map((subject) => (
-              <div class="metric-row"><span class="metric-name">{subject.subject_name}</span><span class="metric-value">{formatPercent(subject.share_of_entries)}</span></div>
-            ))}
-          </div>
-          {profile.subjectExtraRows.length > 0 && (
-            <Fragment>
-              <button class="subject-toggle" data-mobile-subject-toggle="expand" type="button">Show full subject mix</button>
-              <div class="subject-extra" hidden>
-                <div class="metric-list">
-                  {profile.subjectExtraRows.map((subject) => (
-                    <div class="metric-row"><span class="metric-name">{subject.subject_name}</span><span class="metric-value">{formatPercent(subject.share_of_entries)}</span></div>
+          {feePanes.length > 0 ? (
+            feePanes.map((pane, index) => (
+              <div class={`mobile-fee-pane ${index === 0 ? 'is-active' : ''}`} data-mobile-fee-pane={pane.feeType} hidden={index !== 0}>
+                <div class="mobile-fee-grid">
+                  {pane.compactColumns.map((column) => (
+                    <div class="mobile-fee-grid__column">
+                      {column.map((row) => (
+                        <div class="mobile-fee-table__row">
+                          <span class="mobile-fee-table__year">{row.yearLabel}</span>
+                          <strong class="mobile-fee-table__amount">{row.amountLabel}</strong>
+                        </div>
+                      ))}
+                    </div>
                   ))}
                 </div>
-                <button class="subject-toggle subject-toggle--collapse" data-mobile-subject-toggle="collapse" type="button">Collapse subject mix</button>
               </div>
-            </Fragment>
+            ))
+          ) : (
+            <p>No fee profile is currently published for this school.</p>
           )}
         </article>
-      ) : null}
 
-      {!isSeniorSchool && profile.content?.assessment_approach ? (
+        <div class="mobile-school-stat-grid">
+          <article class="mobile-school-card mobile-school-card--stat">
+            <h2>Bursaries</h2>
+            <p class="mobile-school-yes-no">{hasBursaries ? 'Yes' : 'No'}</p>
+          </article>
+
+          <article class="mobile-school-card mobile-school-card--stat">
+            <h2>Scholarships</h2>
+            <p class="mobile-school-yes-no">{hasScholarships ? 'Yes' : 'No'}</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="mobile-school-panel mobile-school-panel--academics" data-mobile-school-panel="academics">
+      <div class="shell mobile-school-stack">
+        {profile.alevelResult ? (
+          <article class="mobile-school-card">
+            <h2>A-level results</h2>
+            <div class="tile-kpis">
+              <div class="tile-kpi"><span class="tile-kpi-label">% A*–A</span><span class="tile-kpi-value">{formatPercent(profile.alevelResult.pct_a_star_a)}</span></div>
+              <div class="tile-kpi"><span class="tile-kpi-label">% A*–B</span><span class="tile-kpi-value">{formatPercent(profile.alevelResult.pct_a_star_b)}</span></div>
+              <div class="tile-kpi"><span class="tile-kpi-label">Subjects</span><span class="tile-kpi-value">{formatInteger(profile.alevelResult.unique_subjects)}</span></div>
+            </div>
+            <p class="tile-note">Results shown for {profile.alevelResult.result_year}.</p>
+          </article>
+        ) : isSeniorSchool ? (
+          <article class="mobile-school-card">
+            <h2>A-level results</h2>
+            <p>No A-level results are currently published for this school.</p>
+          </article>
+        ) : null}
+
+        {profile.subjectRows.length > 0 ? (
+          <article class={`mobile-school-card ${profile.subjectExtraRows.length ? 'tile-expandable' : ''}`}>
+            <h2>Subject popularity</h2>
+            <p class="tile-note">By percentage of all A-level exams taken.</p>
+            <div class="metric-list">
+              {profile.subjectTopRows.map((subject) => (
+                <div class="metric-row"><span class="metric-name">{subject.subject_name}</span><span class="metric-value">{formatPercent(subject.share_of_entries)}</span></div>
+              ))}
+            </div>
+            {profile.subjectExtraRows.length > 0 && (
+              <Fragment>
+                <button class="subject-toggle" data-mobile-subject-toggle="expand" type="button">Show full subject mix</button>
+                <div class="subject-extra" hidden>
+                  <div class="metric-list">
+                    {profile.subjectExtraRows.map((subject) => (
+                      <div class="metric-row"><span class="metric-name">{subject.subject_name}</span><span class="metric-value">{formatPercent(subject.share_of_entries)}</span></div>
+                    ))}
+                  </div>
+                  <button class="subject-toggle subject-toggle--collapse" data-mobile-subject-toggle="collapse" type="button">Collapse subject mix</button>
+                </div>
+              </Fragment>
+            )}
+          </article>
+        ) : null}
+
+        {!isSeniorSchool && profile.content?.assessment_approach ? (
+          <article class="mobile-school-card">
+            <h2>Assessment approach</h2>
+            <div class="school-card-copy">
+              {profile.assessmentBullets.length > 1 ? (
+                <ul>
+                  {profile.assessmentBullets.map((item) => <li>{item}</li>)}
+                </ul>
+              ) : (
+                splitParagraphs(profile.content.assessment_approach).map((paragraph) => <p>{paragraph}</p>)
+              )}
+            </div>
+          </article>
+        ) : null}
+
+        {!isSeniorSchool && linkedSeniorSchool ? (
+          <article class="mobile-school-card">
+            <h2>Linked senior school</h2>
+            <p>{linkedSeniorSchool}</p>
+          </article>
+        ) : null}
+
+        {profile.content?.admissions_summary ? (
+          <article class="mobile-school-card">
+            <h2>Admissions</h2>
+            <div class="school-card-copy">
+              {splitParagraphs(profile.content.admissions_summary).map((paragraph) => <p>{paragraph}</p>)}
+            </div>
+          </article>
+        ) : null}
+      </div>
+    </section>
+
+    <section class="mobile-school-panel mobile-school-panel--about" data-mobile-school-panel="about">
+      <div class="shell mobile-school-stack">
         <article class="mobile-school-card">
-          <h2>Assessment approach</h2>
+          <h2>How the school describes itself</h2>
           <div class="school-card-copy">
-            {profile.assessmentBullets.length > 1 ? (
+            {profile.schoolVoice.length > 0 ? (
               <ul>
-                {profile.assessmentBullets.map((item) => <li>{item}</li>)}
+                {profile.schoolVoice.map((item) => <li>{item}</li>)}
               </ul>
             ) : (
-              splitParagraphs(profile.content.assessment_approach).map((paragraph) => <p>{paragraph}</p>)
+              <p>Coming soon</p>
             )}
           </div>
         </article>
-      ) : null}
 
-      {!isSeniorSchool && linkedSeniorSchool ? (
         <article class="mobile-school-card">
-          <h2>Linked senior school</h2>
-          <p>{linkedSeniorSchool}</p>
-        </article>
-      ) : null}
-
-      {profile.content?.admissions_summary ? (
-        <article class="mobile-school-card">
-          <h2>Admissions</h2>
+          <h2>Parents like</h2>
           <div class="school-card-copy">
-            {splitParagraphs(profile.content.admissions_summary).map((paragraph) => <p>{paragraph}</p>)}
-          </div>
-        </article>
-      ) : null}
-    </section>
-
-    <section class="mobile-school-panel" data-mobile-school-section="about" hidden>
-      <article class="mobile-school-card">
-        <h2>How the school describes itself</h2>
-        <div class="school-card-copy">
-          {profile.schoolVoice.length > 0 ? (
-            <ul>
-              {profile.schoolVoice.map((item) => <li>{item}</li>)}
-            </ul>
-          ) : (
-            <p>Coming soon</p>
-          )}
-        </div>
-      </article>
-
-      <article class="mobile-school-card">
-        <h2>Parents like</h2>
-        <div class="school-card-copy">
-          {profile.parentLikes.length > 0 ? (
-            <ul>
-              {profile.parentLikes.map((item) => <li>{item}</li>)}
-            </ul>
-          ) : (
-            <p>Coming soon</p>
-          )}
-        </div>
-      </article>
-
-      {profile.content?.inspection_snapshot || profile.school.inspection_rating ? (
-        <article class="mobile-school-card">
-          <h2>Inspection snapshot</h2>
-          <div class="school-card-copy">
-            {profile.inspectionBullets.length > 1 ? (
+            {profile.parentLikes.length > 0 ? (
               <ul>
-                {profile.inspectionBullets.map((item) => <li>{item}</li>)}
+                {profile.parentLikes.map((item) => <li>{item}</li>)}
               </ul>
             ) : (
-              splitParagraphs(profile.content?.inspection_snapshot || profile.school.inspection_rating).map((paragraph) => <p>{paragraph}</p>)
+              <p>Coming soon</p>
             )}
           </div>
         </article>
-      ) : null}
+
+        {profile.content?.inspection_snapshot || profile.school.inspection_rating ? (
+          <article class="mobile-school-card">
+            <h2>Inspection snapshot</h2>
+            <div class="school-card-copy">
+              {profile.inspectionBullets.length > 1 ? (
+                <ul>
+                  {profile.inspectionBullets.map((item) => <li>{item}</li>)}
+                </ul>
+              ) : (
+                splitParagraphs(profile.content?.inspection_snapshot || profile.school.inspection_rating).map((paragraph) => <p>{paragraph}</p>)
+              )}
+            </div>
+          </article>
+        ) : null}
+      </div>
     </section>
+  </div>
+
+  <div class="mobile-results-sheet" data-mobile-results-sheet hidden>
+    <div class="mobile-results-sheet__backdrop" data-mobile-results-close></div>
+    <div aria-labelledby="mobile-results-sheet-title" aria-modal="true" class="mobile-results-sheet__panel" role="dialog">
+      <div class="mobile-results-sheet__head">
+        <div>
+          <p class="mobile-results-sheet__eyebrow">Search results</p>
+          <h2 id="mobile-results-sheet-title">Full list of results</h2>
+        </div>
+        <button aria-label="Close full results list" class="mobile-results-sheet__close" data-mobile-results-close type="button">×</button>
+      </div>
+      <p class="mobile-results-sheet__summary" data-mobile-results-summary>Showing search results.</p>
+      <div class="mobile-results-sheet__list" data-mobile-results-list></div>
+    </div>
   </div>
 </section>
