@@ -134,6 +134,15 @@ const overviewRows = [
 ];
 ---
 <section class="mobile-school-profile" aria-label="Mobile school profile" data-mobile-school-profile>
+  <div class="mobile-school-topbar" data-mobile-school-topbar hidden>
+    <div class="mobile-school-topbar__row mobile-school-topbar__row--pager" data-mobile-school-results-nav hidden>
+      <button class="mobile-school-topbar__pager" data-mobile-school-prev type="button">Prev</button>
+      <p class="mobile-school-topbar__position" data-mobile-school-results-label>School profile</p>
+      <button class="mobile-school-topbar__results-button" data-mobile-results-open type="button">Full list</button>
+      <button class="mobile-school-topbar__pager" data-mobile-school-next type="button">Next</button>
+    </div>
+  </div>
+
   <section class={`mobile-school-hero ${!hasHeroMedia ? 'mobile-school-hero--fallback' : ''}`} aria-labelledby="mobile-school-title">
     {hasHeroMedia ? (
       <div class="mobile-school-hero__media" data-mobile-hero-slideshow={heroSlides.length > 1 ? 'true' : undefined}>
@@ -168,24 +177,6 @@ const overviewRows = [
     ) : <div class="mobile-school-hero__fallback"></div>}
     <div class="mobile-school-hero__overlay"></div>
     <div class="mobile-school-hero__copy shell">
-      <div class="mobile-school-hero__utility-row">
-        <a class="mobile-school-hero__back" data-restore-search-link href={profile.changeSearchHref}>Back to search</a>
-        <div class="mobile-school-hero__utility-actions">
-          <a class="mobile-school-hero__utility-button" href="/shortlist/">
-            <span class="mobile-school-hero__utility-label">View shortlist</span>
-            <span class="mobile-school-hero__utility-count" data-shortlist-count>0</span>
-          </a>
-          <button
-            class="mobile-school-hero__utility-button mobile-school-hero__utility-button--primary"
-            data-shortlist-add-label="Add to shortlist"
-            data-shortlist-button
-            data-shortlist-remove-label="Shortlisted"
-            data-shortlist-school-id={profile.school.id}
-            type="button"
-          >Add to shortlist</button>
-        </div>
-      </div>
-
       <div class="mobile-school-hero__text">
         <h1 class="mobile-school-hero__title" id="mobile-school-title">{profile.school.name}</h1>
         {profile.address ? <p class="mobile-school-hero__address">{profile.address}</p> : null}
@@ -194,13 +185,20 @@ const overviewRows = [
     </div>
   </section>
 
-  <div class="mobile-school-topbar" data-mobile-school-topbar hidden>
-    <div class="mobile-school-topbar__row mobile-school-topbar__row--pager" data-mobile-school-results-nav hidden>
-      <button class="mobile-school-topbar__pager" data-mobile-school-prev type="button">Prev</button>
-      <p class="mobile-school-topbar__position" data-mobile-school-results-label>School profile</p>
-      <button class="mobile-school-topbar__results-button" data-mobile-results-open type="button">Full list</button>
-      <button class="mobile-school-topbar__pager" data-mobile-school-next type="button">Next</button>
-    </div>
+  <div class="mobile-school-actions shell">
+    <a class="mobile-school-actions__button" data-restore-search-link href={profile.changeSearchHref}>Back to search</a>
+    <a class="mobile-school-actions__button" href="/shortlist/">
+      <span class="mobile-school-actions__label">View shortlist</span>
+      <span class="mobile-school-actions__count" data-shortlist-count>0</span>
+    </a>
+    <button
+      class="mobile-school-actions__button mobile-school-actions__button--primary"
+      data-shortlist-add-label="Add to shortlist"
+      data-shortlist-button
+      data-shortlist-remove-label="Shortlisted"
+      data-shortlist-school-id={profile.school.id}
+      type="button"
+    >Add to shortlist</button>
   </div>
 
   <input checked class="mobile-school-section-control" data-mobile-school-section-control id="mobile-school-section-overview" name="mobile-school-section" type="radio" value="overview" />

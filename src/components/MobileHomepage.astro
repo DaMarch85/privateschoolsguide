@@ -17,9 +17,25 @@ const {
 <section class="mobile-homepage" aria-label="Mobile school search" data-mobile-homepage>
   <div class="mobile-homepage__shell shell">
     <div class="mobile-homepage__panel">
+      <div class="mobile-homepage__brand" data-mobile-brand-banner>
+        <video
+          aria-hidden="true"
+          autoplay
+          class="mobile-homepage__brand-video"
+          data-mobile-brand-video
+          muted
+          playsinline
+          poster="/assets/video/home-hero-mobile-poster.jpg"
+          preload="metadata"
+        >
+          <source src="/assets/video/home-hero-mobile.mp4" type="video/mp4" />
+        </video>
+        <div aria-hidden="true" class="mobile-homepage__brand-overlay"></div>
+        <h1 class="mobile-homepage__brand-title">The Private School Guide</h1>
+      </div>
+
       <header class="mobile-homepage__header">
-        <h1 class="mobile-homepage__title">Find independent schools</h1>
-        <p class="mobile-homepage__intro">Search by town or postcode, fees, age range and other filters.</p>
+        <p class="mobile-homepage__intro">Find the perfect independent school for your child. Search by location, fees, age range, and more to compare every school that matches your needs.</p>
       </header>
 
       <form class="mobile-homepage__form" id="mobile-homepage-filters" novalidate>
