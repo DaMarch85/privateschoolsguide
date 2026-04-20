@@ -245,27 +245,26 @@
     const root = getRoot();
     if (!root) return null;
 
+    const topbar = getTopbar();
     const nav = root.querySelector('[data-mobile-school-results-nav]');
-    const resultsRow = root.querySelector('[data-mobile-school-results-list-row]');
     const prevButton = root.querySelector('[data-mobile-school-prev]');
     const nextButton = root.querySelector('[data-mobile-school-next]');
     const label = root.querySelector('[data-mobile-school-results-label]');
-    if (!nav || !resultsRow || !prevButton || !nextButton || !label) return null;
+    if (!nav || !prevButton || !nextButton || !label) return null;
 
     const context = getCurrentSearchResultsContext();
     if (!context) {
       nav.hidden = true;
-      resultsRow.hidden = true;
+      if (topbar) topbar.hidden = true;
       syncStickyOffset();
       return null;
     }
 
-    const currentSection = getCurrentSection();
     const previousItem = context.index > 0 ? context.items[context.index - 1] : null;
     const nextItem = context.index < context.count - 1 ? context.items[context.index + 1] : null;
 
+    if (topbar) topbar.hidden = false;
     nav.hidden = false;
-    resultsRow.hidden = false;
     label.textContent = 'School ' + (context.index + 1) + ' of ' + context.count;
     prevButton.disabled = !previousItem;
     nextButton.disabled = !nextItem;

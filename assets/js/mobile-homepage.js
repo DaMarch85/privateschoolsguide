@@ -340,6 +340,127 @@
     fill.style.background = 'linear-gradient(90deg, rgba(41,36,33,.82) 0%, rgba(179,91,46,.96) 100%)';
   }
 
+
+  function buildHistogramCounts(values, bounds, binCount) {
+    const safeValues = Array.isArray(values)
+      ? values.map(function (value) { return Number(value); }).filter(function (value) { return Number.isFinite(value); })
+      : [];
+    const minBound = parseFiniteNumber(bounds && bounds.min, 0);
+    const maxBound = parseFiniteNumber(bounds && bounds.max, minBound + 1);
+    const safeMax = maxBound > minBound ? maxBound : minBound + 1;
+    const bins = Math.max(10, Math.min(24, Number(binCount) || 16));
+    const span = safeMax - minBound;
+    const counts = new Array(bins).fill(0);
+
+    safeValues.forEach(function (value) {
+      const clamped = Math.max(minBound, Math.min(value, safeMax));
+      const position = span <= 0 ? 0 : ((clamped - minBound) / span) * bins;
+      const index = Math.max(0, Math.min(bins - 1, Math.floor(position === bins ? bins - 1 : position)));
+      counts[index] += 1;
+    });
+
+    return {
+      counts: counts,
+      maxCount: Math.max.apply(null, counts.concat([1])),
+      minBound: minBound,
+      maxBound: safeMax,
+      bins: bins,
+      valueCount: safeValues.length
+    };
+  }
+
+  function renderHistogram(container, histogram, selectedLow, selectedHigh) {
+    if (!container) return;
+    const counts = histogram && Array.isArray(histogram.counts) ? histogram.counts : [];
+    const maxCount = histogram && Number(histogram.maxCount) > 0 ? Number(histogram.maxCount) : 1;
+    const minBound = histogram ? histogram.minBound : 0;
+    const maxBound = histogram ? histogram.maxBound : 1;
+    const span = Math.max(1, maxBound - minBound);
+    const safeLow = parseFiniteNumber(selectedLow, minBound);
+    const safeHigh = parseFiniteNumber(selectedHigh, maxBound);
+    const binSize = counts.length ? span / counts.length : span;
+
+    container.innerHTML = counts.map(function (count, index) {
+      const height = count > 0 ? Math.max(18, Math.round((count / maxCount) * 100)) : 18;
+      const start = minBound + (index * binSize);
+      const end = index === counts.length - 1 ? maxBound : start + binSize;
+      const isSelected = end > safeLow && start <= safeHigh;
+      return '<span class="mobile-range__histogram-bar' +
+        (isSelected ? ' is-selected' : '') +
+        (count === 0 ? ' is-empty' : '') +
+        '" style="height:' + height + '%" aria-hidden="true"></span>';
+    }).join('');
+  }
+
+  function setHistogramCaption(selector, text) {
+    const target = document.querySelector(selector);
+    if (!target) return;
+    target.textContent = text || '';
+  }
+
+  function clearRangeHistograms() {
+    [
+      ['[data-mobile-day-fee-histogram]', '[data-mobile-day-fee-histogram-count]'],
+      ['[data-mobile-boarding-fee-histogram]', '[data-mobile-boarding-fee-histogram-count]'],
+      ['[data-mobile-alevel-histogram]', '[data-mobile-alevel-histogram-count]']
+    ].forEach(function (entry) {
+      const container = document.querySelector(entry[0]);
+      if (container) container.innerHTML = '';
+      setHistogramCaption(entry[1], '');
+    });
+  }
+
+  function refreshRangeHistograms(filters) {
+    const activeFilters = filters || readFilters();
+    const configs = [
+      {
+        containerSelector: '[data-mobile-day-fee-histogram]',
+        countSelector: '[data-mobile-day-fee-histogram-count]',
+        histogramFilters: Object.assign({}, activeFilters, { dayFeeActive: false }),
+        bounds: state.rangeBounds.fee.day,
+        readValue: function (school) { return normalizeFeeValue(school.dayFeeAverage); },
+        low: activeFilters.dayFeeMin,
+        high: activeFilters.dayFeeMax,
+        emptyText: 'No day fees in these results'
+      },
+      {
+        containerSelector: '[data-mobile-boarding-fee-histogram]',
+        countSelector: '[data-mobile-boarding-fee-histogram-count]',
+        histogramFilters: Object.assign({}, activeFilters, { boardingFeeActive: false }),
+        bounds: state.rangeBounds.fee.boarding,
+        readValue: function (school) { return normalizeFeeValue(school.boardingFeeAverage); },
+        low: activeFilters.boardingFeeMin,
+        high: activeFilters.boardingFeeMax,
+        emptyText: 'No boarding fees in these results'
+      },
+      {
+        containerSelector: '[data-mobile-alevel-histogram]',
+        countSelector: '[data-mobile-alevel-histogram-count]',
+        histogramFilters: Object.assign({}, activeFilters, { alevelActive: false }),
+        bounds: state.rangeBounds.alevel,
+        readValue: function (school) { return getAlevelAStarAValue(school); },
+        low: activeFilters.alevelMin,
+        high: activeFilters.alevelMax,
+        emptyText: 'No A-level results in these results'
+      }
+    ];
+
+    configs.forEach(function (config) {
+      const container = document.querySelector(config.containerSelector);
+      if (!container) return;
+      const schools = filterSchools(config.histogramFilters, state.resolvedLocation);
+      const values = schools.map(config.readValue).filter(function (value) { return value !== null; });
+      if (!values.length) {
+        container.innerHTML = '';
+        setHistogramCaption(config.countSelector, config.emptyText);
+        return;
+      }
+      const histogram = buildHistogramCounts(values, config.bounds, 16);
+      renderHistogram(container, histogram, config.low, config.high);
+      setHistogramCaption(config.countSelector, formatCount(histogram.valueCount) + ' schools in range');
+    });
+  }
+
   function syncRangeControl(config) {
     const form = getFilterForm();
     if (!form) return;
@@ -425,6 +546,7 @@
     syncDayFeeRangeUi(true);
     syncBoardingFeeRangeUi(true);
     syncAlevelRangeUi(true);
+    refreshRangeHistograms(readFilters());
   }
 
   function getMobileDropdowns() {
@@ -881,6 +1003,7 @@
         state.resolvedLocation = null;
         state.filteredSchools = [];
         clearSearchResultsContext();
+        clearRangeHistograms();
         setError('Enter a UK town or postcode we can find.');
         updateActionButton();
         return;
@@ -892,6 +1015,7 @@
     saveHomepageSearchState(filters);
     saveSearchResultsContext();
     updateActionButton();
+    refreshRangeHistograms(filters);
   }
 
   function scheduleApplyFilters(delay) {
