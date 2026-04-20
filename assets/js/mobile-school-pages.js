@@ -3,6 +3,7 @@
   const OSM_FALLBACK_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   const SEARCH_RESULTS_STORAGE_KEY = 'psg-search-results-v1';
   const VALID_SECTIONS = ['overview', 'fees', 'academics', 'about'];
+  const SEARCH_SCROLL_STORAGE_KEY = 'psg-mobile-school-scroll-v1';
 
   let map = null;
   let markerLayer = null;
@@ -135,13 +136,13 @@
 
   function getMarkerIcon(kind) {
     if (!window.L) return null;
-    const className = kind === 'current'
-      ? 'mobile-school-map-pin mobile-school-map-pin--current'
-      : 'mobile-school-map-pin';
-    const size = kind === 'current' ? 22 : 16;
+    const markerClass = kind === 'current'
+      ? 'school-map-marker school-map-marker--primary'
+      : 'school-map-marker school-map-marker--secondary';
+    const size = kind === 'current' ? 18 : 15;
     return window.L.divIcon({
-      className: 'mobile-school-map-icon-wrap',
-      html: '<span class="' + className + '"></span>',
+      className: 'school-map-icon-wrap school-map-icon-wrap--' + (kind === 'current' ? 'primary' : 'secondary'),
+      html: '<span class="' + markerClass + '"></span>',
       iconSize: [size, size],
       iconAnchor: [Math.round(size / 2), Math.round(size / 2)],
       popupAnchor: [0, -Math.round(size / 2)]
@@ -187,6 +188,82 @@
     const target = new URL(path || window.location.pathname, window.location.origin);
     target.searchParams.set('section', section || 'overview');
     return target.pathname + target.search + target.hash;
+  }
+
+  function clearPendingScrollRestore() {
+    const storage = getSessionStorage();
+    if (!storage) return;
+    try {
+      storage.removeItem(SEARCH_SCROLL_STORAGE_KEY);
+    } catch (error) {
+      // ignore storage failures
+    }
+  }
+
+  function readPendingScrollRestore() {
+    const storage = getSessionStorage();
+    if (!storage) return null;
+    try {
+      const raw = storage.getItem(SEARCH_SCROLL_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function savePendingScrollRestore(targetPath) {
+    const storage = getSessionStorage();
+    const normalizedTargetPath = normalizePath(targetPath);
+    if (!storage || !normalizedTargetPath) return;
+    const scrollY = Math.max(
+      window.scrollY || 0,
+      document.documentElement ? document.documentElement.scrollTop || 0 : 0,
+      document.body ? document.body.scrollTop || 0 : 0
+    );
+
+    try {
+      storage.setItem(SEARCH_SCROLL_STORAGE_KEY, JSON.stringify({
+        targetPath: normalizedTargetPath,
+        section: getCurrentSection(),
+        scrollY: scrollY,
+        createdAt: Date.now()
+      }));
+    } catch (error) {
+      // ignore storage failures
+    }
+  }
+
+  function navigateToSchool(targetPath) {
+    if (!targetPath) return;
+    savePendingScrollRestore(targetPath);
+    window.location.href = buildSchoolUrl(targetPath, getCurrentSection());
+  }
+
+  function restorePendingScrollRestore() {
+    const pending = readPendingScrollRestore();
+    if (!pending) return;
+
+    const currentPath = normalizePath(window.location.pathname);
+    const targetPath = normalizePath(pending.targetPath);
+    const targetSection = VALID_SECTIONS.includes(String(pending.section || '').toLowerCase())
+      ? String(pending.section).toLowerCase()
+      : 'overview';
+    const currentSection = getCurrentSectionFromUrl();
+    const scrollY = Number(pending.scrollY);
+    const ageMs = Date.now() - Number(pending.createdAt || 0);
+
+    if (!targetPath || targetPath !== currentPath || targetSection !== currentSection || !Number.isFinite(scrollY) || ageMs > 10 * 60 * 1000) {
+      clearPendingScrollRestore();
+      return;
+    }
+
+    const delays = [0, 70, 180, 360, 700, 1100];
+    delays.forEach(function (delay, index) {
+      window.setTimeout(function () {
+        window.scrollTo(0, Math.max(0, scrollY));
+        if (index === delays.length - 1) clearPendingScrollRestore();
+      }, delay);
+    });
   }
 
   function normalizeSearchResultItem(item) {
@@ -271,13 +348,13 @@
 
     prevButton.onclick = previousItem
       ? function () {
-          window.location.href = buildSchoolUrl(previousItem.path || previousItem.href, getCurrentSection());
+          navigateToSchool(previousItem.path || previousItem.href);
         }
       : null;
 
     nextButton.onclick = nextItem
       ? function () {
-          window.location.href = buildSchoolUrl(nextItem.path || nextItem.href, getCurrentSection());
+          navigateToSchool(nextItem.path || nextItem.href);
         }
       : null;
 
@@ -407,7 +484,7 @@
   function bindMapNavigation(marker, targetPath) {
     if (!marker || !targetPath) return;
     marker.on('click', function () {
-      window.location.href = buildSchoolUrl(targetPath, getCurrentSection());
+      navigateToSchool(targetPath);
     });
   }
 
@@ -459,7 +536,7 @@
         if (!link) return;
         link.addEventListener('click', function (event) {
           event.preventDefault();
-          window.location.href = buildSchoolUrl(point.path || point.href, getCurrentSection());
+          navigateToSchool(point.path || point.href);
         }, { once: true });
       });
     });
@@ -524,6 +601,7 @@
       const isCurrent = index === context.index;
       link.className = 'mobile-results-sheet__item' + (isCurrent ? ' is-current' : '');
       link.href = buildSchoolUrl(item.path || item.href, getCurrentSection());
+      link.setAttribute('data-mobile-school-target', item.path || item.href || '');
       link.innerHTML =
         '<span class="mobile-results-sheet__item-index">' + (index + 1) + '</span>' +
         '<span class="mobile-results-sheet__item-copy">' +
@@ -542,6 +620,7 @@
     if (!root) return;
     const openButtons = Array.from(root.querySelectorAll('[data-mobile-results-open]'));
     const closeButtons = Array.from(root.querySelectorAll('[data-mobile-results-close]'));
+    const list = root.querySelector('[data-mobile-results-list]');
     if (!openButtons.length) return;
 
     if (!context) {
@@ -552,6 +631,19 @@
     }
 
     populateResultsSheet(context);
+
+    if (list && list.dataset.bound !== 'true') {
+      list.addEventListener('click', function (event) {
+        const link = event.target && event.target.closest ? event.target.closest('[data-mobile-school-target]') : null;
+        if (!link) return;
+        const targetPath = link.getAttribute('data-mobile-school-target');
+        if (!targetPath) return;
+        event.preventDefault();
+        setResultsSheetOpen(false);
+        navigateToSchool(targetPath);
+      });
+      list.dataset.bound = 'true';
+    }
 
     openButtons.forEach(function (button) {
       button.hidden = false;
@@ -576,6 +668,7 @@
     if (!isMobileViewport()) return;
     if (!getRoot()) return;
 
+    restorePendingScrollRestore();
     bindSectionNav();
     bindFeeSwitches();
     const context = bindSearchResultsNavigation();
