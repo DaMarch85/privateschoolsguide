@@ -1447,7 +1447,7 @@
     margin:0;
     padding:0 16px;
     color:var(--psg-white);
-    font:500 clamp(1.48rem, 7.6vw, 2.05rem)/.95 "EB Garamond", ui-serif, Georgia, serif;
+    font:500 clamp(1.11rem, 5.7vw, 1.54rem)/.95 "EB Garamond", ui-serif, Georgia, serif;
     letter-spacing:.08em;
     text-transform:uppercase;
     text-align:center;
@@ -1747,7 +1747,7 @@
   }
 
   .mobile-homepage__brand-title{
-    font-size:1.42rem;
+    font-size:1.06rem;
   }
 
   .mobile-homepage__intro{
