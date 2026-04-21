@@ -115,7 +115,7 @@ async function createCheckoutSession({
   if (foundingProgramme) return null;
   if (plan === 'claimed') return null;
 
-  const siteUrl = String(Deno.env.get('PUBLIC_SITE_URL') || 'https://www.privateschoolguide.co.uk').replace(/\/$/, '');
+  const siteUrl = String(Deno.env.get('PUBLIC_SITE_URL') || 'https://privateschoolguide.co.uk').replace(/\/$/, '');
   const stripeSecretKey = getEnv('STRIPE_SECRET_KEY');
   const enhancedPriceId = Deno.env.get('STRIPE_PRICE_ENHANCED_MONTHLY');
   const featuredPriceId = Deno.env.get('STRIPE_PRICE_FEATURED_MONTHLY');

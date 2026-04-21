@@ -684,11 +684,39 @@
     return data;
   }
 
+  function getLegacyCompareSlugFromParams(params) {
+    if (!params) return "";
+    if (params.get("compare")) return params.get("compare");
+    if (!params.get("schools")) return "";
+    const schools = params.get("schools").split(",");
+    return schools.find((slug) => slug && slug !== currentSlug) || "";
+  }
+
+  function getCompareSlugFromHash(hash) {
+    const normalizedHash = String(hash || "").replace(/^#/, "").trim();
+    if (!normalizedHash) return "";
+    const params = new URLSearchParams(normalizedHash);
+    return params.get("compare") || "";
+  }
+
+  function getCompareSlugFromLink(link) {
+    if (!link) return "";
+    if (link.dataset.compareSchool) return link.dataset.compareSchool;
+
+    const href = link.getAttribute("href") || "";
+    if (!href) return "";
+
+    if (href.charAt(0) === "#") {
+      return getCompareSlugFromHash(href);
+    }
+
+    const url = new URL(href, window.location.origin);
+    return getLegacyCompareSlugFromParams(url.searchParams);
+  }
+
   function setActiveLink(slug) {
     sideCompareLinks.forEach((link) => {
-      const target =
-        link.dataset.compareSchool ||
-        new URL(link.href, window.location.origin).searchParams.get("compare");
+      const target = getCompareSlugFromLink(link);
       link.classList.toggle("is-active", target === slug);
     });
   }
@@ -856,8 +884,14 @@
       renderMap(currentData, comparisonData);
 
       const nextUrl = new URL(window.location.href);
-      nextUrl.searchParams.set("compare", slug);
-      window.history.replaceState({}, "", nextUrl);
+      nextUrl.searchParams.delete("compare");
+      nextUrl.searchParams.delete("schools");
+      nextUrl.hash = `compare=${encodeURIComponent(slug)}`;
+      window.history.replaceState(
+        {},
+        "",
+        nextUrl.pathname + (nextUrl.search ? nextUrl.search : "") + nextUrl.hash
+      );
     } catch (err) {
       console.error(err);
     }
@@ -873,6 +907,7 @@
     const nextUrl = new URL(window.location.href);
     nextUrl.searchParams.delete("compare");
     nextUrl.searchParams.delete("schools");
+    nextUrl.hash = "";
     window.history.replaceState(
       {},
       "",
@@ -882,24 +917,26 @@
 
   sideCompareLinks.forEach((link) => {
     link.addEventListener("click", (event) => {
-      const href = link.getAttribute("href") || "";
-      const url = new URL(href || window.location.href, window.location.origin);
-      let target = link.dataset.compareSchool || url.searchParams.get("compare");
-      if (!target && url.searchParams.get("schools")) {
-        const schools = url.searchParams.get("schools").split(",");
-        target = schools.find((slug) => slug && slug !== currentSlug);
-      }
+      const target = getCompareSlugFromLink(link);
       if (!target) return;
       event.preventDefault();
       applyComparison(target);
     });
   });
 
+  window.addEventListener("hashchange", function () {
+    const compareFromHash = getCompareSlugFromHash(window.location.hash);
+    if (compareFromHash) {
+      applyComparison(compareFromHash);
+      return;
+    }
+    clearComparison();
+  });
+
   const params = new URLSearchParams(window.location.search);
-  let initialCompare = params.get("compare");
-  if (!initialCompare && params.get("schools")) {
-    const schools = params.get("schools").split(",");
-    initialCompare = schools.find((slug) => slug && slug !== currentSlug);
+  let initialCompare = getCompareSlugFromHash(window.location.hash);
+  if (!initialCompare) {
+    initialCompare = getLegacyCompareSlugFromParams(params);
   }
   if (initialCompare) applyComparison(initialCompare);
 })();

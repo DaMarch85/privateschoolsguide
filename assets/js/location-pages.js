@@ -189,7 +189,7 @@
     if (!points.length && !fallbackView) {
       if (emptyState) {
         emptyState.hidden = false;
-        emptyState.textContent = 'School locations are being updated.';
+        emptyState.textContent = 'Map data is unavailable right now. Use the school list below.';
       }
       mapTarget.style.display = 'none';
       return true;

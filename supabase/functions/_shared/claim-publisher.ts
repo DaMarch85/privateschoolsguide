@@ -86,7 +86,7 @@ function escapeHtml(value: unknown): string {
 }
 
 function buildAdminClaimUrl(claimId: string): string {
-  const siteUrl = String(Deno.env.get('PUBLIC_SITE_URL') || 'https://www.privateschoolguide.co.uk').replace(/\/$/, '');
+  const siteUrl = String(Deno.env.get('PUBLIC_SITE_URL') || 'https://privateschoolguide.co.uk').replace(/\/$/, '');
   return `${siteUrl}/admin/school-claims/?claim=${claimId}`;
 }
 
@@ -107,7 +107,7 @@ export async function sendClaimNotificationEmail({
     return { sent: false, skipped: true };
   }
 
-  const siteUrl = String(Deno.env.get('PUBLIC_SITE_URL') || 'https://www.privateschoolguide.co.uk').replace(/\/$/, '');
+  const siteUrl = String(Deno.env.get('PUBLIC_SITE_URL') || 'https://privateschoolguide.co.uk').replace(/\/$/, '');
   const schoolPageUrl = schoolPagePath ? `${siteUrl}${schoolPagePath.startsWith('/') ? schoolPagePath : `/${schoolPagePath}`}` : null;
   const adminUrl = buildAdminClaimUrl(claim.id);
   const planLabel = claim.plan_slug === 'featured' ? 'Featured profile' : claim.plan_slug === 'enhanced' ? 'Enhanced profile' : 'Member profile';

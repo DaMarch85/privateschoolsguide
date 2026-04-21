@@ -141,7 +141,7 @@ const hasHeroMedia = heroSlides.length > 0;
             <ul class="school-compare-links">
               {profile.compareLinks.map((link) => (
                 <li>
-                  <a data-compare-school={link.slug} href={`?compare=${encodeURIComponent(link.slug)}`}>{link.name}</a>
+                  <a data-compare-school={link.slug} href={`#compare=${encodeURIComponent(link.slug)}`}>{link.name}</a>
                 </li>
               ))}
             </ul>
@@ -161,7 +161,7 @@ const hasHeroMedia = heroSlides.length > 0;
                     {profile.schoolVoice.map((item) => <li>{item}</li>)}
                   </ul>
                 ) : (
-                  <p>Coming soon</p>
+                  <p>No published information at the moment.</p>
                 )}
               </div>
             </div>
@@ -251,7 +251,7 @@ const hasHeroMedia = heroSlides.length > 0;
                     {profile.parentLikes.map((item) => <li>{item}</li>)}
                   </ul>
                 ) : (
-                  <p>Coming soon</p>
+                  <p>No published information at the moment.</p>
                 )}
               </div>
             </div>
@@ -281,7 +281,7 @@ const hasHeroMedia = heroSlides.length > 0;
                     splitParagraphs(profile.content.scholarships).map((paragraph) => <p>{paragraph}</p>)
                   )
                 ) : (
-                  <p>Coming soon</p>
+                  <p>No published information at the moment.</p>
                 )}
               </div>
             </div>

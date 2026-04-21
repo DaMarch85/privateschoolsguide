@@ -1017,7 +1017,7 @@
       '<h3 class="map-popup-title">' + escapeHtml(point.name) + '</h3>' +
       (point.displayLocation ? '<p class="map-popup-meta">' + escapeHtml(point.displayLocation) + '</p>' : '') +
       (point.note ? '<p class="map-popup-meta">' + escapeHtml(point.note) + '</p>' : '') +
-      (point.href ? '<a class="map-popup-link" href="' + escapeHtml(point.href) + '">View school</a>' : '<p class="map-popup-link map-popup-link--muted">Profile coming soon</p>') +
+      (point.href ? '<a class="map-popup-link" href="' + escapeHtml(point.href) + '">View school</a>' : '<p class="map-popup-link map-popup-link--muted">Profile not yet published</p>') +
       '</div>';
   }
 
@@ -1042,7 +1042,7 @@
       '<p class="homepage-school-card__meta">' + escapeHtml(point.genderLabel + ' · ' + point.boardingLabel + ' · Ages ' + point.ageLabel) + '</p>' +
       (extras.length ? '<p class="homepage-school-card__meta homepage-school-card__meta--secondary">' + escapeHtml(extras.join(' · ')) + '</p>' : '') +
       (showNoFeeDataLabel ? '<p class="homepage-school-card__status homepage-school-card__status--neutral">No fee data</p>' : '') +
-      (!point.href ? '<p class="homepage-school-card__status">Profile coming soon</p>' : '') +
+      (!point.href ? '<p class="homepage-school-card__status">Profile not yet published</p>' : '') +
       '</div>' + mainEnd +
       '<div class="homepage-school-card__actions">' +
       '<button class="homepage-school-card__shortlist homepage-school-card__shortlist--banner" data-shortlist-add-label="Add to shortlist" data-shortlist-button data-shortlist-remove-label="Shortlisted" data-shortlist-school-id="' + escapeHtml(point.id) + '" type="button">Add to shortlist</button>' +
@@ -1432,7 +1432,7 @@
     if (state.viewMode === 'tiles') {
       if (!state.visibleSchools.length) {
         empty.hidden = false;
-        empty.textContent = state.shortlistPage ? 'No shortlisted schools are currently visible on the map.' : 'No schools are currently visible on the map.';
+        empty.textContent = state.shortlistPage ? 'No shortlisted schools match the current map view.' : 'No schools match the current map view.';
         return;
       }
 
@@ -1450,7 +1450,7 @@
     const sectionSchools = getSectionSchools();
     if (!state.visibleSchools.length) {
       empty.hidden = false;
-      empty.textContent = state.shortlistPage ? 'No shortlisted schools are currently visible on the map.' : 'No schools are currently visible on the map.';
+      empty.textContent = state.shortlistPage ? 'No shortlisted schools match the current map view.' : 'No schools match the current map view.';
       return;
     }
     if (!sectionSchools.length) {

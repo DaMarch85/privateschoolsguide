@@ -955,7 +955,7 @@ export async function getHomepageLocations(): Promise<HomepageLocationItem[]> {
   return ((data || []) as HomepageLocationRecord[]).map((location) => ({
     name: location.name,
     href: `/${location.slug}/`,
-    state: String(location.homepage_status_label || '').trim() || (location.is_live ? 'Live now' : 'Coming soon'),
+    state: String(location.homepage_status_label || '').trim() || (location.is_live ? 'Live now' : 'Guide in preparation'),
     isLive: Boolean(location.is_live)
   }));
 }
@@ -1768,7 +1768,7 @@ export async function getLocationBursariesData(locationSlug: string) {
     const summary = String(
       bursary?.summary ||
       bursary?.status_label ||
-      (bursary?.has_bursaries === true ? 'Bursary information is being updated.' : 'Coming soon')
+      (bursary?.has_bursaries === true ? 'Bursary details are available from the school.' : 'No bursary summary is currently published.')
     ).trim();
 
     return {
@@ -1776,7 +1776,7 @@ export async function getLocationBursariesData(locationSlug: string) {
       schoolSlug: school.slug,
       schoolName: school.name,
       provisionCategory: getProvisionCategory(school),
-      summary: summary || 'Coming soon'
+      summary: summary || 'No bursary summary is currently published.'
     };
   });
 

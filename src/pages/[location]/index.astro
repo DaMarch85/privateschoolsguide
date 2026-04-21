@@ -31,6 +31,10 @@ function formatCount(value: number) {
   return new Intl.NumberFormat('en-GB').format(value);
 }
 
+function buildCardExtras(school: { religion: string | null; hasSixthForm: boolean; hasNursery: boolean }) {
+  return [school.religion || '', school.hasSixthForm ? 'Sixth form' : '', school.hasNursery ? 'Nursery' : ''].filter(Boolean);
+}
+
 function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const radians = Math.PI / 180;
   const dLat = (lat2 - lat1) * radians;
@@ -130,8 +134,6 @@ const changeSearchHref = `/?location=${encodeURIComponent(location.name)}&map=ce
 const locationSchoolSearchScript = `window.homepageSchoolSearchData = ${JSON.stringify(locationSchools)};`;
 const locationSearchStateScript = `window.PSGInitialSearchState = ${JSON.stringify({ mode: 'url', restoreUrl: changeSearchHref, locationLabel: location.name })};`;
 const initialSchoolCount = formatCount(locationSchools.length);
-const mobileSearchRedirectHref = `/?location=${encodeURIComponent(location.name)}`;
-const mobileRedirectScript = `(function(){var isMobile=window.matchMedia&&window.matchMedia('(max-width: 900px)').matches;if(isMobile){window.location.replace(${JSON.stringify(mobileSearchRedirectHref)});}})();`;
 ---
 <BaseLayout
   title={location.meta_title || fallbackMetaTitle}
@@ -146,7 +148,6 @@ const mobileRedirectScript = `(function(){var isMobile=window.matchMedia&&window
     <link rel="stylesheet" href="/assets/css/homepage.css?v=20260414d-range-row" />
   </Fragment>
 
-  <script is:inline set:html={mobileRedirectScript}></script>
   <a class="skip-link" href="#main">Skip to content</a>
   <SiteHeader minimal={true} />
 
@@ -205,7 +206,7 @@ const mobileRedirectScript = `(function(){var isMobile=window.matchMedia&&window
                 </div>
               </div>
               <div aria-label={`${location.name} school map`} class="homepage-map" id="homepage-map"></div>
-              <p class="finder-note" id="homepage-map-empty" hidden>School locations are being updated.</p>
+              <p class="finder-note" id="homepage-map-empty" hidden>Map data is unavailable right now. Use the school list below.</p>
               <div class="finder-map-actions">
                 <a class="location-change-search-button" href={changeSearchHref}>Change search area</a>
               </div>
@@ -274,32 +275,50 @@ const mobileRedirectScript = `(function(){var isMobile=window.matchMedia&&window
             </div>
           </div>
 
-          <div class="homepage-visible-school-grid" id="homepage-visible-school-grid"></div>
+          <div class="homepage-visible-school-grid" id="homepage-visible-school-grid">
+            {locationSchools.map((school) => (
+              <article class={`homepage-school-card homepage-school-card--${school.type}`} data-school-id={school.id}>
+                <a class="homepage-school-card__main" href={school.href}>
+                  <div class="homepage-school-card__body">
+                    {school.displayLocation ? <p class="homepage-school-card__eyebrow">{school.displayLocation}</p> : null}
+                    {school.badgeLabel ? <p class="homepage-school-card__badge">{school.badgeLabel}</p> : null}
+                    <h3 class="homepage-school-card__title">{school.name}</h3>
+                    <p class="homepage-school-card__meta">{school.genderLabel} · {school.boardingLabel} · Ages {school.ageLabel}</p>
+                    {buildCardExtras(school).length ? (
+                      <p class="homepage-school-card__meta homepage-school-card__meta--secondary">{buildCardExtras(school).join(' · ')}</p>
+                    ) : null}
+                  </div>
+                </a>
+              </article>
+            ))}
+          </div>
           <div class="homepage-school-table-wrap" id="homepage-school-table-wrap" hidden>
             <div class="homepage-school-table-scroll">
               <table class="homepage-school-table" id="homepage-school-table"></table>
             </div>
           </div>
-          <p class="finder-note" id="homepage-visible-school-empty" hidden>No schools are currently visible on the map.</p>
+          <p class="finder-note" id="homepage-visible-school-empty" hidden>No schools match the current map view.</p>
 
-          <article class="location-editorial-card location-editorial-card--lower">
-            <div class="location-editorial-card__head">
-              <p class="finder-kicker">Editorial</p>
-              <h2 class="location-editorial-card__title">{localInsightsTitle}</h2>
-            </div>
-            <div class="location-editorial-copy">
-              {(localInsightsParagraphs.length ? localInsightsParagraphs : [`Local insights for ${location.name} will be added here as this page is developed.`]).map((paragraph) => (
-                <p>{paragraph}</p>
-              ))}
-            </div>
-          </article>
+          {localInsightsParagraphs.length > 0 ? (
+            <article class="location-editorial-card location-editorial-card--lower">
+              <div class="location-editorial-card__head">
+                <p class="finder-kicker">Editorial</p>
+                <h2 class="location-editorial-card__title">{localInsightsTitle}</h2>
+              </div>
+              <div class="location-editorial-copy">
+                {localInsightsParagraphs.map((paragraph) => (
+                  <p>{paragraph}</p>
+                ))}
+              </div>
+            </article>
+          ) : null}
 
-          <article class="location-editorial-card location-editorial-card--lower">
-            <div class="location-editorial-card__head">
-              <p class="finder-kicker">FAQs</p>
-              <h2 class="location-editorial-card__title">Frequently asked questions</h2>
-            </div>
-            {faqItems.length ? (
+          {faqItems.length ? (
+            <article class="location-editorial-card location-editorial-card--lower">
+              <div class="location-editorial-card__head">
+                <p class="finder-kicker">FAQs</p>
+                <h2 class="location-editorial-card__title">Frequently asked questions</h2>
+              </div>
               <div class="location-faq-list">
                 {faqItems.map((item) => (
                   <details class="location-faq-item">
@@ -312,10 +331,8 @@ const mobileRedirectScript = `(function(){var isMobile=window.matchMedia&&window
                   </details>
                 ))}
               </div>
-            ) : (
-              <p class="finder-note">FAQs for {location.name} will appear here as this page is expanded.</p>
-            )}
-          </article>
+            </article>
+          ) : null}
         </div>
       </div>
     </section>

@@ -79,7 +79,7 @@ function parseSchoolId(value: unknown): string | number {
 }
 
 function getSiteUrl(): string {
-  return String(Deno.env.get('PUBLIC_SITE_URL') || 'https://www.privateschoolguide.co.uk').replace(/\/$/, '');
+  return String(Deno.env.get('PUBLIC_SITE_URL') || 'https://privateschoolguide.co.uk').replace(/\/$/, '');
 }
 
 function planLabel(plan: PlanSlug): string {

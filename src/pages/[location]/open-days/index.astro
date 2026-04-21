@@ -51,13 +51,12 @@ function formatTimeRange(startAt: string | null, endAt: string | null) {
 const lastVerifiedLabel = lastVerifiedAt
   ? new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(lastVerifiedAt))
   : null;
-const mobileSearchRedirectHref = `/?location=${encodeURIComponent(location.name)}`;
-const mobileRedirectScript = `(function(){var isMobile=window.matchMedia&&window.matchMedia('(max-width: 900px)').matches;if(isMobile){window.location.replace(${JSON.stringify(mobileSearchRedirectHref)});}})();`;
 ---
 <BaseLayout
   title={title}
   description={description}
   canonicalPath={`/${location.slug}/open-days/`}
+  robots={openDays.length ? 'index, follow' : 'noindex, follow'}
   bodyClass="location-page location-page--data"
   dataLocationSlug={location.slug}
 >
@@ -66,7 +65,6 @@ const mobileRedirectScript = `(function(){var isMobile=window.matchMedia&&window
     <link rel="stylesheet" href="/assets/css/bath-refined.css" />
   </Fragment>
 
-  <script is:inline set:html={mobileRedirectScript}></script>
   <a class="skip-link" href="#main">Skip to content</a>
   <SiteHeader minimal={true} />
 
@@ -117,7 +115,7 @@ const mobileRedirectScript = `(function(){var isMobile=window.matchMedia&&window
             </table>
           </div>
         ) : (
-          <p class="data-page-note">Open day information is being updated.</p>
+          <p class="data-page-note">No open days are listed right now. Please check schools directly for the latest admissions events.</p>
         )}
       </section>
     </div>

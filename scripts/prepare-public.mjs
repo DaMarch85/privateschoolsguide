@@ -6,6 +6,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
 const publicDir = path.join(root, 'public');
 const GOOGLE_TAG_ID = 'G-BDP9V8TPZZ';
+const PRIMARY_SITE_URL = 'https://privateschoolguide.co.uk';
+const LEGACY_SITE_URLS = [
+  'https://www.privateschoolsguide.co.uk',
+  'https://www.privateschoolguide.co.uk'
+];
 const GOOGLE_TAG_SNIPPET = [
   '<!-- Google tag (gtag.js) -->',
   `<script async src="https://www.googletagmanager.com/gtag/js?id=${GOOGLE_TAG_ID}"></script>`,
@@ -22,8 +27,6 @@ const copyTargets = [
   { from: 'assets', to: 'assets' },
   { from: '_redirects', to: '_redirects' },
   { from: 'robots.txt', to: 'robots.txt' },
-  { from: 'sitemap.xml', to: 'sitemap.xml' },
-  { from: '404.html', to: '404.html' },
   { from: 'about', to: 'about' },
   { from: 'advertise', to: 'advertise' },
   { from: 'contact', to: 'contact' },
@@ -46,8 +49,16 @@ async function exists(p) {
   }
 }
 
+function normalizeSiteHost(html) {
+  let normalized = html;
+  for (const legacySiteUrl of LEGACY_SITE_URLS) {
+    normalized = normalized.replaceAll(legacySiteUrl, PRIMARY_SITE_URL);
+  }
+  return normalized;
+}
+
 function upsertGoogleTag(html) {
-  const normalized = html
+  const normalized = normalizeSiteHost(html)
     .replace(/https:\/\/www\.googletagmanager\.com\/gtag\/js\?id=[A-Z0-9-]+/g, `https://www.googletagmanager.com/gtag/js?id=${GOOGLE_TAG_ID}`)
     .replace(/gtag\('config',\s*'[^']+'\);/g, `gtag('config', '${GOOGLE_TAG_ID}');`);
 
@@ -58,14 +69,14 @@ function upsertGoogleTag(html) {
   return normalized.replace(/<head([^>]*)>/i, (match) => `${match}\n${GOOGLE_TAG_SNIPPET}`);
 }
 
-async function injectGoogleTagIntoHtmlFiles(dir) {
+async function normalizeHtmlFiles(dir) {
   if (!(await exists(dir))) return;
 
   const entries = await readdir(dir, { withFileTypes: true });
   for (const entry of entries) {
     const entryPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      await injectGoogleTagIntoHtmlFiles(entryPath);
+      await normalizeHtmlFiles(entryPath);
       continue;
     }
 
@@ -80,6 +91,10 @@ async function injectGoogleTagIntoHtmlFiles(dir) {
 }
 
 await mkdir(publicDir, { recursive: true });
+
+for (const stalePath of ['404.html', 'sitemap.xml']) {
+  await rm(path.join(publicDir, stalePath), { recursive: true, force: true });
+}
 
 for (const target of copyTargets) {
   const from = path.join(root, target.from);
@@ -96,6 +111,6 @@ for (const target of copyTargets) {
   }
 }
 
-await injectGoogleTagIntoHtmlFiles(publicDir);
+await normalizeHtmlFiles(publicDir);
 
 console.log('Public assets and legacy static routes prepared.');

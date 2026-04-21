@@ -17,7 +17,7 @@ const nav = getLocationNavigationConfig(locationSlug) || {
   movingToSection: false
 };
 
-const hasAnySections = Boolean(nav.openDays || nav.movingToSection);
+const hasAnySections = Boolean(nav.openDays);
 ---
 {hasAnySections && (
   <nav class="location-side-nav" aria-label={`${locationName} page navigation`}>
@@ -26,13 +26,6 @@ const hasAnySections = Boolean(nav.openDays || nav.movingToSection);
     {nav.openDays && (
       <div class="location-side-nav-group">
         <a class:list={["location-side-nav-title", currentSection === 'open-days' && 'is-current']} href={`/${locationSlug}/open-days/`}>Open days</a>
-      </div>
-    )}
-
-    {nav.movingToSection && (
-      <div class="location-side-nav-group">
-        <span class="location-side-nav-title">Moving to {locationName}</span>
-        <span class="sub-label">Coming soon</span>
       </div>
     )}
   </nav>
